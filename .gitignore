@@ -66,10 +66,52 @@ yarn-error.log
 # testing
 /coverage
 
-# Yarn
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
+# Firebase
+firebase-service-account-key.json
+firebase-credentials.json
+*.firebase.json
+
+# Environment Variables
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# API Keys and Secrets
+**/config/keys.js
+**/config/secrets.js
+**/*.key
+**/*.pem
+**/*.p12
+**/*.pfx
+
+# React Native
+ios/build
+android/app/build
+android/app/google-services.json
+ios/GoogleService-Info.plist
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Temporary files
+tmp/
+temp/

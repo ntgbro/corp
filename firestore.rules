@@ -1,0 +1,251 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user owns the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Helper function to check if user has admin role
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    // Helper function to check if user has chef role
+    function isChef() {
+      return isAuthenticated() && request.auth.token.role == 'chef';
+    }
+
+    // Helper function to check if user can access order
+    function canAccessOrder(orderData) {
+      return isAuthenticated() && (
+        orderData.customerId == request.auth.uid ||
+        orderData.chefId == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
+    // ============================================================================
+    // USERS COLLECTION
+    // ============================================================================
+    match /users/{userId} {
+      // Users can read/write their own profile
+      allow read, write: if isOwner(userId);
+
+      // Allow create during registration (before user document exists)
+      allow create: if isAuthenticated();
+
+      // Allow admins to read all user profiles
+      allow read: if isAdmin();
+    }
+
+    // ============================================================================
+    // FRESH_SERVE COLLECTION (Public read, admin write)
+    // ============================================================================
+    match /freshserve/{productId} {
+      // Allow everyone to read freshserve data (for home screen, product listings)
+      allow read: if true;
+
+      // Allow admins to manage freshserve products
+      allow write, create, delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // CHEFS COLLECTION (Public read, restricted write)
+    // ============================================================================
+    match /chefs/{chefId} {
+      // Allow everyone to read chef data (for home screen, product listings)
+      allow read: if true;
+
+      // Only allow chef to update their own profile or admins
+      allow write: if isOwner(chefId) || isAdmin();
+
+      // Allow authenticated users to create chef profiles
+      // Allow admins to delete chef profiles
+      allow delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // SUPPLIES COLLECTION (Public read, admin write)
+    // ============================================================================
+    match /supplies/{productId} {
+      // Allow everyone to read supplies data (for home screen, product listings)
+      allow read: if true;
+
+      // Allow admins to manage supplies products
+      allow write, create, delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // FMCG COLLECTION (Public read, admin write)
+    // ============================================================================
+    match /fmcg/{productId} {
+      // Allow everyone to read FMCG data (for home screen, product listings)
+      allow read: if true;
+
+      // Allow admins to manage FMCG products
+      allow write, create, delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // PRODUCT CATEGORIES COLLECTION (Public read, admin write)
+    // ============================================================================
+    match /product_categories/{categoryId} {
+      // Allow everyone to read categories (for navigation, filtering)
+      allow read: if true;
+
+      // Only admins can modify categories
+      allow write, create, delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // ORDERS COLLECTION (Customer/Chef/Admin access)
+    // ============================================================================
+    match /orders/{orderId} {
+      // Allow read/write if user is customer, chef, or admin
+      allow read, write: if isAuthenticated() && canAccessOrder(resource.data);
+
+      // Allow customers to create orders
+      allow create: if isAuthenticated() && request.resource.data.customerId == request.auth.uid;
+
+      // Allow admins to delete orders
+      allow delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // REVIEWS COLLECTION (Public read, authenticated write)
+    // ============================================================================
+    match /reviews/{reviewId} {
+      // Allow everyone to read reviews (for product/chef ratings)
+      allow read: if true;
+
+      // Allow authenticated users to create reviews
+      allow create: if isAuthenticated();
+
+      // Allow review authors and admins to update/delete
+      allow write: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+
+      // Allow admins to delete reviews
+      allow delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // ADDRESSES COLLECTION (User-specific access)
+    // ============================================================================
+    match /addresses/{addressId} {
+      // Allow users to read/write their own addresses
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Allow users to create their own addresses
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+
+      // Allow admins to read all addresses
+      allow read: if isAdmin();
+    }
+
+    // ============================================================================
+    // NOTIFICATIONS COLLECTION (User-specific access)
+    // ============================================================================
+    match /notifications/{notificationId} {
+      // Allow users to read their own notifications
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Allow users to update their notification read status
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Allow system to create notifications for users
+      allow create: if isAdmin();
+
+      // Allow admins to delete notifications
+      allow delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // PROMOTIONS/BANNERS COLLECTION (Public read, admin write)
+    // ============================================================================
+    match /promotions/{promotionId} {
+      // Allow everyone to read promotions (for home screen banners)
+      allow read: if true;
+
+      // Only admins can manage promotions
+      allow write, create, delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // DELIVERY_ZONES COLLECTION (Public read, admin write)
+    // ============================================================================
+    match /delivery_zones/{zoneId} {
+      // Allow everyone to read delivery zones (for order calculations)
+      allow read: if true;
+
+      // Only admins can manage delivery zones
+      allow write, create, delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // SETTINGS/APP_CONFIG COLLECTION (Admin only)
+    // ============================================================================
+    match /app_config/{configId} {
+      // Only admins can read/write app configuration
+      allow read, write, create, delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // CARTS COLLECTION (Temporary user-specific data)
+    // ============================================================================
+    match /carts/{cartId} {
+      // Allow users to manage their own cart
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Allow users to create their own cart
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+
+      // Allow users to delete their own cart
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ============================================================================
+    // FAVORITES COLLECTION (User-specific access)
+    // ============================================================================
+    match /favorites/{favoriteId} {
+      // Allow users to manage their own favorites
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Allow users to create their own favorites
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+
+      // Allow users to delete their own favorites
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ============================================================================
+    // ANALYTICS/EVENTS COLLECTION (System/Admin access)
+    // ============================================================================
+    match /analytics/{eventId} {
+      // Only allow system/admin to create analytics events
+      allow create: if isAdmin();
+
+      // Only admins can read analytics
+      allow read: if isAdmin();
+
+      // Prevent deletion of analytics data
+      allow write, delete: if false;
+    }
+
+    // ============================================================================
+    // DEFAULT DENY RULE (Security best practice)
+    // ============================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

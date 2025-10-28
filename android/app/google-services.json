@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "371942129309",
+    "project_id": "corpeas-ee450",
+    "storage_bucket": "corpeas-ee450.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:371942129309:android:c855b37dce07eb41931e74",
+        "android_client_info": {
+          "package_name": "com.corpease"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0B4tNrApQRWljS7_b2AnBSSXuXli33Y4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
