@@ -1,6 +1,7 @@
 // User specific types
 export interface UserProfile {
   id: string;
+  uid: string; // Firebase Auth UID
   phoneNumber: string;
   displayName?: string;
   email?: string;

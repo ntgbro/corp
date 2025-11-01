@@ -24,11 +24,16 @@ export type MainStackParamList = {
   };
 };
 
+export type CartStackParamList = {
+  Cart: undefined;
+  Coupons: undefined;
+};
+
 export type MainTabParamList = {
   Home: undefined;
   Product: undefined;
   Products: undefined;
-  Cart: undefined;
+  CartStack: undefined;
   Orders: undefined;
   Profile: undefined;
   ProductDetails: { menuItemId: string };
