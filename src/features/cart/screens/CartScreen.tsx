@@ -10,9 +10,11 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaWrapper } from '../../../components/layout';
-import { Button, Card } from '../../../components/common';
-import { useThemeContext } from '../../../contexts/ThemeContext';
+import { Button, Card, TextInput } from '../../../components/common';
+import { useTheme } from '@react-navigation/native';
 import { useCart } from '../../../contexts/CartContext';
+import { useThemeContext } from '../../../contexts/ThemeContext';
+import { Coupon } from '../../../types/coupon';
 
 interface CartItemProps {
   item: any;
@@ -85,10 +87,21 @@ const CartItem: React.FC<CartItemProps> = ({ item, onUpdateQuantity, onRemove })
   );
 };
 
-export const CartScreen: React.FC = () => {
+export const CartScreen = () => {
   const { theme } = useThemeContext();
   const navigation = useNavigation();
-  const { state, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { 
+    state: { items, totalItems, subtotal, discount, totalAmount, appliedCoupon }, 
+    updateQuantity, 
+    removeFromCart, 
+    clearCart, 
+    applyCoupon, 
+    removeCoupon 
+  } = useCart();
+  
+  const [couponCode, setCouponCode] = useState('');
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState('');
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -135,6 +148,96 @@ export const CartScreen: React.FC = () => {
     );
   };
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError('Please enter a coupon code');
+      return;
+    }
+
+    try {
+      setApplyingCoupon(true);
+      setCouponError('');
+      
+      // In a real app, you would validate the coupon with your backend
+      // For now, we'll just show a success message if the code is not empty
+      const tempCoupon: Coupon = {
+        id: 'temp-id',
+        code: couponCode,
+        name: 'Temporary Coupon',
+        title: `${couponCode} Discount`,
+        description: 'Temporary discount coupon',
+        discountType: 'percentage',
+        discountValue: 10, // 10% off as an example
+        validFrom: new Date(),
+        validTill: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        isActive: true,
+        isStackable: false,
+        minOrderAmount: 0,
+        minOrderCount: 1,
+        usedCount: 0,
+        maxUses: 1000,
+      };
+      
+      await applyCoupon(tempCoupon);
+      
+      setCouponCode('');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to apply coupon';
+      setCouponError(errorMessage);
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
+  const renderCouponSection = () => (
+    <View style={styles.couponSection}>
+      <View style={styles.couponHeader}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+          Apply Coupon
+        </Text>
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('Coupons' as never)}
+          style={styles.viewCouponsButton}
+        >
+          <Text style={{ color: theme.colors.primary }}>View Coupons</Text>
+        </TouchableOpacity>
+      </View>
+      
+      {appliedCoupon ? (
+        <View style={styles.appliedCoupon}>
+          <Text style={{ color: theme.colors.success, flex: 1 }}>
+            Applied: {appliedCoupon.code} (-{appliedCoupon.discountValue}%)
+          </Text>
+          <TouchableOpacity onPress={removeCoupon}>
+            <Text style={{ color: theme.colors.error }}>Remove</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.couponInputContainer}>
+          <TextInput
+            placeholder="Enter coupon code"
+            value={couponCode}
+            onChangeText={setCouponCode}
+            style={[styles.input, { flex: 1 }]}
+            containerStyle={{ flex: 1 }}
+          />
+          <Button
+            title="Apply"
+            onPress={handleApplyCoupon}
+            style={styles.applyButton}
+            textStyle={styles.applyButtonText}
+            disabled={!couponCode.trim() || applyingCoupon}
+          />
+        </View>
+      )}
+      {couponError ? (
+        <Text style={[styles.errorText, { color: theme.colors.error }]}>
+          {couponError}
+        </Text>
+      ) : null}
+    </View>
+  );
+
   const renderEmptyCart = () => (
     <View style={[styles.emptyContainer, { backgroundColor: theme.colors.background }]}>
       <Text style={[styles.emptyIcon, { fontSize: 64 }]}>🛒</Text>
@@ -152,82 +255,172 @@ export const CartScreen: React.FC = () => {
     </View>
   );
 
-  const renderCartFooter = () => (
-    <Card style={styles.cartSummary}>
-      <View style={styles.summaryRow}>
-        <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>
-          Subtotal ({state.totalItems} items)
-        </Text>
-        <Text style={[styles.summaryValue, { color: theme.colors.text }]}>
-          {formatPrice(state.totalAmount)}
-        </Text>
-      </View>
-
-      <View style={styles.summaryRow}>
-        <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>
-          Delivery Fee
-        </Text>
-        <Text style={[styles.summaryValue, { color: theme.colors.text }]}>
-          {formatPrice(40)}
-        </Text>
-      </View>
-
-      <View style={[styles.summaryRow, styles.totalRow]}>
-        <Text style={[styles.totalLabel, { color: theme.colors.text }]}>
-          Total
-        </Text>
-        <Text style={[styles.totalValue, { color: theme.colors.primary }]}>
-          {formatPrice(state.totalAmount + 40)}
-        </Text>
-      </View>
-
-      <Button
-        title="Proceed to Checkout"
-        onPress={handleCheckout}
-        style={styles.checkoutButton}
-        disabled={state.items.length === 0}
-      />
-
-      {state.items.length > 0 && (
-        <TouchableOpacity
-          style={styles.clearButton}
-          onPress={handleClearCart}
-        >
-          <Text style={[styles.clearButtonText, { color: theme.colors.error }]}>
-            Clear Cart
-          </Text>
-        </TouchableOpacity>
-      )}
-    </Card>
-  );
-
   return (
-    <SafeAreaWrapper style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      {state.items.length === 0 ? (
-        renderEmptyCart()
-      ) : (
-        <>
-          <FlatList
-            data={state.items}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <CartItem
-                item={item}
-                onUpdateQuantity={handleUpdateQuantity}
-                onRemove={handleRemoveItem}
+    <SafeAreaWrapper>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        {items.length === 0 ? (
+          renderEmptyCart()
+        ) : (
+          <>
+            <FlatList
+              data={items}
+              renderItem={({ item }) => (
+                <CartItem
+                  item={item}
+                  onUpdateQuantity={handleUpdateQuantity}
+                  onRemove={handleRemoveItem}
+                />
+              )}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.cartList}
+              ListHeaderComponent={
+                <>
+                  {renderCouponSection()}
+                  <View style={styles.divider} />
+                </>
+              }
+              ListFooterComponent={
+                <Button
+                  title="Clear Cart"
+                  onPress={handleClearCart}
+                  variant="outline"
+                  style={styles.clearButton}
+                  textStyle={{ color: theme.colors.error }}
+                />
+              }
+            />
+            <View style={[styles.summary, { backgroundColor: theme.colors.surface }]}>
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>
+                  Subtotal:
+                </Text>
+                <Text style={[styles.summaryValue, { color: theme.colors.text }]}>
+                  {formatPrice(subtotal)}
+                </Text>
+              </View>
+              
+              {appliedCoupon && (
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>
+                    Discount ({appliedCoupon.code}):
+                  </Text>
+                  <Text style={[styles.summaryValue, { color: theme.colors.success }]}>
+                    -{formatPrice(discount)}
+                  </Text>
+                </View>
+              )}
+              
+              <View style={[styles.divider, { marginVertical: 8 }]} />
+              
+              <View style={[styles.summaryRow, { marginTop: 4 }]}>
+                <Text style={[styles.summaryLabel, { 
+                  fontSize: 18, 
+                  fontWeight: 'bold',
+                  color: theme.colors.text 
+                }]}>
+                  Total:
+                </Text>
+                <Text style={[styles.summaryValue, { 
+                  fontSize: 18, 
+                  fontWeight: 'bold',
+                  color: theme.colors.primary 
+                }]}>
+                  {formatPrice(totalAmount)}
+                </Text>
+              </View>
+              
+              <Button
+                title="Proceed to Checkout"
+                onPress={handleCheckout}
+                style={styles.checkoutButton}
               />
-            )}
-            contentContainerStyle={styles.cartList}
-            showsVerticalScrollIndicator={false}
-            ListFooterComponent={renderCartFooter}
-          />
-        </>
-      )}
+            </View>
+          </>
+        )}
+      </View>
     </SafeAreaWrapper>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    borderRadius: 8,
+  },
+  summary: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  couponSection: {
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  couponHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  viewCouponsButton: {
+    padding: 8,
+  },
+  couponInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginRight: 8,
+  },
+  applyButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  applyButtonText: {
+    fontSize: 14,
+  },
+  appliedCoupon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: 'rgba(0, 200, 83, 0.1)',
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  errorText: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    marginVertical: 8,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  summaryLabel: {
+    fontSize: 14,
+  },
+  summaryValue: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
   cartList: {
     padding: 16,
   },
@@ -342,6 +535,23 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   clearButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  couponButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  couponButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  couponCode: {
     fontSize: 14,
     fontWeight: '500',
   },

@@ -5,8 +5,9 @@ import { useThemeContext } from '../contexts/ThemeContext';
 import { MainTabParamList } from './types';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import { ProductStackNavigator } from './ProductStackNavigator';
-import CartScreen from '../features/cart/screens/CartScreen';
+import { CartStackNavigator } from './CartStackNavigator';
 import { useCart } from '../contexts/CartContext';
+import { ProfileScreen } from '../features/settings/screens/ProfileScreen';
 
 // Placeholder Screen Components (to avoid inline functions)
 const OrdersScreen: React.FC = () => {
@@ -16,32 +17,6 @@ const OrdersScreen: React.FC = () => {
       <Text style={{ fontSize: 48, color: theme.colors.textSecondary }}>📦</Text>
       <Text style={{ fontSize: 18, fontWeight: '600', color: theme.colors.text, marginTop: 16 }}>📦 Orders</Text>
       <Text style={{ fontSize: 14, marginTop: 8, color: theme.colors.textSecondary }}>Order management coming soon!</Text>
-    </View>
-  );
-};
-
-const ProfileScreen: React.FC = () => {
-  const { theme } = useThemeContext();
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-      <Text style={{ fontSize: 48, color: theme.colors.textSecondary }}>👤</Text>
-      <Text style={{ fontSize: 18, fontWeight: '600', color: theme.colors.text, marginTop: 16 }}>👤 Profile</Text>
-      <Text style={{ fontSize: 14, marginTop: 8, color: theme.colors.textSecondary, textAlign: 'center' }}>
-        User profile and settings coming soon!
-      </Text>
-
-      {/* OpenStreetMap Attribution */}
-      <View style={{ marginTop: 40, padding: 16, backgroundColor: theme.colors.surface, borderRadius: 8 }}>
-        <Text style={{ fontSize: 12, color: theme.colors.textSecondary, textAlign: 'center', marginBottom: 8 }}>
-          Location data provided by
-        </Text>
-        <Text style={{ fontSize: 12, color: theme.colors.primary, textAlign: 'center', fontWeight: '600' }}>
-          OpenStreetMap contributors
-        </Text>
-        <Text style={{ fontSize: 10, color: theme.colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
-          © OpenStreetMap contributors
-        </Text>
-      </View>
     </View>
   );
 };
@@ -123,7 +98,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
             displayLabel = isFocused ? 'Profile' : '';
             break;
           default:
-            icon = '❓';
+            icon = '🛒';
             displayLabel = route.name;
         }
 
@@ -211,10 +186,33 @@ export const MainTabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen
-        name="Cart"
-        component={CartScreen}
+        name="CartStack"
+        component={CartStackNavigator}
         options={{
-          tabBarLabel: ({ focused }) => focused ? 'Cart' : 'Cart',
+          tabBarLabel: 'Cart',
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 24, color }}>🛒</Text>
+              {useCart().state.totalItems > 0 && (
+                <View style={{
+                  position: 'absolute',
+                  right: -8,
+                  top: -4,
+                  backgroundColor: 'red',
+                  borderRadius: 8,
+                  width: 16,
+                  height: 16,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+                  <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
+                    {useCart().state.totalItems}
+                  </Text>
+                </View>
+              )}
+            </View>
+          ),
         }}
       />
       <Tab.Screen
@@ -229,6 +227,7 @@ export const MainTabNavigator: React.FC = () => {
         component={ProfileScreen}
         options={{
           tabBarLabel: ({ focused }) => focused ? 'Profile' : '',
+          headerShown: false,
         }}
       />
       <Tab.Screen
