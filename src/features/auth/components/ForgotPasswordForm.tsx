@@ -9,7 +9,7 @@ import {
   StyleSheet,
   Dimensions
 } from 'react-native';
-import { Button, Typography, Card, Spacer } from '../../../components/common';
+import { Button, Typography, Spacer } from '../../../components/common';
 import { useThemeContext } from '../../../contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
@@ -53,81 +53,69 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onForgotPasswor
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={styles.formContainer}>
-        <View style={styles.inputGroup}>
-          <Typography variant="body2" color="text" style={styles.label}>
-            Email Address
-          </Typography>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.colors.surface,
-                color: theme.colors.text,
-                borderColor: emailError ? '#EF4444' : theme.colors.border
-              }
-            ]}
-            placeholder="Enter your email address"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholderTextColor={theme.colors.textSecondary}
-          />
-          {emailError ? (
-            <Typography variant="caption" color="error" style={styles.errorText}>
-              {emailError}
-            </Typography>
-          ) : (
-            <Typography variant="caption" color="secondary" style={styles.helperText}>
-              We'll send a password reset link to this email
-            </Typography>
-          )}
-        </View>
-
-        {error && (
-          <>
-            <Typography variant="body2" color="error" style={styles.errorText}>
-              {error}
-            </Typography>
-            <Spacer height={4} />
-          </>
-        )}
-
-        <Button
-          title={loading ? "Sending Reset Link..." : "Send Reset Link"}
-          onPress={handleSubmit}
-          disabled={!isFormValid || loading}
-          loading={loading}
-          style={styles.resetButton}
-          fullWidth
+    <View style={styles.formContainer}>
+      <View style={styles.inputGroup}>
+        <Typography variant="body2" color="text" style={styles.label}>
+          Email Address
+        </Typography>
+        <TextInput
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.colors.surface,
+              color: theme.colors.text,
+              borderColor: emailError ? '#EF4444' : theme.colors.border
+            }
+          ]}
+          placeholder="Enter your email address"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          placeholderTextColor={theme.colors.textSecondary}
         />
-
-        <Spacer height={16} />
-
-        <View style={styles.infoBox}>
-          <Typography variant="body2" color="secondary" style={styles.infoText}>
-            📧 Check your email after submitting and follow the instructions to reset your password.
+        {emailError ? (
+          <Typography variant="caption" color="error" style={styles.errorText}>
+            {emailError}
           </Typography>
-        </View>
+        ) : (
+          <Typography variant="caption" color="secondary" style={styles.helperText}>
+            We'll send a password reset link to this email
+          </Typography>
+        )}
       </View>
-    </Card>
+
+      {error && (
+        <>
+          <Typography variant="body2" color="error" style={styles.errorText}>
+            {error}
+          </Typography>
+          <Spacer height={4} />
+        </>
+      )}
+
+      <Button
+        title={loading ? "Sending Reset Link..." : "Send Reset Link"}
+        onPress={handleSubmit}
+        disabled={!isFormValid || loading}
+        loading={loading}
+        style={styles.resetButton}
+        fullWidth
+      />
+
+      <Spacer height={16} />
+
+      <View style={styles.infoBox}>
+        <Typography variant="body2" color="secondary" style={styles.infoText}>
+          📧 Check your email after submitting and follow the instructions to reset your password.
+        </Typography>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: 2,
-    padding: 2,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-  },
   formContainer: {
     padding: 12,
   },
@@ -147,6 +135,7 @@ const styles = StyleSheet.create({
   },
   resetButton: {
     marginBottom: 8,
+    opacity: 1,
   },
   errorText: {
     marginTop: 2,

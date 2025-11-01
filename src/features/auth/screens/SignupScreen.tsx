@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   Platform,
   Alert,
   StatusBar,
+  Image,
+  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -24,6 +26,27 @@ const SignupScreen: React.FC = () => {
   const navigation = useNavigation<SignupScreenNavigationProp>();
   const { theme } = useThemeContext();
   const { signup, googleSignIn, loading } = useEmailAuth();
+  
+  // Animation values
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(0.8)).current;
+
+  useEffect(() => {
+    // Start the logo animation when the component mounts
+    Animated.parallel([
+      Animated.timing(logoOpacity, {
+        toValue: 1,
+        duration: 2000,
+        useNativeDriver: true,
+      }),
+      Animated.spring(logoScale, {
+        toValue: 1,
+        friction: 8,
+        tension: 30,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const handleSignup = async (email: string, password: string, name: string) => {
     const result = await signup(email, password, name);
@@ -46,10 +69,10 @@ const SignupScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaWrapper style={{ backgroundColor: theme.colors.background }}>
+    <SafeAreaWrapper style={{ backgroundColor: '#F5DEB3' }}>
       <StatusBar
         barStyle={theme.colors.background === '#000000' ? 'light-content' : 'dark-content'}
-        backgroundColor={theme.colors.background}
+        backgroundColor="#F5DEB3"
       />
 
       <KeyboardAvoidingView
@@ -57,26 +80,48 @@ const SignupScreen: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {/* Signup Form */}
-          <SignupForm
-            onSignup={handleSignup}
-            onGoogleSignup={handleGoogleSignup}
-            loading={loading}
-            error={null}
-          />
-
-          {/* Navigation Buttons */}
-          <View style={styles.navigationSection}>
-            <Button
-              title="Already have an account? Sign In"
-              onPress={() => navigation.navigate('Login')}
-              variant="outline"
-              style={styles.loginButton}
-              fullWidth
-            />
+          {/* CorpEase Logo at the top with animation */}
+          <View style={styles.logoContainer}>
+            <Animated.View
+              style={[
+                styles.logoWrapper,
+                {
+                  opacity: logoOpacity,
+                  transform: [{ scale: logoScale }],
+                },
+              ]}
+            >
+              <Image
+                source={require('../../../assets/Corpeas_new.png')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </Animated.View>
           </View>
 
-          <Spacer height={8} />
+          {/* All content wrapped in a View with card-like styling */}
+          <View style={[styles.card, { backgroundColor: '#FBF5EB' }]}>
+            {/* Signup Form */}
+            <SignupForm
+              onSignup={handleSignup}
+              onGoogleSignup={handleGoogleSignup}
+              loading={loading}
+              error={null}
+            />
+
+            {/* Navigation Buttons */}
+            <View style={styles.navigationSection}>
+              <Button
+                title="Already have an account? Sign In"
+                onPress={() => navigation.navigate('Login')}
+                variant="outline"
+                style={styles.loginButton}
+                fullWidth
+              />
+            </View>
+
+            <Spacer height={8} />
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaWrapper>
@@ -89,11 +134,37 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 2,
-    paddingVertical: 2,
+    justifyContent: 'space-between',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    paddingTop: 40,
+    paddingBottom: 20,
+  },
+  logoWrapper: {
+    // This wrapper helps with the animation
+  },
+  logo: {
+    width: 320,
+    height: 150,
+  },
+  card: {
+    marginHorizontal: 0,
+    marginBottom: 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   navigationSection: {
     marginTop: 12,
+    paddingHorizontal: 12,
+    paddingBottom: 8,
   },
   loginButton: {
     marginBottom: 0,
