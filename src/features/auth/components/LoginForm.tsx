@@ -7,9 +7,10 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
-  Dimensions
+  Dimensions,
+  Image,
 } from 'react-native';
-import { Button, Typography, Card, Spacer } from '../../../components/common';
+import { Button, Typography, Spacer } from '../../../components/common';
 import { useThemeContext } from '../../../contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
@@ -19,9 +20,10 @@ interface LoginFormProps {
   onGoogleLogin: () => void;
   loading: boolean;
   error: string | null;
+  onForgotPassword?: () => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onGoogleLogin, loading, error }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onGoogleLogin, loading, error, onForgotPassword }) => {
   const { theme } = useThemeContext();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -71,112 +73,105 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onGoogleLogin, loading, 
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={styles.formContainer}>
-        <View style={styles.inputGroup}>
-          <Typography variant="body2" color="text" style={styles.label}>
-            Email Address
-          </Typography>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.colors.surface,
-                color: theme.colors.text,
-                borderColor: emailError ? '#EF4444' : theme.colors.border
-              }
-            ]}
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholderTextColor={theme.colors.textSecondary}
-          />
-          {emailError ? (
-            <Typography variant="caption" color="error" style={styles.errorText}>
-              {emailError}
-            </Typography>
-          ) : null}
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Typography variant="body2" color="text" style={styles.label}>
-            Password
-          </Typography>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.colors.surface,
-                color: theme.colors.text,
-                borderColor: passwordError ? '#EF4444' : theme.colors.border
-              }
-            ]}
-            placeholder="Enter your password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            placeholderTextColor={theme.colors.textSecondary}
-          />
-          {passwordError ? (
-            <Typography variant="caption" color="error" style={styles.errorText}>
-              {passwordError}
-            </Typography>
-          ) : null}
-        </View>
-
-        {error && (
-          <>
-            <Typography variant="body2" color="error" style={styles.errorText}>
-              {error}
-            </Typography>
-            <Spacer height={4} />
-          </>
-        )}
-
-        <Button
-          title={loading ? "Signing In..." : "Sign In"}
-          onPress={handleSubmit}
-          disabled={!isFormValid || loading}
-          loading={loading}
-          style={styles.loginButton}
-          fullWidth
+    <View style={styles.formContainer}>
+      <View style={styles.inputGroup}>
+        <Typography variant="body2" color="text" style={styles.label}>
+          Email Address
+        </Typography>
+        <TextInput
+          style={[
+            styles.input,
+            {
+              backgroundColor: '#FBF5EB',
+              color: theme.colors.text,
+              borderColor: emailError ? '#EF4444' : theme.colors.border
+            }
+          ]}
+          placeholder="Enter your email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          placeholderTextColor="#6b7280"
         />
-
-        <View style={styles.divider}>
-          <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
-          <Typography variant="body2" color="secondary" style={styles.dividerText}>
-            OR
+        {emailError ? (
+          <Typography variant="caption" color="error" style={styles.errorText}>
+            {emailError}
           </Typography>
-          <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
-        </View>
-
-        <Button
-          title="Continue with Google"
-          onPress={onGoogleLogin}
-          disabled={loading}
-          variant="outline"
-          style={styles.googleButton}
-          fullWidth
-        />
+        ) : null}
       </View>
-    </Card>
+
+      <View style={styles.inputGroup}>
+        <Typography variant="body2" color="text" style={styles.label}>
+          Password
+        </Typography>
+        <TextInput
+          style={[
+            styles.input,
+            {
+              backgroundColor: '#FBF5EB',
+              color: theme.colors.text,
+              borderColor: passwordError ? '#EF4444' : theme.colors.border
+            }
+          ]}
+          placeholder="Enter your password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          placeholderTextColor="#6b7280"
+        />
+        {passwordError ? (
+          <Typography variant="caption" color="error" style={styles.errorText}>
+            {passwordError}
+          </Typography>
+        ) : null}
+      </View>
+
+      {/* Forgot Password Button - Positioned to the right below password field */}
+      {onForgotPassword && (
+        <View style={styles.forgotPasswordContainer}>
+          <TouchableOpacity onPress={onForgotPassword}>
+            <Typography variant="body1" color="primary" style={styles.forgotPasswordText}>
+              Forgot Password?
+            </Typography>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {error && (
+        <>
+          <Typography variant="body2" color="error" style={styles.errorText}>
+            {error}
+          </Typography>
+          <Spacer height={4} />
+        </>
+      )}
+
+      <Button
+        title={loading ? "Signing In..." : "Sign In"}
+        onPress={handleSubmit}
+        disabled={!isFormValid || loading}
+        loading={loading}
+        style={styles.loginButton}
+        textStyle={styles.loginButtonText}
+        fullWidth
+      />
+
+      <View style={styles.divider}>
+        <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
+        <Typography variant="body2" color="secondary" style={styles.dividerText}>
+          OR
+        </Typography>
+        <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
+      </View>
+
+      {/* Google Button moved to LoginScreen */}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: 2,
-    padding: 2,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-  },
   formContainer: {
     padding: 12,
   },
@@ -191,24 +186,60 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   inputGroup: {
-    marginBottom: 8,
+    marginBottom: 4,
   },
   label: {
     marginBottom: 4,
     fontWeight: '500',
+    marginTop: 12, // Adding padding above the label
   },
   input: {
     height: 44,
     borderWidth: 1,
+    borderColor: '#e5e7eb',
     borderRadius: 6,
     paddingHorizontal: 12,
+    fontSize: 16,
+    backgroundColor: '#FBF5EB',
+  },
+  forgotPasswordContainer: {
+    alignItems: 'flex-end',
+    marginBottom: 12,
+  },
+  forgotPasswordText: {
+    fontWeight: '500',
     fontSize: 16,
   },
   loginButton: {
     marginBottom: 12,
+    zIndex: 1,
+    opacity: 1,
+  },
+  loginButtonText: {
+    color: '#ffffff',
+    zIndex: 2,
+  },
+  googleButtonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+    backgroundColor: 'transparent',
+    minHeight: 44,
+    opacity: 1,
   },
   googleButton: {
     marginBottom: 0,
+  },
+  googleButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#3b82f6',
+    textAlign: 'center',
   },
   divider: {
     flexDirection: 'row',
@@ -226,6 +257,11 @@ const styles = StyleSheet.create({
   errorText: {
     marginTop: 2,
     fontSize: 12,
+  },
+  googleIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 8,
   },
 });
 

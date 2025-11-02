@@ -7,9 +7,10 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
-  Dimensions
+  Dimensions,
+  Image,
 } from 'react-native';
-import { Button, Typography, Card, Spacer } from '../../../components/common';
+import { Button, Typography, Spacer } from '../../../components/common';
 import { useThemeContext } from '../../../contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
@@ -103,169 +104,173 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup, onGoogleSignup, loadi
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={styles.formContainer}>
-        <View style={styles.inputGroup}>
-          <Typography variant="body2" color="text" style={styles.label}>
-            Full Name
-          </Typography>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.colors.surface,
-                color: theme.colors.text,
-                borderColor: nameError ? '#EF4444' : theme.colors.border
-              }
-            ]}
-            placeholder="Enter your full name"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-            autoCorrect={false}
-            placeholderTextColor={theme.colors.textSecondary}
-          />
-          {nameError ? (
-            <Typography variant="caption" color="error" style={styles.errorText}>
-              {nameError}
-            </Typography>
-          ) : null}
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Typography variant="body2" color="text" style={styles.label}>
-            Email Address
-          </Typography>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.colors.surface,
-                color: theme.colors.text,
-                borderColor: emailError ? '#EF4444' : theme.colors.border
-              }
-            ]}
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholderTextColor={theme.colors.textSecondary}
-          />
-          {emailError ? (
-            <Typography variant="caption" color="error" style={styles.errorText}>
-              {emailError}
-            </Typography>
-          ) : null}
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Typography variant="body2" color="text" style={styles.label}>
-            Password
-          </Typography>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.colors.surface,
-                color: theme.colors.text,
-                borderColor: passwordError ? '#EF4444' : theme.colors.border
-              }
-            ]}
-            placeholder="Create a password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            placeholderTextColor={theme.colors.textSecondary}
-          />
-          {passwordError ? (
-            <Typography variant="caption" color="error" style={styles.errorText}>
-              {passwordError}
-            </Typography>
-          ) : (
-            <Typography variant="caption" color="secondary" style={styles.helperText}>
-              At least 6 characters
-            </Typography>
-          )}
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Typography variant="body2" color="text" style={styles.label}>
-            Confirm Password
-          </Typography>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.colors.surface,
-                color: theme.colors.text,
-                borderColor: confirmPasswordError ? '#EF4444' : theme.colors.border
-              }
-            ]}
-            placeholder="Confirm your password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            placeholderTextColor={theme.colors.textSecondary}
-          />
-          {confirmPasswordError ? (
-            <Typography variant="caption" color="error" style={styles.errorText}>
-              {confirmPasswordError}
-            </Typography>
-          ) : null}
-        </View>
-
-        {error && (
-          <>
-            <Typography variant="body2" color="error" style={styles.errorText}>
-              {error}
-            </Typography>
-            <Spacer height={4} />
-          </>
-        )}
-
-        <Button
-          title={loading ? "Creating Account..." : "Create Account"}
-          onPress={handleSubmit}
-          disabled={!isFormValid || loading}
-          loading={loading}
-          style={styles.signupButton}
-          fullWidth
+    <View style={styles.formContainer}>
+      <View style={styles.inputGroup}>
+        <Typography variant="body2" color="text" style={styles.label}>
+          Full Name
+        </Typography>
+        <TextInput
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.colors.surface,
+              color: theme.colors.text,
+              borderColor: nameError ? '#EF4444' : theme.colors.border
+            }
+          ]}
+          placeholder="Enter your full name"
+          value={name}
+          onChangeText={setName}
+          autoCapitalize="words"
+          autoCorrect={false}
+          placeholderTextColor={theme.colors.textSecondary}
         />
-
-        <View style={styles.divider}>
-          <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
-          <Typography variant="body2" color="secondary" style={styles.dividerText}>
-            OR
+        {nameError ? (
+          <Typography variant="caption" color="error" style={styles.errorText}>
+            {nameError}
           </Typography>
-          <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
-        </View>
-
-        <Button
-          title="Continue with Google"
-          onPress={onGoogleSignup}
-          disabled={loading}
-          variant="outline"
-          style={styles.googleButton}
-          fullWidth
-        />
+        ) : null}
       </View>
-    </Card>
+
+      <View style={styles.inputGroup}>
+        <Typography variant="body2" color="text" style={styles.label}>
+          Email Address
+        </Typography>
+        <TextInput
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.colors.surface,
+              color: theme.colors.text,
+              borderColor: emailError ? '#EF4444' : theme.colors.border
+            }
+          ]}
+          placeholder="Enter your email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          placeholderTextColor={theme.colors.textSecondary}
+        />
+        {emailError ? (
+          <Typography variant="caption" color="error" style={styles.errorText}>
+            {emailError}
+          </Typography>
+        ) : null}
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Typography variant="body2" color="text" style={styles.label}>
+          Password
+        </Typography>
+        <TextInput
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.colors.surface,
+              color: theme.colors.text,
+              borderColor: passwordError ? '#EF4444' : theme.colors.border
+            }
+          ]}
+          placeholder="Create a password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          placeholderTextColor={theme.colors.textSecondary}
+        />
+        {passwordError ? (
+          <Typography variant="caption" color="error" style={styles.errorText}>
+            {passwordError}
+          </Typography>
+        ) : (
+          <Typography variant="caption" color="secondary" style={styles.helperText}>
+            At least 6 characters
+          </Typography>
+        )}
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Typography variant="body2" color="text" style={styles.label}>
+          Confirm Password
+        </Typography>
+        <TextInput
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.colors.surface,
+              color: theme.colors.text,
+              borderColor: confirmPasswordError ? '#EF4444' : theme.colors.border
+            }
+          ]}
+          placeholder="Confirm your password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+          placeholderTextColor={theme.colors.textSecondary}
+        />
+        {confirmPasswordError ? (
+          <Typography variant="caption" color="error" style={styles.errorText}>
+            {confirmPasswordError}
+          </Typography>
+        ) : null}
+      </View>
+
+      {error && (
+        <>
+          <Typography variant="body2" color="error" style={styles.errorText}>
+            {error}
+          </Typography>
+          <Spacer height={4} />
+        </>
+      )}
+
+      <Button
+        title={loading ? "Creating Account..." : "Create Account"}
+        onPress={handleSubmit}
+        disabled={!isFormValid || loading}
+        loading={loading}
+        style={styles.signupButton}
+        fullWidth
+      />
+
+      <View style={styles.divider}>
+        <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
+        <Typography variant="body2" color="secondary" style={styles.dividerText}>
+          OR
+        </Typography>
+        <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
+      </View>
+
+      {/* Custom Google Button with Icon */}
+      <TouchableOpacity
+        style={[
+          styles.googleButton, 
+          styles.googleButtonContainer,
+          { 
+            backgroundColor: 'transparent',
+            borderWidth: 1,
+            borderColor: theme.colors.primary,
+            opacity: 1
+          }
+        ]}
+        onPress={onGoogleSignup}
+        disabled={loading}
+        activeOpacity={0.8}
+      >
+        <Image
+          source={require('../../../assets/icons/google_icon.png')}
+          style={styles.googleIcon}
+        />
+        <Text style={[styles.googleButtonText, { color: theme.colors.primary }]}>
+          Continue with Google
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: 2,
-    padding: 2,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-  },
   formContainer: {
     padding: 12,
   },
@@ -285,9 +290,30 @@ const styles = StyleSheet.create({
   },
   signupButton: {
     marginBottom: 12,
+    opacity: 1,
+  },
+  googleButtonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    minHeight: 44,
+    marginBottom: 12,
   },
   googleButton: {
     marginBottom: 0,
+  },
+  googleButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  googleIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 8,
   },
   divider: {
     flexDirection: 'row',
