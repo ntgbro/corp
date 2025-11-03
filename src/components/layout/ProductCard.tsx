@@ -202,7 +202,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Product Name */}
         <Text
           style={[
-            ProductCardStyles.title,
+            styles.title,
             {
               color: theme.colors.text,
               fontSize: fontSizes.title,
@@ -214,49 +214,54 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {product.name}
         </Text>
 
-        {/* Price */}
-        <Text
-          style={[
-            ProductCardStyles.price,
-            {
-              color: theme.colors.primary,
-              fontSize: fontSizes.price,
-            }
-          ]}
-        >
-          {formatPrice(product.price)}
-        </Text>
-
-        {/* Rating */}
-        {showRating && product.rating !== undefined && (
-          <View style={styles.ratingContainer}>
-            <Text style={[ProductCardStyles.rating, { color: '#FFD700' }]}>
-              {renderStars(product.rating)}
+        {/* Price and Rating Row with Add to Cart Button */}
+        <View style={styles.bottomRow}>
+          <View style={styles.priceRatingContainer}>
+            {/* Price */}
+            <Text
+              style={[
+                styles.price,
+                {
+                  color: theme.colors.primary,
+                  fontSize: fontSizes.price,
+                }
+              ]}
+            >
+              {formatPrice(product.price)}
             </Text>
-            {product.reviewCount !== undefined && (
-              <Text style={[ProductCardStyles.reviewCount, { color: theme.colors.textSecondary }]}>
-                ({product.reviewCount})
-              </Text>
+
+            {/* Rating */}
+            {showRating && product.rating !== undefined && (
+              <View style={styles.ratingContainer}>
+                <Text style={[styles.rating, { color: '#FFD700' }]}>
+                  {renderStars(product.rating)}
+                </Text>
+                {product.reviewCount !== undefined && (
+                  <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>
+                    ({product.reviewCount})
+                  </Text>
+                )}
+              </View>
             )}
           </View>
-        )}
 
-        {/* Add to Cart Button - Always visible */}
-        <TouchableOpacity
-          style={[
-            ProductCardStyles.addToCartButton,
-            {
-              backgroundColor: product.isAvailable ? theme.colors.primary : theme.colors.border,
-              opacity: isAddingToCart ? 0.7 : 1,
-            },
-          ]}
-          onPress={handleAddToCart}
-          disabled={isAddingToCart || !product.isAvailable}
-        >
-          <Text style={[ProductCardStyles.addToCartText, { color: theme.colors.white }]}>
-            {isAddingToCart ? 'Adding...' : product.isAvailable ? '+' : 'Out'}
-          </Text>
-        </TouchableOpacity>
+          {/* Add to Cart Button - Aligned on the same line */}
+          <TouchableOpacity
+            style={[
+              ProductCardStyles.addToCartButton,
+              {
+                backgroundColor: product.isAvailable ? theme.colors.primary : theme.colors.border,
+                opacity: isAddingToCart ? 0.7 : 1,
+              },
+            ]}
+            onPress={handleAddToCart}
+            disabled={isAddingToCart || !product.isAvailable}
+          >
+            <Text style={[ProductCardStyles.addToCartText, { color: theme.colors.white }]}>
+              {isAddingToCart ? 'Adding...' : product.isAvailable ? '+' : 'Out'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </Container>
   );
@@ -288,6 +293,38 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: '#fff',
+  },
+  title: {
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 16,
+    color: '#333',
+    // Removed marginBottom to fit within fixed height container
+  },
+  price: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#007AFF',
+    // Removed marginBottom to fit within fixed height container
+  },
+  rating: {
+    fontSize: 20, // Further increased from 18 for better visibility
+    color: '#FFD700',
+    marginRight: SPACING.content.small,
+  },
+  reviewCount: {
+    fontSize: 16, // Further increased from 14 for better visibility
+    color: '#666',
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: SPACING.content.small,
+  },
+  priceRatingContainer: {
+    flex: 1,
+    marginRight: SPACING.content.small,
   },
   ratingContainer: {
     flexDirection: 'row',

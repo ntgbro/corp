@@ -50,37 +50,10 @@ export const ProductCardStyles = StyleSheet.create({
 
   // Info container with consistent padding
   infoContainer: {
-    // Removed flex: 1 to prevent height variation
-    height: 114, // Fixed height: cardHeight(240) - imageHeight(110) - padding(16)
+    // Removed fixed height to allow responsive sizing
     padding: PRODUCT_CARD_DIMENSIONS.STANDARD.padding,
     justifyContent: 'space-between',
-  },
-
-  // Typography styles
-  title: {
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 16,
-    color: '#333',
-    // Removed marginBottom to fit within fixed height container
-  },
-
-  price: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    // Removed marginBottom to fit within fixed height container
-  },
-
-  rating: {
-    fontSize: 12,
-    color: '#FFD700',
-    marginRight: SPACING.content.small,
-  },
-
-  reviewCount: {
-    fontSize: 10,
-    color: '#666',
+    minHeight: 94, // Updated from 114 to match new dimensions (cardHeight(200) - imageHeight(90) - padding(16))
   },
 
   // Add to cart button
@@ -88,15 +61,16 @@ export const ProductCardStyles = StyleSheet.create({
     backgroundColor: '#007AFF',
     borderRadius: BORDERS.radius.small,
     paddingHorizontal: SPACING.content.medium,
-    paddingVertical: SPACING.content.small,
+    paddingVertical: SPACING.content.medium,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: SPACING.content.small,
-    minHeight: 32, // Minimum touch target
+    marginTop: 0, // Reduced from SPACING.content.small to move button up
+    minHeight: 36, // Reset to a reasonable size
+    alignSelf: 'flex-end', // Position at the bottom-right
   },
 
   addToCartText: {
-    fontSize: 11,
+    fontSize: 16, // Increased for better visibility
     fontWeight: '600',
     color: '#fff',
   },

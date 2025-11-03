@@ -16,7 +16,7 @@ export const SPACING = {
 
   // Card spacing
   card: {
-    horizontal: 6,  // Between cards
+    horizontal: 4,  // ✅ Decreased from 6 to 4 for tighter card spacing
     vertical: 8,    // Between card rows
   },
 
@@ -38,9 +38,9 @@ export const SPACING = {
 export const CARD_DIMENSIONS = {
   // Standard card sizes across all screens
   product: {
-    width: 160,
-    height: 240,
-    imageHeight: 110,
+    width: 120,
+    height: 200,
+    imageHeight: 100, // ✅ Increased from 90 to 100 for better image visibility
     borderRadius: 12,
     padding: 8,
   },
@@ -53,8 +53,8 @@ export const CARD_DIMENSIONS = {
   },
   menuItem: {
     width: 140,
-    height: 180,
-    imageHeight: 100,
+    height: 200,
+    imageHeight: 110,
     borderRadius: 8,
     padding: 8,
   },
