@@ -15,7 +15,7 @@ interface CategorySectionsProps {
   selectedCategory?: string;
   onCategoryPress?: (category: Category) => void;
   style?: ViewStyle;
-  variant?: 'horizontal' | 'grid' | 'grid4' | 'direct';
+  variant?: 'horizontal' | 'grid' | 'grid4' | 'grid3' | 'direct'; // ✅ Added 'grid3' variant
   showIcons?: boolean;
 }
 
@@ -31,6 +31,59 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
 
   const renderCategoryItem = (category: Category) => {
     const isSelected = selectedCategory === category.id;
+
+    if (variant === 'grid3') {
+      // 3-column grid with square cards
+      return (
+        <View key={category.id} style={styles.grid3ItemContainer}>
+          <TouchableOpacity
+            onPress={() => onCategoryPress?.(category)}
+            activeOpacity={0.7}
+            style={styles.grid3CardTouchable}
+          >
+            <View style={[
+              styles.grid3Card,
+              {
+                backgroundColor: isSelected ? theme.colors.primary : theme.colors.surface,
+                borderColor: isSelected ? theme.colors.primary : theme.colors.border,
+              }
+            ]}>
+              {/* Placeholder icon for visibility */}
+              <View style={{
+                width: 50,
+                height: 50,
+                borderRadius: 25,
+                backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginBottom: 8,
+              }}>
+                <Text style={{
+                  fontSize: 20,
+                  color: isSelected ? theme.colors.white : theme.colors.primary
+                }}>
+                  📦
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          {/* Category Name Below Card */}
+          <Text
+            style={[
+              styles.grid3CategoryName,
+              {
+                color: isSelected ? theme.colors.primary : theme.colors.text,
+                fontWeight: isSelected ? '600' : '500',
+              },
+            ]}
+            numberOfLines={2}
+          >
+            {category.name}
+          </Text>
+        </View>
+      );
+    }
 
     if (variant === 'grid4') {
       // 4-column grid with square cards and full image coverage
@@ -328,6 +381,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
     minHeight: 100,
+  },
+  // New 3-column grid styles
+  grid3ItemContainer: {
+    width: '33.33%', // 3 columns: exactly 33.33% each
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  grid3CardTouchable: {
+    width: '90%',
+    aspectRatio: 1,
+  },
+  grid3Card: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  grid3CategoryName: {
+    fontSize: 14, // ✅ Increased font size from 12 to 14 for better readability
+    textAlign: 'center',
+    marginTop: 8,
+    fontWeight: '500',
   },
   // New 4-column grid styles
   grid4ItemContainer: {

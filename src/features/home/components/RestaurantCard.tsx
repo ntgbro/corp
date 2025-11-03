@@ -14,32 +14,32 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant, onPress, wi
 
   return (
     <TouchableOpacity onPress={onPress} style={{
-      backgroundColor: theme.colors.surface,
+      backgroundColor: '#FBF5EB', // ✅ Changed background color from theme.colors.surface to #FBF5EB
       borderRadius: 8,
-      padding: 10,
+      padding: 12,
       marginBottom: 10,
       width,
-      height: 170, // ✅ Added fixed height for consistent grid alignment
+      height: 300, // ✅ Increased height from 250 to 300 for more content visibility
       justifyContent: 'space-between'
     }}>
       <Image
         source={{ uri: restaurant.logoURL || restaurant.bannerURL || 'https://via.placeholder.com/150' }}
-        style={{ width: '100%', height: 100, borderRadius: 8, marginBottom: 8 }}
+        style={{ width: '100%', height: 160, borderRadius: 8, marginBottom: 6 }} // ✅ Decreased marginBottom from 10 to 6 to reduce padding between image and content
       />
-      <Text style={{ color: theme.colors.text, fontSize: 13, fontWeight: 'bold', marginBottom: 4 }} numberOfLines={1} ellipsizeMode="tail">
+      <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: 'bold', marginBottom: 6 }} numberOfLines={1} ellipsizeMode="tail">
         {restaurant.name}
       </Text>
-      <Text style={{ color: theme.colors.textSecondary, fontSize: 11, marginBottom: 4 }}>
-        ⭐ {restaurant.avgRating || 'N/A'}
+      <Text style={{ color: theme.colors.textSecondary, fontSize: 12, marginBottom: 4 }}>
+        ⭐ {restaurant.avgRating || 'N/A'} • {restaurant.cuisines?.join(', ') || 'Various'}
       </Text>
-      <Text style={{ color: theme.colors.textSecondary, fontSize: 11, marginBottom: 8 }} numberOfLines={1} ellipsizeMode="tail">
-        📍 {restaurant.address?.city || 'City'}
+      <Text style={{ color: theme.colors.textSecondary, fontSize: 12, marginBottom: 8 }} numberOfLines={4} ellipsizeMode="tail">
+        📍 {restaurant.address?.line1 || ''} {restaurant.address?.city || 'City'}
       </Text>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={{ color: theme.colors.primary, fontSize: 11, fontWeight: 'bold' }}>
+        <Text style={{ color: theme.colors.primary, fontSize: 12, fontWeight: 'bold' }}>
           {restaurant.priceRange || '₹₹'}
         </Text>
-        <Text style={{ color: theme.colors.textSecondary, fontSize: 10 }}>
+        <Text style={{ color: theme.colors.textSecondary, fontSize: 11 }}>
           {restaurant.avgDeliveryTime || '30-45 min'}
         </Text>
       </View>

@@ -227,7 +227,7 @@ const ProductsPage: React.FC = () => {
         data={restaurantGroups}
         keyExtractor={(group) => group.restaurantId}
         renderItem={renderRestaurantGroup}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={{ paddingBottom: 20, paddingHorizontal: SPACING.screen }} // ✅ Proper screen edge padding
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Typography variant="body1" color="secondary">
@@ -243,7 +243,7 @@ const ProductsPage: React.FC = () => {
 const styles = StyleSheet.create({
   restaurantSection: {
     marginBottom: SPACING.section.medium,
-    // Removed paddingHorizontal for edge-to-edge layout
+    // Removed duplicate paddingHorizontal to avoid double padding
   },
   restaurantHeader: {
     flexDirection: 'row',
@@ -284,11 +284,11 @@ const styles = StyleSheet.create({
     gap: SPACING.content.medium,
   },
   productsContainer: {
-    // Removed paddingHorizontal for edge-to-edge layout
+    // Removed paddingHorizontal to avoid double padding with main FlatList
   },
   productCardContainer: {
     width: PRODUCT_CARD_DIMENSIONS.HORIZONTAL.width,
-    // Removed marginHorizontal for edge-to-edge layout
+    marginHorizontal: SPACING.card.horizontal, // ✅ Using standard card horizontal spacing
     alignItems: 'center',
     borderWidth: BORDERS.width.medium,
     borderRadius: PRODUCT_CARD_DIMENSIONS.HORIZONTAL.borderRadius,

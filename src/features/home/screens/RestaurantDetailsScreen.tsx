@@ -114,7 +114,8 @@ const RestaurantDetailsScreen: React.FC = () => {
   return (
     <SafeAreaWrapper style={{ backgroundColor: theme.colors.background }}>
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{
-        // Removed paddingHorizontal for edge-to-edge layout
+        paddingHorizontal: SPACING.screen, // Added padding on both sides of the screen
+        paddingTop: SPACING.section.medium, // Added gap between navigation header and banner image
       }}>
         {/* Restaurant Hero Section with Banner */}
         <View style={styles.heroSection}>
@@ -169,40 +170,40 @@ const RestaurantDetailsScreen: React.FC = () => {
 
           {/* Restaurant Details Grid */}
           <View style={styles.detailsGrid}>
-            <View style={[styles.detailItem, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
               <Typography variant="caption" color="secondary" style={styles.detailLabel}>📍 Address</Typography>
               <Typography variant="body2" color="text" style={styles.detailValue}>
                 {restaurant.address ? `${restaurant.address.line1}, ${restaurant.address.city}` : 'Not available'}
               </Typography>
             </View>
 
-            <View style={[styles.detailItem, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
               <Typography variant="caption" color="secondary" style={styles.detailLabel}>📞 Phone</Typography>
               <Typography variant="body2" color="text" style={styles.detailValue}>{restaurant.phone}</Typography>
             </View>
 
-            <View style={[styles.detailItem, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
               <Typography variant="caption" color="secondary" style={styles.detailLabel}>⏱️ Delivery</Typography>
               <Typography variant="body2" color="text" style={styles.detailValue}>
                 {restaurant.avgDeliveryTime || 'Not specified'}
               </Typography>
             </View>
 
-            <View style={[styles.detailItem, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
               <Typography variant="caption" color="secondary" style={styles.detailLabel}>💰 Min Order</Typography>
               <Typography variant="body2" color="text" style={styles.detailValue}>
                 ₹{restaurant.minOrderAmount || 'Not specified'}
               </Typography>
             </View>
 
-            <View style={[styles.detailItem, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
               <Typography variant="caption" color="secondary" style={styles.detailLabel}>🚚 Delivery Fee</Typography>
               <Typography variant="body2" color="text" style={styles.detailValue}>
                 ₹{restaurant.deliveryCharges || 'Free'}
               </Typography>
             </View>
 
-            <View style={[styles.detailItem, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
               <Typography variant="caption" color="secondary" style={styles.detailLabel}>🎯 Price Range</Typography>
               <Typography variant="body2" color="text" style={styles.detailValue}>
                 {restaurant.priceRange || 'Not specified'}
@@ -211,7 +212,7 @@ const RestaurantDetailsScreen: React.FC = () => {
 
             {/* Enhanced Details */}
             {restaurant.maxDeliveryRadius && (
-              <View style={[styles.detailItem, { backgroundColor: theme.colors.surface }]}>
+              <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
                 <Typography variant="caption" color="secondary" style={styles.detailLabel}>📏 Delivery Radius</Typography>
                 <Typography variant="body2" color="text" style={styles.detailValue}>
                   {restaurant.maxDeliveryRadius} km
@@ -220,7 +221,7 @@ const RestaurantDetailsScreen: React.FC = () => {
             )}
 
             {restaurant.freeDeliveryAbove && (
-              <View style={[styles.detailItem, { backgroundColor: theme.colors.surface }]}>
+              <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
                 <Typography variant="caption" color="secondary" style={styles.detailLabel}>🎁 Free Delivery</Typography>
                 <Typography variant="body2" color="text" style={styles.detailValue}>
                   Above ₹{restaurant.freeDeliveryAbove}
@@ -229,7 +230,7 @@ const RestaurantDetailsScreen: React.FC = () => {
             )}
 
             {/* Payment Methods */}
-            <View style={[styles.detailItem, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
               <Typography variant="caption" color="secondary" style={styles.detailLabel}>💳 Payment</Typography>
               <Typography variant="body2" color="text" style={styles.detailValue}>
                 {restaurant.hasOnlinePayment && restaurant.hasCashOnDelivery
@@ -243,7 +244,7 @@ const RestaurantDetailsScreen: React.FC = () => {
             </View>
 
             {/* Veg/Non-Veg */}
-            <View style={[styles.detailItem, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
               <Typography variant="caption" color="secondary" style={styles.detailLabel}>🥗 Type</Typography>
               <Typography variant="body2" color="text" style={styles.detailValue}>
                 {restaurant.isPureVeg ? 'Pure Veg' : 'Veg & Non-Veg'}
@@ -252,7 +253,7 @@ const RestaurantDetailsScreen: React.FC = () => {
 
             {/* Services */}
             {restaurant.serviceIds && restaurant.serviceIds.length > 0 && (
-              <View style={[styles.detailItem, { backgroundColor: theme.colors.surface }]}>
+              <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
                 <Typography variant="caption" color="secondary" style={styles.detailLabel}>🏪 Services</Typography>
                 <Typography variant="body2" color="text" style={styles.detailValue}>
                   {restaurant.serviceIds.join(', ')}
@@ -262,7 +263,7 @@ const RestaurantDetailsScreen: React.FC = () => {
 
             {/* Setup Status */}
             {restaurant.needsSetup !== undefined && (
-              <View style={[styles.detailItem, { backgroundColor: theme.colors.surface }]}>
+              <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
                 <Typography variant="caption" color="secondary" style={styles.detailLabel}>⚙️ Status</Typography>
                 <Typography variant="body2" color={restaurant.needsSetup ? "error" : "success"} style={styles.detailValue}>
                   {restaurant.needsSetup ? 'Setup Required' : 'Ready'}
@@ -277,7 +278,7 @@ const RestaurantDetailsScreen: React.FC = () => {
               <Typography variant="h6" color="text" style={styles.sectionTitle}>Operating Hours</Typography>
               <View style={styles.hoursGrid}>
                 {Object.entries(restaurant.openHours).map(([day, hours]) => (
-                  <View key={day} style={[styles.hourItem, { backgroundColor: theme.colors.surface }]}>
+                  <View key={day} style={[styles.hourItem, { backgroundColor: '#FBF5EB' }]}>
                     <Typography variant="caption" color="secondary" style={styles.dayLabel}>
                       {day.charAt(0).toUpperCase() + day.slice(1)}
                     </Typography>
@@ -296,7 +297,7 @@ const RestaurantDetailsScreen: React.FC = () => {
               <Typography variant="h6" color="text" style={styles.sectionTitle}>Delivery Areas</Typography>
               <View style={styles.deliveryGrid}>
                 {restaurant.deliveryLocations.map((location, index) => (
-                  <View key={index} style={[styles.deliveryItem, { backgroundColor: theme.colors.surface }]}>
+                  <View key={index} style={[styles.deliveryItem, { backgroundColor: '#FBF5EB' }]}>
                     <Typography variant="body2" color="text" style={styles.deliveryCity}>
                       {location.cityName}
                     </Typography>
