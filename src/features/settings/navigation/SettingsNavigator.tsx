@@ -1,24 +1,27 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import { SettingsScreen } from '../screens/SettingsScreen';
-import { ProfileManagementScreen } from '../screens/ProfileManagementScreen';
-import { NotificationSettingsScreen } from '../screens/NotificationSettingsScreen';
-import { PreferencesScreen } from '../screens/PreferencesScreen';
+import { SettingsIndex } from '../SettingsIndex';
+import { ProfileScreen } from '../profile/screens/ProfileScreen';
+import { OrdersScreen } from '../orders/screens/OrdersScreen';
+import { WishlistScreen } from '../wishlist/screens/WishlistScreen';
+import { AddressesScreen } from '../addresses/screens/AddressesScreen';
+import { PreferencesScreen } from '../preferences/screens/PreferencesScreen';
+import { NotificationsScreen } from '../notifications/screens/NotificationsScreen';
+import { GeneralInfoScreen } from '../generalInfo/screens/GeneralInfoScreen';
+import { HelpSupportScreen } from '../helpSupport/screens/HelpSupportScreen';
+import { SocialMediaScreen } from '../socialMedia/screens/SocialMediaScreen';
 
 export type SettingsStackParamList = {
   SettingsHome: undefined;
-  ProfileManagement: undefined;
-  NotificationSettings: undefined;
-  AddressManagement: undefined;
-  OrderHistory: undefined;
+  Profile: undefined;
+  Orders: undefined;
   Wishlist: undefined;
+  Addresses: undefined;
   Preferences: undefined;
+  Notifications: undefined;
+  GeneralInfo: undefined;
   HelpSupport: undefined;
-  Feedback: undefined;
-  AppInfo: undefined;
   SocialMedia: undefined;
-  CuisinePreferences: undefined;
-  FoodTypePreferences: undefined;
 };
 
 const Stack = createStackNavigator<SettingsStackParamList>();
@@ -36,23 +39,53 @@ export const SettingsNavigator = () => {
     >
       <Stack.Screen 
         name="SettingsHome" 
-        component={SettingsScreen}
+        component={SettingsIndex}
         options={{ title: 'Settings' }}
       />
       <Stack.Screen 
-        name="ProfileManagement" 
-        component={ProfileManagementScreen}
+        name="Profile" 
+        component={ProfileScreen}
         options={{ title: 'Profile' }}
       />
       <Stack.Screen 
-        name="NotificationSettings" 
-        component={NotificationSettingsScreen}
-        options={{ title: 'Notifications' }}
+        name="Orders" 
+        component={OrdersScreen}
+        options={{ title: 'Order History' }}
+      />
+      <Stack.Screen 
+        name="Wishlist" 
+        component={WishlistScreen}
+        options={{ title: 'Wishlist' }}
+      />
+      <Stack.Screen 
+        name="Addresses" 
+        component={AddressesScreen}
+        options={{ title: 'Addresses' }}
       />
       <Stack.Screen 
         name="Preferences" 
         component={PreferencesScreen}
         options={{ title: 'Preferences' }}
+      />
+      <Stack.Screen 
+        name="Notifications" 
+        component={NotificationsScreen}
+        options={{ title: 'Notifications' }}
+      />
+      <Stack.Screen 
+        name="GeneralInfo" 
+        component={GeneralInfoScreen}
+        options={{ title: 'General Information' }}
+      />
+      <Stack.Screen 
+        name="HelpSupport" 
+        component={HelpSupportScreen}
+        options={{ title: 'Help & Support' }}
+      />
+      <Stack.Screen 
+        name="SocialMedia" 
+        component={SocialMediaScreen}
+        options={{ title: 'Follow Us' }}
       />
     </Stack.Navigator>
   );

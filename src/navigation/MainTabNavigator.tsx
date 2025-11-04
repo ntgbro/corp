@@ -7,7 +7,7 @@ import HomeScreen from '../features/home/screens/HomeScreen';
 import { ProductStackNavigator } from './ProductStackNavigator';
 import { CartStackNavigator } from './CartStackNavigator';
 import { useCart } from '../contexts/CartContext';
-import { ProfileScreen } from '../features/settings/screens/ProfileScreen';
+import { SettingsNavigator } from '../features/settings/navigation/SettingsNavigator';
 
 // Placeholder Screen Components (to avoid inline functions)
 const OrdersScreen: React.FC = () => {
@@ -85,7 +85,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
             icon = '🛍️';
             displayLabel = isFocused ? 'Products' : '';
             break;
-          case 'Cart':
+          case 'CartStack':
             icon = '🛒';
             displayLabel = isFocused ? 'Cart' : 'Cart';
             break;
@@ -121,7 +121,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
               }}>
                 {icon}
               </Text>
-              {route.name === 'Cart' && cartState.totalItems > 0 && (
+              {route.name === 'CartStack' && cartState.totalItems > 0 && (
                 <View style={{
                   position: 'absolute',
                   top: -8,
@@ -224,7 +224,7 @@ export const MainTabNavigator: React.FC = () => {
       />
       <Tab.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={SettingsNavigator}
         options={{
           tabBarLabel: ({ focused }) => focused ? 'Profile' : '',
           headerShown: false,

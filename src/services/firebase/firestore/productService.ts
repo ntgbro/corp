@@ -25,6 +25,7 @@ export interface ProductCategory {
   productCount: number;
   isActive: boolean;
   description: string;
+  imageURL?: string;
 }
 
 // Helper to get restaurants or warehouses based on service
@@ -44,7 +45,7 @@ async function getEntitiesForService(serviceId: 'fresh' | 'fmcg' | 'supplies') {
 export async function getCategoriesByService(serviceId: 'fresh' | 'fmcg' | 'supplies'): Promise<ProductCategory[]> {
   try {
     const entities = await getEntitiesForService(serviceId);
-    const categoryMap: { [key: string]: { name: string; count: number } } = {};
+    const categoryMap: { [key: string]: { name: string; count: number; imageURL?: string } } = {};
 
     for (const entity of entities) {
       if (entity.type === 'restaurant' && serviceId === 'fresh') {
@@ -53,10 +54,16 @@ export async function getCategoriesByService(serviceId: 'fresh' | 'fmcg' | 'supp
         snapshot.docs.forEach((doc: any) => {
           const data = doc.data() as MenuItem;
           if (data.category) {
+            // Use the first item's image as the category image
+            const imageURL = data.mainImageURL || data.imageURL;
             if (categoryMap[data.category]) {
               categoryMap[data.category].count += 1;
             } else {
-              categoryMap[data.category] = { name: data.category, count: 1 };
+              categoryMap[data.category] = { 
+                name: data.category, 
+                count: 1,
+                imageURL: imageURL // Add image URL
+              };
             }
           }
         });
@@ -66,10 +73,16 @@ export async function getCategoriesByService(serviceId: 'fresh' | 'fmcg' | 'supp
         snapshot.docs.forEach((doc: any) => {
           const data = doc.data();
           if (data.category) {
+            // Use the first item's image as the category image
+            const imageURL = data.imageURL;
             if (categoryMap[data.category]) {
               categoryMap[data.category].count += 1;
             } else {
-              categoryMap[data.category] = { name: data.category, count: 1 };
+              categoryMap[data.category] = { 
+                name: data.category, 
+                count: 1,
+                imageURL: imageURL // Add image URL
+              };
             }
           }
         });
@@ -84,6 +97,7 @@ export async function getCategoriesByService(serviceId: 'fresh' | 'fmcg' | 'supp
       productCount: cat.count,
       isActive: true,
       description: `Products in ${cat.name}`,
+      imageURL: cat.imageURL, // Add image URL
     }));
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -96,22 +110,22 @@ export async function getCategoriesByService(serviceId: 'fresh' | 'fmcg' | 'supp
 function getStaticCategories(serviceId: 'fresh' | 'fmcg' | 'supplies'): ProductCategory[] {
   if (serviceId === 'fresh') {
     return [
-      { id: 'salads', name: 'Salads', icon: '🥗', productCount: 25, isActive: true, description: 'Fresh salads' },
-      { id: 'curries', name: 'Curries', icon: '🍛', productCount: 30, isActive: true, description: 'Indian curries' },
-      { id: 'pizza', name: 'Pizza', icon: '🍕', productCount: 20, isActive: true, description: 'Fresh pizza' },
-      { id: 'burgers', name: 'Burgers', icon: '🍔', productCount: 15, isActive: true, description: 'Juicy burgers' },
-      { id: 'desserts', name: 'Desserts', icon: '🍰', productCount: 18, isActive: true, description: 'Sweet treats' },
-      { id: 'beverages', name: 'Beverages', icon: '🥤', productCount: 22, isActive: true, description: 'Refreshing drinks' },
+      { id: 'salads', name: 'Salads', icon: '🥗', productCount: 25, isActive: true, description: 'Fresh salads', imageURL: undefined },
+      { id: 'curries', name: 'Curries', icon: '🍛', productCount: 30, isActive: true, description: 'Indian curries', imageURL: undefined },
+      { id: 'pizza', name: 'Pizza', icon: '🍕', productCount: 20, isActive: true, description: 'Fresh pizza', imageURL: undefined },
+      { id: 'burgers', name: 'Burgers', icon: '🍔', productCount: 15, isActive: true, description: 'Juicy burgers', imageURL: undefined },
+      { id: 'desserts', name: 'Desserts', icon: '🍰', productCount: 18, isActive: true, description: 'Sweet treats', imageURL: undefined },
+      { id: 'beverages', name: 'Beverages', icon: '🥤', productCount: 22, isActive: true, description: 'Refreshing drinks', imageURL: undefined },
     ];
   } else if (serviceId === 'fmcg') {
     return [
-      { id: 'snacks', name: 'Snacks', icon: '🍟', productCount: 20, isActive: true, description: 'Crispy snacks' },
-      { id: 'beverages', name: 'Beverages', icon: '🥤', productCount: 35, isActive: true, description: 'Drinks' },
+      { id: 'snacks', name: 'Snacks', icon: '🍟', productCount: 20, isActive: true, description: 'Crispy snacks', imageURL: undefined },
+      { id: 'beverages', name: 'Beverages', icon: '🥤', productCount: 35, isActive: true, description: 'Drinks', imageURL: undefined },
     ];
   } else {
     return [
-      { id: 'stationery', name: 'Stationery', icon: '📝', productCount: 30, isActive: true, description: 'Office supplies' },
-      { id: 'electronics', name: 'Electronics', icon: '💻', productCount: 15, isActive: true, description: 'Tech items' },
+      { id: 'stationery', name: 'Stationery', icon: '📝', productCount: 30, isActive: true, description: 'Office supplies', imageURL: undefined },
+      { id: 'electronics', name: 'Electronics', icon: '💻', productCount: 15, isActive: true, description: 'Tech items', imageURL: undefined },
     ];
   }
 }
