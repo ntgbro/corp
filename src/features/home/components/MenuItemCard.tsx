@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     borderWidth: BORDERS.width.medium,
     overflow: 'hidden',
     ...SHADOWS.small,
-    // Removed marginHorizontal for edge-to-edge layout
+    marginHorizontal: SPACING.card.horizontal, // Added margin between cards
   },
   imageContainer: {
     width: '100%',
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     // Removed flex-based layout to prevent height variation
-    height: 64, // Fixed height: cardHeight(180) - imageHeight(100) - padding(16)
+    height: 74, // Fixed height: cardHeight(200) - imageHeight(110) - padding(16)
     padding: CARD_DIMENSIONS.menuItem.padding,
     justifyContent: 'space-between',
   },

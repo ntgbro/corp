@@ -42,9 +42,9 @@ const HomeScreen: React.FC = () => {
     error: locationError,
   } = useLocationContext();
 
-  // Calculate card width for edge-to-edge layout (assuming 1.5 cards visible)
+  // Calculate card width for edge-to-edge layout (assuming 1.8 cards visible for narrower cards)
   const screenWidth = Dimensions.get('window').width;
-  const cardWidth = (screenWidth - 20) / 1.5; // Account for small margins
+  const cardWidth = (screenWidth - 30) / 1.8; // ✅ Decreased width by increasing divisor from 1.5 to 1.8 and increasing margin
 
   const handleSearch = (query: string) => {
     if (query.trim().length > 0) {
@@ -140,6 +140,7 @@ const HomeScreen: React.FC = () => {
         contentContainerStyle={{
           backgroundColor: theme.colors.background,
           paddingBottom: 80, // Space for bottom navigation (60px + extra padding)
+          paddingHorizontal: 16, // ✅ Added padding to both side edges
         }}
         showsVerticalScrollIndicator={true}
         nestedScrollEnabled={true}
@@ -190,11 +191,13 @@ const HomeScreen: React.FC = () => {
               }}
               showsHorizontalScrollIndicator={false}
               renderItem={({ item: restaurant }: { item: any }) => (
-                <RestaurantCard
-                  restaurant={restaurant}
-                  width={cardWidth}
-                  onPress={() => (navigation as any).navigate('Product', { screen: 'RestaurantDetails', params: { restaurantId: restaurant.restaurantId } })}
-                />
+                <View style={{ marginHorizontal: 4 }}> {/* ✅ Decreased horizontal margin from 8 to 4 for closer spacing between cards */}
+                  <RestaurantCard
+                    restaurant={restaurant}
+                    width={cardWidth}
+                    onPress={() => (navigation as any).navigate('Product', { screen: 'RestaurantDetails', params: { restaurantId: restaurant.restaurantId } })}
+                  />
+                </View>
               )}
             />
           )}
@@ -211,7 +214,7 @@ const HomeScreen: React.FC = () => {
             <CategorySections
               categories={categories}
               onCategoryPress={handleCategoryPress}
-              variant="grid4"
+              variant="grid3" // ✅ Changed from 'grid4' to 'grid3' for 3x3 grid layout
               showIcons={false}
             />
           ) : (

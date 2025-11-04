@@ -353,12 +353,12 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   };
 
   return (
-    <View style={[styles.header, { backgroundColor: theme.colors.primary }]}>
+    <View style={[styles.header, { backgroundColor: '#F5DEB3' }]}>
       <View style={styles.headerContent}>
         {/* Back Button */}
         {showBackButton && (
           <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
-            <Text style={{ fontSize: 18, color: theme.colors.white }}>←</Text>
+            <Text style={{ fontSize: 18, color: theme.colors.text }}>←</Text>
           </TouchableOpacity>
         )}
 
@@ -367,7 +367,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
         {/* Title */}
         {title && (
-          <Text style={styles.title}>{title}</Text>
+          <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
         )}
 
         {/* Right Component */}
@@ -380,12 +380,10 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       {showLocation && (
         <View style={styles.locationSection}>
           <View style={styles.locationInfo}>
-            <View style={styles.addressBox}>
-              {/* Simplified Address Display */}
-              <Text style={styles.addressText}>
-                {currentLocation?.address ? formatLocationAddress(currentLocation.address).display : 'Set Location'}
-              </Text>
-            </View>
+            {/* Simplified Address Display - Removed card styling and changed font color to black */}
+            <Text style={styles.addressTextNoCard}>
+              {currentLocation?.address ? formatLocationAddress(currentLocation.address).display : 'Set Location'}
+            </Text>
 
             {/* Change Location Button */}
             <TouchableOpacity
@@ -445,8 +443,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 8,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
   },
   fixedSearchHeaderAbsolute: {
     position: 'absolute',
@@ -457,8 +453,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 8,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -523,6 +517,15 @@ const styles = StyleSheet.create({
     color: 'white',
     lineHeight: 18,
     textAlign: 'left',
+  },
+  addressTextNoCard: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'black', // ✅ Changed font color from white to black
+    lineHeight: 18,
+    textAlign: 'left',
+    flex: 1,
+    marginLeft: 8,
   },
   locationText: {
     fontSize: 12,

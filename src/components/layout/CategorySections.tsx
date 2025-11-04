@@ -49,34 +49,23 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
                 borderColor: isSelected ? theme.colors.primary : theme.colors.border,
               }
             ]}>
-              {/* Use category image if available, otherwise placeholder that occupies entire card */}
-              {category.imageURL ? (
-                <Image
-                  source={{ uri: category.imageURL }}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: 12,
-                  }}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: 12,
-                  backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
-                  justifyContent: 'center',
-                  alignItems: 'center',
+              {/* Placeholder icon for visibility */}
+              <View style={{
+                width: 50,
+                height: 50,
+                borderRadius: 25,
+                backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginBottom: 8,
+              }}>
+                <Text style={{
+                  fontSize: 20,
+                  color: isSelected ? theme.colors.white : theme.colors.primary
                 }}>
-                  <Text style={{
-                    fontSize: 20,
-                    color: isSelected ? theme.colors.white : theme.colors.primary
-                  }}>
-                    📦
-                  </Text>
-                </View>
-              )}
+                  📦
+                </Text>
+              </View>
             </View>
           </TouchableOpacity>
 

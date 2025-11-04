@@ -38,7 +38,9 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
 }) => {
   const theme = useTheme();
   const screenWidth = Dimensions.get('window').width;
-  const cardWidth = (screenWidth) / numColumns;
+  const horizontalPadding = SPACING.screen;
+  const availableWidth = screenWidth - (horizontalPadding * 2);
+  const cardWidth = (availableWidth / numColumns) - (SPACING.card.horizontal * (numColumns - 1) / numColumns);
 
   const renderProduct: ListRenderItem<ProductData> = ({ item, index }) => {
     return (
@@ -48,7 +50,11 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         showRating={showRating}
         showCategory={showCategory}
         size={cardSize}
-        style={{ width: cardWidth }}
+        style={{ 
+          width: cardWidth,
+          marginHorizontal: SPACING.card.horizontal / 2,
+          marginVertical: SPACING.card.vertical / 2
+        }}
         // Remove manual width override - let FlatList handle grid layout
       />
     );
@@ -92,8 +98,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={{
-          paddingVertical: SPACING.screen,
-          // Removed horizontal padding for edge-to-edge layout
+          padding: SPACING.screen, // Changed from separate horizontal/vertical to uniform padding
         }}
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={true}
@@ -117,12 +122,12 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         columnWrapperStyle={{
           justifyContent: 'space-between',
           alignItems: 'flex-start', // ✅ Align items to top for consistent grid
-          // Removed any vertical spacing to prevent row misalignment
+          marginVertical: SPACING.card.vertical / 2 // Add vertical spacing between rows
         }}
         legacyImplementation={false}
         // ✅ Added getItemLayout for better performance with fixed height cards
         getItemLayout={(data, index) => {
-          const cardHeight = 240; // Fixed height for all product cards
+          const cardHeight = 200; // Fixed height for all product cards (updated from 240)
           const rowHeight = cardHeight; // Each row has the same height
           const rowIndex = Math.floor(index / numColumns);
           return {
