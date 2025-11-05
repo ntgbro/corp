@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import { useLocationContext } from '../../contexts/LocationContext';
+import LocationIcon from '../common/LocationIcon';
+import NotificationIcon from '../common/NotificationIcon';
 
 interface ScrollableLocationHeaderProps {
   showBackButton?: boolean;
@@ -28,8 +30,10 @@ export const ScrollableLocationHeader: React.FC<ScrollableLocationHeaderProps> =
   const { theme } = useThemeContext();
   const navigation = useNavigation();
   const { currentLocation, loading: locationLoading } = useLocationContext();
+  const [isLocationIconActive, setIsLocationIconActive] = useState(false);
 
   const handleLocationChangePress = () => {
+    setIsLocationIconActive(true);
     if (onLocationChange) {
       onLocationChange();
     }
@@ -98,6 +102,13 @@ export const ScrollableLocationHeader: React.FC<ScrollableLocationHeaderProps> =
       display: essentialParts.join(', ')
     };
   };
+
+  // Reset icon color when location data is fetched
+  useEffect(() => {
+    if (currentLocation && !locationLoading) {
+      setIsLocationIconActive(false);
+    }
+  }, [currentLocation, locationLoading]);
 
   return (
     <View style={[styles.header, { backgroundColor: theme.colors.primary }]}>
@@ -136,13 +147,15 @@ export const ScrollableLocationHeader: React.FC<ScrollableLocationHeaderProps> =
               activeOpacity={1.0} // No opacity change to prevent shifting
               disabled={locationLoading} // Disable when loading
             >
-              <Text style={[
-                styles.locationPinText,
-                locationLoading && styles.locationPinLoading // Add loading animation style
-              ]}>
-                📍
-              </Text>
+              <LocationIcon 
+                size={30} 
+                color={isLocationIconActive ? '#754C29' : 'black'} 
+                style={[
+                  locationLoading && styles.locationPinLoading // Add loading animation style
+                ]}
+              />
             </TouchableOpacity>
+
           </View>
         </View>
       )}
@@ -166,6 +179,8 @@ export const FixedSearchHeader: React.FC<FixedSearchHeaderProps> = ({
   const { theme } = useThemeContext();
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isNotificationIconActive, setIsNotificationIconActive] = useState(false);
+  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -187,10 +202,33 @@ export const FixedSearchHeader: React.FC<FixedSearchHeaderProps> = ({
   };
 
   const handleNotificationPress = () => {
+    // Clear any existing timeout
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+    }
+    
+    // Set the icon to active state
+    setIsNotificationIconActive(true);
+    
+    // Reset the icon color after 2 seconds
+    notificationTimeoutRef.current = setTimeout(() => {
+      setIsNotificationIconActive(false);
+      notificationTimeoutRef.current = null;
+    }, 2000);
+    
     if (onNotificationPress) {
       onNotificationPress();
     }
   };
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (notificationTimeoutRef.current) {
+        clearTimeout(notificationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Only render if search is enabled
   if (!showSearch) return null;
@@ -218,7 +256,10 @@ export const FixedSearchHeader: React.FC<FixedSearchHeaderProps> = ({
           {/* Notification Bell - OUTSIDE search container */}
           {showNotificationBell && (
             <TouchableOpacity onPress={handleNotificationPress} style={styles.notificationButton}>
-              <Text style={{ fontSize: 20, color: theme.colors.white }}>🔔</Text>
+              <NotificationIcon 
+                size={24} 
+                color="white" 
+              />
             </TouchableOpacity>
           )}
         </View>
@@ -256,6 +297,9 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   const navigation = useNavigation();
   const { currentLocation, loading: locationLoading } = useLocationContext();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLocationIconActive, setIsLocationIconActive] = useState(false);
+  const [isNotificationIconActive, setIsNotificationIconActive] = useState(false);
+  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -277,16 +321,40 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   };
 
   const handleLocationChangePress = () => {
+    setIsLocationIconActive(true);
     if (onLocationChange) {
       onLocationChange();
     }
   };
 
   const handleNotificationPress = () => {
+    // Clear any existing timeout
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+    }
+    
+    // Set the icon to active state
+    setIsNotificationIconActive(true);
+    
+    // Reset the icon color after 2 seconds
+    notificationTimeoutRef.current = setTimeout(() => {
+      setIsNotificationIconActive(false);
+      notificationTimeoutRef.current = null;
+    }, 2000);
+    
     if (onNotificationPress) {
       onNotificationPress();
     }
   };
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (notificationTimeoutRef.current) {
+        clearTimeout(notificationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Format location address to show specific OSM components only
   const formatLocationAddress = (address: string): { display: string } => {
@@ -351,6 +419,13 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       display: essentialParts.join(', ')
     };
   };
+
+  // Reset icon color when location data is fetched
+  useEffect(() => {
+    if (currentLocation && !locationLoading) {
+      setIsLocationIconActive(false);
+    }
+  }, [currentLocation, locationLoading]);
 
   return (
     <View style={[styles.header, { backgroundColor: '#F5DEB3' }]}>
@@ -392,13 +467,15 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               activeOpacity={1.0} // No opacity change to prevent shifting
               disabled={locationLoading} // Disable when loading
             >
-              <Text style={[
-                styles.locationPinText,
-                locationLoading && styles.locationPinLoading // Add loading animation style
-              ]}>
-                📍
-              </Text>
+              <LocationIcon 
+                size={30} 
+                color={isLocationIconActive ? '#754C29' : 'black'} 
+                style={[
+                  locationLoading && styles.locationPinLoading // Add loading animation style
+                ]}
+              />
             </TouchableOpacity>
+
           </View>
 
           {/* Removed loading text section */}
@@ -428,7 +505,10 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
             {/* Notification Bell - OUTSIDE search container */}
             {showNotificationBell && (
               <TouchableOpacity onPress={handleNotificationPress} style={styles.notificationButton}>
-                <Text style={{ fontSize: 20, color: theme.colors.white }}>🔔</Text>
+                <NotificationIcon 
+                  size={30} 
+                  color={isNotificationIconActive ? '#754C29' : 'black'} 
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -554,7 +634,7 @@ const styles = StyleSheet.create({
   },
   locationPinLoading: {
     transform: [{ scale: 1.2 }], // Slightly larger when loading
-    opacity: 0.8, // Slightly transparent when loading
+    // Removed opacity to ensure full color intensity
   },
   searchSection: {
     marginBottom: 4,

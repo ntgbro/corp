@@ -11,6 +11,10 @@ import { useTheme } from '../../config/theme';
 import { useCart } from '../../contexts/CartContext';
 import { ProductCardStyles, PRODUCT_CARD_DIMENSIONS } from './ProductCardStyles';
 import { SPACING, BORDERS, CARD_DIMENSIONS } from '../../constants/ui';
+import FavoriteButton from '../../components/common/FavoriteButton';
+import { useDispatch, useSelector } from 'react-redux';
+import { toggleProductFavorite } from '../../store/slices/productsSlice';
+import { RootState } from '../../store';
 
 export interface ProductData {
   id: string;
@@ -45,6 +49,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   size = 'medium',
 }) => {
   const theme = useTheme();
+  const dispatch = useDispatch();
+  const { favoriteProducts } = useSelector((state: RootState) => state.products);
   const { addToCart } = useCart();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
@@ -186,7 +192,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </Text>
           </View>
         )}
-
+        <FavoriteButton
+          isFavorited={favoriteProducts.includes(product.id)}
+          onPress={() => dispatch(toggleProductFavorite(product.id))}
+          size={20}
+          style={styles.favoriteButton}
+        />
         {/* Availability Badge */}
         {!product.isAvailable && (
           <View style={[styles.badge, styles.unavailableBadge, { backgroundColor: theme.colors.error }]}>
@@ -277,6 +288,15 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '500',
     color: '#999',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 1,
+    padding: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   badge: {
     position: 'absolute',

@@ -493,39 +493,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
-  cartSummary: {
-    margin: 16,
-    marginTop: 8,
-    padding: 16,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  summaryLabel: {
-    fontSize: 14,
-  },
-  summaryValue: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  totalRow: {
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
-    paddingTop: 12,
-    marginTop: 8,
-    marginBottom: 0,
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  totalValue: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
   checkoutButton: {
     marginTop: 16,
   },

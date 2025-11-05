@@ -38,7 +38,7 @@ export const SPACING = {
 export const CARD_DIMENSIONS = {
   // Standard card sizes across all screens
   product: {
-    width: 120,
+    width: 140, // Increased from 120 to 140 for better visibility
     height: 200,
     imageHeight: 100, // ✅ Increased from 90 to 100 for better image visibility
     borderRadius: 12,
