@@ -1,22 +1,25 @@
-export { default as Button } from './Button';
-export { default as TextInput } from './TextInput';
-export { default as Card } from './Card';
-export { default as Loader } from './Loader';
-
-// Components with only default exports - working
 export { default as Accordion } from './Accordion';
+export { default as AddToCartButton } from './AddToCartButton';
 export { default as Avatar } from './Avatar';
 export { default as Badge } from './Badge';
 export { default as Brand } from './Brand';
+export { default as Button } from './Button';
+export { default as Card } from './Card';
+export { default as Carousel } from './Carousel';
 export { default as Checkbox } from './Checkbox';
 export { default as Chip } from './Chip';
+export { default as ConfirmationDialog } from './ConfirmationDialog';
+export { default as DatePicker } from './DatePicker';
 export { default as Divider } from './Divider';
 export { default as EmptyState } from './EmptyState';
+export { default as ErrorBoundary } from './ErrorBoundary';
 export { default as ErrorMessage } from './ErrorMessage';
+export { default as FavoriteButton } from './FavoriteButton';
 export { default as HeaderText } from './HeaderText';
 export { default as IconButton } from './IconButton';
 export { default as ImagePicker } from './ImagePicker';
 export { default as ListItem } from './ListItem';
+export { default as Loader } from './Loader';
 export { default as Modal } from './Modal';
 export { default as ProgressBar } from './ProgressBar';
 export { default as QuantityStepper } from './QuantityStepper';
@@ -25,15 +28,17 @@ export { default as SearchInput } from './SearchInput';
 export { default as Snackbar } from './Snackbar';
 export { default as Spacer } from './Spacer';
 export { default as StarRating } from './StarRating';
+export { default as StepIndicator } from './StepIndicator';
 export { default as Switch } from './Switch';
 export { default as TabBar } from './TabBar';
+export { default as TextInput } from './TextInput';
 export { default as TimePicker } from './TimePicker';
 export { default as Tooltip } from './Tooltip';
 export { default as Typography } from './Typography';
-
-// Note: The following components have export issues and need to be imported directly:
-// - Carousel (export { Carousel } from './Carousel')
-// - ConfirmationDialog (export { ConfirmationDialog } from './ConfirmationDialog')
-// - DatePicker (export { DatePicker } from './DatePicker')
-// - ErrorBoundary (export { ErrorBoundary } from './ErrorBoundary')
-// - StepIndicator (export { StepIndicator } from './StepIndicator')
+export { default as LocationIcon } from './LocationIcon';
+export { default as HomeIcon } from './HomeIcon';
+export { default as CategoryIcon } from './CategoryIcon';
+export { default as CartIcon } from './CartIcon';
+export { default as OrderIcon } from './OrderIcon';
+export { default as ProfileIcon } from './ProfileIcon';
+export { default as NotificationIcon } from './NotificationIcon';

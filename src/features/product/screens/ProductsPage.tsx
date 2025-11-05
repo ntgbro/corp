@@ -8,14 +8,19 @@ import {
   Image,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
 import { SafeAreaWrapper } from '../../../components/layout';
 import { useThemeContext } from '../../../contexts/ThemeContext';
+import { useCart } from '../../../contexts/CartContext';
 import Typography from '../../../components/common/Typography';
+import FavoriteButton from '../../../components/common/FavoriteButton';
 import { useProductsByCategory } from '../hooks/useProducts';
 import { ProductData } from '../../../services/firebase/firestore/productService';
 import { HomeService } from '../../home/services/homeService';
 import { PRODUCT_CARD_DIMENSIONS } from '../../../components/layout/ProductCardStyles';
 import { SPACING, BORDERS, SHADOWS } from '../../../constants/ui';
+import { toggleProductFavorite } from '../../../store/slices/productsSlice';
+import { RootState } from '../../../store';
 
 interface RouteParams {
   category: string;
@@ -34,6 +39,10 @@ interface RestaurantGroup {
 const ProductsPage: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const { favoriteProducts } = useSelector((state: RootState) => state.products);
+  console.log('Favorite products updated:', favoriteProducts);
+  const { addToCart } = useCart();
   const { category } = route.params as RouteParams;
   const { theme } = useThemeContext();
 
@@ -198,6 +207,12 @@ const ProductsPage: React.FC = () => {
               ) : (
                 <Typography style={styles.productImageEmoji}>🍽️</Typography>
               )}
+              <FavoriteButton 
+                isFavorited={favoriteProducts.includes(product.id)}
+                onPress={() => dispatch(toggleProductFavorite(product.id))}
+                size={20}
+                style={styles.favoriteButton}
+              />
             </View>
             <View style={styles.productInfo}>
               <Typography
@@ -207,13 +222,18 @@ const ProductsPage: React.FC = () => {
               >
                 {product.name}
               </Typography>
-              <Typography
-                variant="body2"
-                color="primary"
-                style={styles.productPrice}
-              >
-                ₹{product.price}
-              </Typography>
+              <View style={styles.priceAndButtonContainer}>
+                <Typography
+                  variant="body2"
+                  color="primary"
+                  style={styles.productPrice}
+                >
+                  ₹{product.price}
+                </Typography>
+                <TouchableOpacity style={styles.addButton}>
+                  <Typography style={styles.addButtonText}>+</Typography>
+                </TouchableOpacity>
+              </View>
             </View>
           </TouchableOpacity>
         )}
@@ -287,7 +307,7 @@ const styles = StyleSheet.create({
     // Removed paddingHorizontal to avoid double padding with main FlatList
   },
   productCardContainer: {
-    width: PRODUCT_CARD_DIMENSIONS.HORIZONTAL.width,
+    width: PRODUCT_CARD_DIMENSIONS.HORIZONTAL.width, // Explicitly set the width
     marginHorizontal: SPACING.card.horizontal, // ✅ Using standard card horizontal spacing
     alignItems: 'center',
     borderWidth: BORDERS.width.medium,
@@ -306,6 +326,15 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
   },
+  favoriteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 1,
+    padding: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
   productImage: {
     width: '100%',
     height: '100%',
@@ -315,13 +344,13 @@ const styles = StyleSheet.create({
   },
   productInfo: {
     padding: PRODUCT_CARD_DIMENSIONS.HORIZONTAL.padding,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     width: '100%',
   },
   productName: {
     fontSize: 13,
     fontWeight: '600',
-    textAlign: 'center',
+    textAlign: 'left',
     lineHeight: 16,
     marginBottom: SPACING.content.small,
     color: '#333',
@@ -329,8 +358,29 @@ const styles = StyleSheet.create({
   productPrice: {
     fontSize: 15,
     fontWeight: 'bold',
-    textAlign: 'center',
+    textAlign: 'left',
     color: '#007AFF',
+  },
+  priceAndButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
+  addButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 24, // Increased significantly for a more rounded, pill-like appearance
+    paddingHorizontal: SPACING.content.large,
+    paddingVertical: SPACING.content.small,
+    minWidth: 40,
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
   },
   emptyContainer: {
     flex: 1,

@@ -5,6 +5,10 @@ import { MenuItem } from '../../../types/firestore';
 import AddToCartButton from '../../../components/common/AddToCartButton';
 import { useCart } from '../../../contexts/CartContext';
 import { CARD_DIMENSIONS, SPACING, BORDERS, SHADOWS } from '../../../constants/ui';
+import FavoriteButton from '../../../components/common/FavoriteButton';
+import { useDispatch, useSelector } from 'react-redux';
+import { toggleProductFavorite } from '../../../store/slices/productsSlice';
+import { RootState } from '../../../store';
 
 interface MenuItemCardProps {
   menuItem: MenuItem;
@@ -14,6 +18,8 @@ interface MenuItemCardProps {
 
 const MenuItemCard: React.FC<MenuItemCardProps> = ({ menuItem, onPress, onAddToCart }) => {
   const { theme } = useThemeContext();
+  const dispatch = useDispatch();
+  const { favoriteProducts } = useSelector((state: RootState) => state.products);
   const { addToCart } = useCart();
 
   const handleAddToCart = () => {
@@ -56,6 +62,12 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ menuItem, onPress, onAddToC
             <Text style={{ fontSize: 20, color: theme.colors.textSecondary }}>🍽️</Text>
           </View>
         )}
+        <FavoriteButton
+          isFavorited={favoriteProducts.includes(menuItem.menuItemId)}
+          onPress={() => dispatch(toggleProductFavorite(menuItem.menuItemId))}
+          size={20}
+          style={styles.favoriteButton}
+        />
       </View>
 
       <View style={styles.infoContainer}>
@@ -104,6 +116,15 @@ const styles = StyleSheet.create({
   placeholderContainer: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 1,
+    padding: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   infoContainer: {
     // Removed flex-based layout to prevent height variation
