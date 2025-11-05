@@ -45,5 +45,8 @@ export { SocialMediaRow } from './socialMedia/components/SocialMediaRow';
 export { useSocialMedia } from './socialMedia/hooks/useSocialMedia';
 export { SocialMediaScreen } from './socialMedia/screens/SocialMediaScreen';
 
+// Navigation exports
+export { SettingsNavigator } from './navigation/SettingsNavigator';
+
 // Main entry point
 export { SettingsIndex } from './SettingsIndex';
