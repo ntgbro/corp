@@ -1,147 +1,109 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { db } from '../../../../config/firebase';
-import { doc, getDoc, updateDoc } from '@react-native-firebase/firestore';
+import { collection, query, onSnapshot, orderBy, doc, updateDoc } from '@react-native-firebase/firestore';
+import { QueryDocumentSnapshot } from '../../../../types/firebase';
 
-export interface NotificationSetting {
+export interface UserNotification {
   id: string;
   title: string;
-  description?: string;
-  enabled: boolean;
-  category: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  createdAt: any;
+  actionURL?: string;
 }
 
 export const useNotifications = () => {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<NotificationSetting[]>([]);
+  const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    const fetchNotificationSettings = async () => {
-      if (user?.userId) {
-        try {
-          setLoading(true);
-          const userDocRef = doc(db, 'users', user.userId);
-          const userDocSnap = await getDoc(userDocRef);
+    if (user?.userId) {
+      try {
+        setLoading(true);
+        
+        // Listen for notifications in the user's notifications subcollection
+        const notificationsQuery = query(
+          collection(db, 'users', user.userId, 'notifications'),
+          orderBy('createdAt', 'desc')
+        );
+        
+        const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
+          const notificationList: UserNotification[] = [];
+          snapshot.forEach((doc: QueryDocumentSnapshot<any>) => {
+            notificationList.push({
+              id: doc.id,
+              ...doc.data()
+            } as UserNotification);
+          });
           
-          if (userDocSnap.exists()) {
-            const userData = userDocSnap.data();
-            const userNotifications = userData?.preferences?.notifications || {};
-            
-            // Map Firebase data to our notification settings structure
-            const notificationSettings: NotificationSetting[] = [
-              {
-                id: 'order_updates',
-                title: 'Order Updates',
-                description: 'Get notified about your order status',
-                enabled: userNotifications.orderUpdates ?? true,
-                category: 'orders',
-              },
-              {
-                id: 'promotions',
-                title: 'Promotions',
-                description: 'Receive updates about special offers',
-                enabled: userNotifications.promotions ?? true,
-                category: 'marketing',
-              },
-              {
-                id: 'offers',
-                title: 'Special Offers',
-                description: 'Get notified about special offers',
-                enabled: userNotifications.offers ?? true,
-                category: 'marketing',
-              },
-            ];
-            
-            setNotifications(notificationSettings);
-          }
-        } catch (error) {
-          console.error('Error fetching notification settings:', error);
-        } finally {
+          // Debug: Log the fetched notifications
+          console.log('Fetched notifications from Firebase:', notificationList);
+          
+          setNotifications(notificationList);
+          setUnreadCount(notificationList.filter(n => !n.isRead).length);
           setLoading(false);
-        }
-      } else {
-        setNotifications([]);
+        }, (error) => {
+          console.error('Error listening to notifications:', error);
+          setLoading(false);
+        });
+        
+        return () => unsubscribe();
+      } catch (error) {
+        console.error('Error setting up notifications listener:', error);
         setLoading(false);
       }
-    };
-
-    fetchNotificationSettings();
+    } else {
+      setNotifications([]);
+      setUnreadCount(0);
+      setLoading(false);
+    }
   }, [user?.userId]);
 
-  const toggleNotification = async (id: string, enabled: boolean) => {
-    setSaving(true);
+  const markAsRead = async (notificationId: string) => {
     try {
       if (user?.userId) {
-        const userDocRef = doc(db, 'users', user.userId);
-        
-        // Map the notification ID to the Firebase field
-        let fieldToUpdate = {};
-        switch (id) {
-          case 'order_updates':
-            fieldToUpdate = { 'preferences.notifications.orderUpdates': enabled };
-            break;
-          case 'promotions':
-            fieldToUpdate = { 'preferences.notifications.promotions': enabled };
-            break;
-          case 'offers':
-            fieldToUpdate = { 'preferences.notifications.offers': enabled };
-            break;
-          default:
-            throw new Error('Unknown notification type');
-        }
-        
-        await updateDoc(userDocRef, fieldToUpdate);
-        
-        setNotifications(prev => 
-          prev.map(notification => 
-            notification.id === id ? { ...notification, enabled } : notification
-          )
-        );
+        const notificationRef = doc(db, 'users', user.userId, 'notifications', notificationId);
+        await updateDoc(notificationRef, { isRead: true });
         return { success: true };
       } else {
         throw new Error('User not authenticated');
       }
     } catch (error) {
+      console.error('Error marking notification as read:', error);
       throw error;
-    } finally {
-      setSaving(false);
     }
   };
 
-  const updateAllNotifications = async (enabled: boolean) => {
-    setSaving(true);
+  const markAllAsRead = async () => {
     try {
       if (user?.userId) {
-        const userDocRef = doc(db, 'users', user.userId);
-        const updateData = {
-          'preferences.notifications.orderUpdates': enabled,
-          'preferences.notifications.promotions': enabled,
-          'preferences.notifications.offers': enabled,
-        };
+        // Update all unread notifications
+        const unreadNotifications = notifications.filter(n => !n.isRead);
+        const updatePromises = unreadNotifications.map(notification => {
+          const notificationRef = doc(db, 'users', user.userId!, 'notifications', notification.id);
+          return updateDoc(notificationRef, { isRead: true });
+        });
         
-        await updateDoc(userDocRef, updateData);
-        
-        setNotifications(prev => 
-          prev.map(notification => ({ ...notification, enabled }))
-        );
+        await Promise.all(updatePromises);
         return { success: true };
       } else {
         throw new Error('User not authenticated');
       }
     } catch (error) {
+      console.error('Error marking all notifications as read:', error);
       throw error;
-    } finally {
-      setSaving(false);
     }
   };
 
   return {
     notifications,
     loading,
-    saving,
-    toggleNotification,
-    updateAllNotifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
   };
 };

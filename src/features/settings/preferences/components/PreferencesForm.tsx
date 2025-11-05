@@ -32,6 +32,12 @@ export const PreferencesForm: React.FC<PreferencesFormProps> = ({
     locationAccess: initialData.locationAccess ?? true,
   });
 
+  // Debug: Log form data
+  useEffect(() => {
+    console.log('PreferencesForm initialData:', initialData);
+    console.log('PreferencesForm formData:', formData);
+  }, [initialData, formData]);
+
   useEffect(() => {
     setFormData({
       notifications: {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaWrapper } from '../../../../components/layout';
 import { useThemeContext } from '../../../../contexts/ThemeContext';
@@ -8,6 +8,11 @@ import { usePreferences } from '../hooks/usePreferences';
 export const PreferencesScreen = () => {
   const { theme } = useThemeContext();
   const { preferences, loading, saving, updatePreferences } = usePreferences();
+
+  // Debug: Log preferences to see what data is being fetched
+  useEffect(() => {
+    console.log('Preferences fetched:', preferences);
+  }, [preferences]);
 
   const handleSave = async (data: any) => {
     try {

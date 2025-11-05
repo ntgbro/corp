@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, ReactNode } from 'react';
-import { collection, doc, getDoc, setDoc } from '@react-native-firebase/firestore';
+import { collection, doc, getDoc, setDoc, GeoPoint } from '@react-native-firebase/firestore';
 import { auth } from '../config/firebase';
-import { onAuthStateChanged } from '@react-native-firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from '@react-native-firebase/auth';
 import { db } from '../config/firebase';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store';
@@ -14,6 +14,8 @@ import {
 } from '../store/slices/authSlice';
 import { generateJWTToken } from '../store/middleware/authMiddleware';
 import { convertUserForRedux } from '../utils/firestoreHelpers';
+import { logoutUser } from '../store/slices/authThunks';
+import { initializeUserSubcollections } from '../utils/userSubcollections';
 
 import { User } from '../types/firestore';
 
@@ -74,6 +76,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     joinedAt: new Date(),
                   };
                   await setDoc(userDocRef, userData);
+                  
+                  // Create default notifications subcollection
+                  await initializeUserSubcollections(firebaseUser.uid);
                 } else {
                   // Convert Firestore Timestamps to serializable dates
                   userData = convertUserForRedux(userData);
@@ -120,10 +125,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, [dispatch]);
 
-  const signOut = async (): Promise<void> => {
+  const signOutUser = async (): Promise<void> => {
     try {
       dispatch(setLoading(true));
-      await auth.signOut();
+      await signOut(auth); // Call the Firebase signOut function with auth parameter
       dispatch(signOutAction());
     } catch (error) {
       dispatch(setError('Sign out failed'));
@@ -150,7 +155,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch(setError(null));
 
     try {
-      const userCredential = await auth.signInWithEmailAndPassword(email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
 
       if (!firebaseUser) {
@@ -163,6 +168,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       let userData = userDocSnap.exists() ? userDocSnap.data() as Omit<UserProfile, 'isPhoneVerified'> : null;
 
       if (!userData) {
+        // Create user profile if it doesn't exist
         userData = {
           userId: firebaseUser.uid,
           phone: firebaseUser.phoneNumber || '',
@@ -177,6 +183,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           joinedAt: new Date(),
         };
         await setDoc(userDocRef, userData);
+        
+        // Initialize user subcollections with a delay
+        setTimeout(async () => {
+          try {
+            await initializeUserSubcollections(firebaseUser.uid);
+          } catch (error) {
+            console.error('Error initializing user subcollections (non-blocking):', error);
+          }
+        }, 1000);
       } else {
         // Convert Firestore Timestamps to serializable dates
         userData = convertUserForRedux(userData);
@@ -205,18 +220,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch(setError(null));
 
     try {
-      const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
 
       if (!firebaseUser) {
         throw new Error('Registration failed');
       }
 
-      // Create user profile
+      // Update Firebase user profile with displayName
+      if (displayName) {
+        await firebaseUser.updateProfile({ displayName });
+      }
+
+      // Create user profile with proper displayName
       const userData = {
         userId: firebaseUser.uid,
         email: firebaseUser.email || '',
-        displayName: displayName,
+        displayName: displayName || firebaseUser.displayName || '',
         phone: '',
         profilePhotoURL: '',
         role: 'customer',
@@ -229,6 +249,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const userDocRef = doc(collection(db, 'users'), firebaseUser.uid);
       await setDoc(userDocRef, userData);
+      
+      // Initialize user subcollections with a delay to avoid permission issues
+      setTimeout(async () => {
+        try {
+          await initializeUserSubcollections(firebaseUser.uid);
+        } catch (error) {
+          console.error('Error initializing user subcollections (non-blocking):', error);
+          // This error shouldn't block the registration process
+        }
+      }, 1000);
 
       // Generate JWT token
       const jwtToken = await generateJWTToken(firebaseUser.uid, userData);
@@ -253,7 +283,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch(setError(null));
 
     try {
-      await auth.sendPasswordResetEmail(email);
+      await sendPasswordResetEmail(auth, email);
       dispatch(setLoading(false));
       return { success: true, message: 'Password reset email sent' };
     } catch (error: any) {
@@ -267,7 +297,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       user,
       loading,
       error,
-      signOut,
+      signOut: signOutUser,
       refreshUser,
       loginWithEmail,
       registerUser,

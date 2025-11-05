@@ -1,16 +1,19 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, ToastAndroid, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaWrapper } from '../../components/layout';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import { SettingsStackParamList } from './navigation/SettingsNavigator';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useAuth } from '../../contexts/AuthContext';
 
 type SettingsNavigationProp = StackNavigationProp<SettingsStackParamList, 'SettingsHome'>;
 
 export const SettingsIndex = () => {
   const { theme } = useThemeContext();
   const navigation = useNavigation<SettingsNavigationProp>();
+  const { signOut, loading } = useAuth();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const settingsSections = [
     { id: 'profile', title: 'Profile', description: 'Manage your personal information', icon: '👤' },
@@ -27,7 +30,7 @@ export const SettingsIndex = () => {
   const handleNavigate = (sectionId: string) => {
     // Map section IDs to navigation names
     const navigationMap: Record<string, keyof SettingsStackParamList> = {
-      profile: 'Profile',
+      profile: 'SettingsProfile', // Changed from 'Profile' to 'SettingsProfile'
       orders: 'Orders',
       wishlist: 'Wishlist',
       addresses: 'Addresses',
@@ -42,6 +45,40 @@ export const SettingsIndex = () => {
     if (target) {
       navigation.navigate(target);
     }
+  };
+
+  const handleLogout = async () => {
+    try {
+      console.log('Logout initiated');
+      setShowLogoutModal(false);
+      await signOut();
+      console.log('Logout completed successfully');
+      
+      // Show success message
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Logged out successfully', ToastAndroid.SHORT);
+      } else {
+        Alert.alert('Success', 'Logged out successfully');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      setShowLogoutModal(false);
+      
+      // Show error message
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Failed to logout. Please try again.', ToastAndroid.LONG);
+      } else {
+        Alert.alert('Error', 'Failed to logout. Please try again.');
+      }
+    }
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   return (
@@ -65,8 +102,50 @@ export const SettingsIndex = () => {
               </View>
             </TouchableOpacity>
           ))}
+          
+          {/* Logout Button */}
+          <TouchableOpacity
+            style={[styles.logoutButton, { backgroundColor: theme.colors.error, borderColor: theme.colors.error }]}
+            onPress={confirmLogout}
+            disabled={loading}
+          >
+            <Text style={[styles.logoutText, { color: theme.colors.white }]}>
+              {loading ? 'Logging out...' : 'Logout'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+      
+      {/* Logout Confirmation Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showLogoutModal}
+        onRequestClose={cancelLogout}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>Logout</Text>
+            <Text style={[styles.modalMessage, { color: theme.colors.textSecondary }]}>
+              Are you sure you want to logout?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton, { borderColor: theme.colors.border }]}
+                onPress={cancelLogout}
+              >
+                <Text style={[styles.cancelButtonText, { color: theme.colors.text }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.logoutModalButton, { backgroundColor: theme.colors.error }]}
+                onPress={handleLogout}
+              >
+                <Text style={[styles.logoutModalButtonText, { color: theme.colors.white }]}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaWrapper>
   );
 };
@@ -112,6 +191,67 @@ const styles = StyleSheet.create({
   },
   chevron: {
     fontSize: 16,
+  },
+  logoutButton: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    borderRadius: 12,
+    padding: 20,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 5,
+    borderWidth: 1,
+  },
+  cancelButton: {
+    backgroundColor: 'transparent',
+  },
+  logoutModalButton: {
+    backgroundColor: '#FF3B30',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  logoutModalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

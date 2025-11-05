@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { SafeAreaWrapper } from '../../../../components/layout';
 import { useThemeContext } from '../../../../contexts/ThemeContext';
 import { NotificationItem } from '../components/NotificationItem';
@@ -7,24 +7,34 @@ import { useNotifications } from '../hooks/useNotifications';
 
 export const NotificationsScreen = () => {
   const { theme } = useThemeContext();
-  const { notifications, loading, saving, toggleNotification, updateAllNotifications } = useNotifications();
-  const [masterSwitch, setMasterSwitch] = useState(true);
+  const { notifications, loading, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const [refreshing, setRefreshing] = useState(false);
 
-  const handleToggle = async (id: string, enabled: boolean) => {
+  // Debug: Log notifications to see what data is being fetched
+  useEffect(() => {
+    console.log('Notifications fetched:', notifications);
+  }, [notifications]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    // In a real implementation, you might want to refresh the data
+    setTimeout(() => setRefreshing(false), 1000);
+  };
+
+  const handleMarkAllAsRead = async () => {
     try {
-      await toggleNotification(id, enabled);
+      await markAllAsRead();
+      Alert.alert('Success', 'All notifications marked as read');
     } catch (error) {
-      Alert.alert('Error', 'Failed to update notification setting');
+      Alert.alert('Error', 'Failed to mark notifications as read');
     }
   };
 
-  const handleMasterToggle = async (enabled: boolean) => {
-    setMasterSwitch(enabled);
+  const handleMarkAsRead = async (id: string) => {
     try {
-      await updateAllNotifications(enabled);
-      Alert.alert('Success', `All notifications ${enabled ? 'enabled' : 'disabled'}`);
+      await markAsRead(id);
     } catch (error) {
-      Alert.alert('Error', 'Failed to update notification settings');
+      console.error('Error marking notification as read:', error);
     }
   };
 
@@ -34,37 +44,50 @@ export const NotificationsScreen = () => {
         key={notification.id}
         id={notification.id}
         title={notification.title}
-        description={notification.description}
-        enabled={notification.enabled}
-        onToggle={handleToggle}
+        description={notification.message}
+        enabled={!notification.isRead}
+        onToggle={handleMarkAsRead}
       />
     ));
   };
 
   return (
     <SafeAreaWrapper>
-      <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.header, { color: theme.colors.text }]}>Notifications</Text>
-        
-        <View style={[styles.masterSwitchContainer, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-          <Text style={[styles.masterSwitchLabel, { color: theme.colors.text }]}>Enable All Notifications</Text>
-          <Switch
-            value={masterSwitch}
-            onValueChange={handleMasterToggle}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-            thumbColor="white"
-          />
+      <ScrollView 
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
+        <View style={styles.headerContainer}>
+          <Text style={[styles.header, { color: theme.colors.text }]}>Notifications</Text>
+          {unreadCount > 0 && (
+            <TouchableOpacity 
+              style={[styles.markAllButton, { backgroundColor: theme.colors.primary }]}
+              onPress={handleMarkAllAsRead}
+            >
+              <Text style={[styles.markAllText, { color: theme.colors.white }]}>
+                Mark All as Read
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
         
         <View style={styles.content}>
           {loading ? (
             <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
-              Loading notification settings...
+              Loading notifications...
             </Text>
           ) : notifications.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-                No notification settings available
+                No notifications yet
+              </Text>
+              <Text style={[styles.emptySubtext, { color: theme.colors.textSecondary }]}>
+                We'll notify you when something important happens
+              </Text>
+              <Text style={[styles.emptySubtext, { color: theme.colors.textSecondary, marginTop: 16, textAlign: 'center' }]}>
+                If you're seeing preference settings here, please restart the app to refresh the data.
               </Text>
             </View>
           ) : (
@@ -80,23 +103,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    padding: 16,
-  },
-  masterSwitchContainer: {
+  headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 12,
     padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 20,
   },
-  masterSwitchLabel: {
-    fontSize: 16,
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  markAllButton: {
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  markAllText: {
+    fontSize: 14,
     fontWeight: '500',
   },
   content: {
@@ -114,7 +137,12 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
   },
 });
 

@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Alert, Platform } from 'react-native';
-import { useFirebase } from './FirebaseContext';
+// Import the modular API functions
+import { getMessaging, requestPermission as requestMessagingPermission, hasPermission, getToken as getMessagingToken, onMessage, onNotificationOpenedApp, getInitialNotification, AuthorizationStatus } from '@react-native-firebase/messaging';
+import type { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
 
 export interface NotificationData {
   title?: string;
@@ -33,7 +35,6 @@ interface NotificationProviderProps {
 }
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
-  const { messaging: fcm } = useFirebase();
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,24 +80,17 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const requestPermission = async (): Promise<boolean> => {
     try {
-      if (Platform.OS === 'ios') {
-        // iOS requires explicit permission request
-        const authStatus = await fcm.requestPermission();
-        const enabled =
-          authStatus === fcm.AuthorizationStatus.AUTHORIZED ||
-          authStatus === fcm.AuthorizationStatus.PROVISIONAL;
+      // Get messaging instance
+      const messaging = getMessaging();
+      
+      // Request permission using the correct Firebase Messaging API
+      await requestMessagingPermission(messaging);
+      const authStatus = await hasPermission(messaging);
+      const enabled = authStatus === AuthorizationStatus.AUTHORIZED ||
+                     authStatus === AuthorizationStatus.PROVISIONAL;
 
-        console.log('🔔 iOS notification permission:', enabled ? 'granted' : 'denied');
-        return enabled;
-      } else {
-        // Android - check authorization status
-        const authStatus = await fcm.getAuthorizationStatus();
-        const enabled = authStatus === fcm.AuthorizationStatus.AUTHORIZED ||
-                       authStatus === fcm.AuthorizationStatus.PROVISIONAL;
-
-        console.log('🔔 Android notification permission:', enabled ? 'granted' : 'denied');
-        return enabled;
-      }
+      console.log('🔔 Notification permission:', enabled ? 'granted' : 'denied');
+      return enabled;
     } catch (error) {
       console.error('❌ Error requesting notification permission:', error);
       return false;
@@ -105,7 +99,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const getToken = async (): Promise<string | null> => {
     try {
-      const token = await fcm.getToken();
+      const messaging = getMessaging();
+      const token = await getMessagingToken(messaging);
       return token;
     } catch (error) {
       console.error('❌ Error getting FCM token:', error);
@@ -114,8 +109,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   };
 
   const setupNotificationListeners = () => {
+    const messaging = getMessaging();
+    
     // Foreground notification listener
-    const unsubscribeForeground = fcm.onMessage(async (remoteMessage: any) => {
+    const unsubscribeForeground = onMessage(messaging, async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
       console.log('🔔 Foreground notification received:', remoteMessage);
 
       const notification: NotificationData = {
@@ -130,7 +127,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     });
 
     // Background/quit notification opened listener
-    fcm.onNotificationOpenedApp((remoteMessage: any) => {
+    onNotificationOpenedApp(messaging, (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
       console.log('🔔 Notification opened from background:', remoteMessage);
 
       const notification: NotificationData = {
@@ -145,9 +142,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     });
 
     // Get initial notification when app was opened from quit state
-    fcm
-      .getInitialNotification()
-      .then((remoteMessage: any) => {
+    getInitialNotification(messaging)
+      .then((remoteMessage: FirebaseMessagingTypes.RemoteMessage | null) => {
         if (remoteMessage) {
           console.log('🔔 App opened from quit state by notification:', remoteMessage);
 

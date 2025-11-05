@@ -93,7 +93,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
             icon = '📦';
             displayLabel = isFocused ? 'Orders' : 'Orders';
             break;
-          case 'Profile':
+          case 'ProfileMain': // This should match the type definition
             icon = '👤';
             displayLabel = isFocused ? 'Profile' : '';
             break;
@@ -223,7 +223,7 @@ export const MainTabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen
-        name="Profile"
+        name="ProfileMain" // Changed from 'Profile' to 'ProfileMain' to match ProfileTabParamList
         component={SettingsNavigator}
         options={{
           tabBarLabel: ({ focused }) => focused ? 'Profile' : '',

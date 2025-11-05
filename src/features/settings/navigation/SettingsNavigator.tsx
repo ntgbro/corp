@@ -13,7 +13,7 @@ import { SocialMediaScreen } from '../socialMedia/screens/SocialMediaScreen';
 
 export type SettingsStackParamList = {
   SettingsHome: undefined;
-  Profile: undefined;
+  SettingsProfile: undefined; // Changed from 'Profile' to 'SettingsProfile' to avoid naming conflict
   Orders: undefined;
   Wishlist: undefined;
   Addresses: undefined;
@@ -43,7 +43,7 @@ export const SettingsNavigator = () => {
         options={{ title: 'Settings' }}
       />
       <Stack.Screen 
-        name="Profile" 
+        name="SettingsProfile" // Changed from 'Profile' to 'SettingsProfile'
         component={ProfileScreen}
         options={{ title: 'Profile' }}
       />
