@@ -12,7 +12,20 @@
           "package_name": "com.corpease"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "371942129309-brnegm35s5php30h65onggqek9ieq69i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.corpease",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "371942129309-66v94c22rh7j5uo4f3k6qnpkebocat8u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyB0B4tNrApQRWljS7_b2AnBSSXuXli33Y4"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "371942129309-66v94c22rh7j5uo4f3k6qnpkebocat8u.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "371942129309-vf6v1uotbtccu5qops3q5lfmn3an93f2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.corpease.corpease"
+              }
+            }
+          ]
         }
       }
     }

@@ -3,7 +3,6 @@ import { initializeApp } from '@react-native-firebase/app';
 import { getAuth } from '@react-native-firebase/auth';
 import { getFirestore } from '@react-native-firebase/firestore';
 import { getStorage } from '@react-native-firebase/storage';
-import { getMessaging } from '@react-native-firebase/messaging';
 import { getAnalytics } from '@react-native-firebase/analytics';
 
 const firebaseConfig = {
@@ -30,7 +29,6 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const firestore = getFirestore(app);
 export const storage = getStorage(app);
-export const messaging = getMessaging(app);
 export const analytics = getAnalytics(app);
 
 export default firebaseConfig;

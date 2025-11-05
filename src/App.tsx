@@ -9,6 +9,9 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useThemeContext } from './contexts/ThemeContext';
 import { store, persistor } from './store';
 
+// Google Sign-In configuration
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+
 // Context Providers
 import { ThemeProvider } from './contexts/ThemeContext';
 import { FirebaseProvider } from './contexts/FirebaseContext';
@@ -16,6 +19,30 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { LocationProvider } from './contexts/LocationContext';
+
+// Helper function to validate Google Sign-In configuration
+const validateGoogleSignInConfig = async () => {
+  try {
+    // Check if Google Sign-In is available
+    if (!GoogleSignin) {
+      console.warn('Google Sign-In is not available');
+      return false;
+    }
+    
+    // Check if Play Services are available
+    const hasPlayServices = await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: false });
+    if (!hasPlayServices) {
+      console.warn('Google Play Services not available');
+      return false;
+    }
+    
+    console.log('Google Sign-In configuration appears to be valid');
+    return true;
+  } catch (error) {
+    console.warn('Google Sign-In configuration error:', error);
+    return false;
+  }
+};
 
 const AppContent: React.FC = () => {
   const { theme } = useThemeContext();
@@ -57,6 +84,23 @@ const AppContent: React.FC = () => {
     // Initialize app
     const initializeApp = async () => {
       try {
+        // Configure Google Sign-In with the Web Client ID from your google-services.json
+        // Based on your updated google-services.json, this should be the Web Client ID:
+        const webClientId = '371942129309-66v94c22rh7j5uo4f3k6qnpkebocat8u.apps.googleusercontent.com';
+        
+        // Configure Google Sign-In if we have a valid webClientId
+        if (webClientId) {
+          GoogleSignin.configure({
+            webClientId: webClientId,
+            offlineAccess: true, // Ensures we get a refresh token
+          });
+          
+          // Validate Google Sign-In configuration
+          await validateGoogleSignInConfig();
+        } else {
+          console.log('Google Sign-In not configured - skipping configuration');
+        }
+        
         // Add any initialization logic here
         // For now, just add a small delay to simulate loading
         setTimeout(() => {

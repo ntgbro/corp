@@ -1,8 +1,29 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { NotificationDetail, NotificationSettings } from '../../types';
+
+interface UserNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  createdAt: any;
+  actionURL?: string;
+}
+
+interface NotificationSettings {
+  pushNotifications: boolean;
+  smsNotifications: boolean;
+  emailNotifications: boolean;
+  orderUpdates: boolean;
+  promotions: boolean;
+  reviews: boolean;
+  chefUpdates: boolean;
+  deliveryUpdates: boolean;
+  marketing: boolean;
+}
 
 interface NotificationState {
-  notifications: NotificationDetail[];
+  notifications: UserNotification[];
   unreadCount: number;
   settings: NotificationSettings;
   loading: boolean;
@@ -35,17 +56,17 @@ export const notificationSlice = createSlice({
   name: 'notifications',
   initialState,
   reducers: {
-    setNotifications: (state, action: PayloadAction<NotificationDetail[]>) => {
+    setNotifications: (state, action: PayloadAction<UserNotification[]>) => {
       state.notifications = action.payload;
       state.loading = false;
       state.error = null;
       state.lastFetched = new Date();
-      state.unreadCount = action.payload.filter(n => !n.read).length;
+      state.unreadCount = action.payload.filter(n => !n.isRead).length;
     },
 
-    addNotification: (state, action: PayloadAction<NotificationDetail>) => {
+    addNotification: (state, action: PayloadAction<UserNotification>) => {
       state.notifications.unshift(action.payload);
-      if (!action.payload.read) {
+      if (!action.payload.isRead) {
         state.unreadCount += 1;
       }
       state.loading = false;
@@ -53,26 +74,26 @@ export const notificationSlice = createSlice({
     },
 
     markAsRead: (state, action: PayloadAction<string>) => {
-      const notification = state.notifications.find(n => n.id === action.payload);
-      if (notification && !notification.read) {
-        notification.read = true;
+      const notification = state.notifications.find((n: UserNotification) => n.id === action.payload);
+      if (notification && !notification.isRead) {
+        notification.isRead = true;
         state.unreadCount = Math.max(0, state.unreadCount - 1);
       }
     },
 
     markAllAsRead: (state) => {
-      state.notifications.forEach(n => {
-        n.read = true;
+      state.notifications.forEach((n: UserNotification) => {
+        n.isRead = true;
       });
       state.unreadCount = 0;
     },
 
     removeNotification: (state, action: PayloadAction<string>) => {
-      const notification = state.notifications.find(n => n.id === action.payload);
-      if (notification && !notification.read) {
+      const notification = state.notifications.find((n: UserNotification) => n.id === action.payload);
+      if (notification && !notification.isRead) {
         state.unreadCount = Math.max(0, state.unreadCount - 1);
       }
-      state.notifications = state.notifications.filter(n => n.id !== action.payload);
+      state.notifications = state.notifications.filter((n: UserNotification) => n.id !== action.payload);
     },
 
     clearNotifications: (state) => {

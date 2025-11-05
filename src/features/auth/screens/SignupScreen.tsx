@@ -64,7 +64,16 @@ const SignupScreen: React.FC = () => {
       Alert.alert('Success', 'Account created with Google!');
       // Navigation will be handled by AuthContext
     } else {
-      Alert.alert('Google Sign-In Failed', result.error || 'Failed to sign in with Google');
+      // Provide more specific error message for configuration issues
+      let errorMessage = result.error || 'Failed to sign in with Google';
+      if (errorMessage.includes('configured') || errorMessage.includes('DEVELOPER_ERROR') || errorMessage.includes('apiClient is null')) {
+        errorMessage += '\n\nTo fix this issue:\n' +
+          '1. Add your app\'s SHA-1 fingerprint in Firebase Console > Project Settings > General\n' +
+          '2. Enable Google Sign-In in Firebase Console > Authentication > Sign-in method\n' +
+          '3. Ensure google-services.json is in android/app/\n\n' +
+          'Note: Web Client ID appears to be configured correctly now.';
+      }
+      Alert.alert('Google Sign-In Failed', errorMessage);
     }
   };
 

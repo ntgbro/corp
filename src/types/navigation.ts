@@ -62,7 +62,7 @@ export type OrdersTabParamList = {
 };
 
 export type ProfileTabParamList = {
-  Profile: undefined;
+  ProfileMain: undefined; // Changed from 'Profile' to 'ProfileMain' to avoid naming conflict
   EditProfile: undefined;
   Preferences: undefined;
   Addresses: NavigatorScreenParams<AddressStackParamList>;
@@ -79,12 +79,20 @@ export type AddressStackParamList = {
 };
 
 export type SettingsStackParamList = {
-  Settings: undefined;
+  SettingsHome: undefined; // Changed from 'Settings' to 'SettingsHome'
+  SettingsProfile: undefined; // Changed from 'Profile' to 'SettingsProfile' to avoid naming conflict
+  Orders: undefined;
+  Wishlist: undefined;
+  Addresses: undefined;
+  Preferences: undefined;
+  Notifications: undefined;
+  GeneralInfo: undefined;
+  HelpSupport: undefined;
+  SocialMedia: undefined;
   Privacy: undefined;
   Terms: undefined;
   Help: undefined;
   About: undefined;
-  Notifications: undefined;
 };
 
 // Combined types for easier imports

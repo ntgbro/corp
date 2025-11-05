@@ -70,7 +70,17 @@ export const useEmailAuth = (): UseEmailAuthReturn => {
       const result = await authService.googleSignIn();
       return result;
     } catch (err: any) {
-      const errorMessage = err.message || 'Google Sign-In failed';
+      // More robust error handling
+      let errorMessage = 'Google Sign-In failed';
+      if (err && typeof err === 'object') {
+        if (err.message) {
+          errorMessage = err.message;
+        } else {
+          errorMessage = err.toString();
+        }
+      } else if (err) {
+        errorMessage = err.toString();
+      }
       setError(errorMessage);
       return { user: null, error: errorMessage };
     } finally {
@@ -84,7 +94,17 @@ export const useEmailAuth = (): UseEmailAuthReturn => {
       setError(null);
       await authService.googleSignOut();
     } catch (err: any) {
-      const errorMessage = err.message || 'Google Sign-Out failed';
+      // More robust error handling
+      let errorMessage = 'Google Sign-Out failed';
+      if (err && typeof err === 'object') {
+        if (err.message) {
+          errorMessage = err.message;
+        } else {
+          errorMessage = err.toString();
+        }
+      } else if (err) {
+        errorMessage = err.toString();
+      }
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -98,7 +118,17 @@ export const useEmailAuth = (): UseEmailAuthReturn => {
       setError(null);
       await authService.signOut();
     } catch (err: any) {
-      const errorMessage = err.message || 'Sign out failed';
+      // More robust error handling
+      let errorMessage = 'Sign out failed';
+      if (err && typeof err === 'object') {
+        if (err.message) {
+          errorMessage = err.message;
+        } else {
+          errorMessage = err.toString();
+        }
+      } else if (err) {
+        errorMessage = err.toString();
+      }
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {

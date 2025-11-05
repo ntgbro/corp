@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from '@react-native-firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut as firebaseSignOut } from '@react-native-firebase/auth';
 import { collection, doc, getDoc, setDoc } from '@react-native-firebase/firestore';
 import { auth, db } from '../../config/firebase';
 import { generateJWTToken, validateJWTToken, refreshJWTToken } from '../../store/middleware/authMiddleware';
@@ -10,7 +10,7 @@ export const loginWithEmail = createAsyncThunk(
   'auth/loginWithEmail',
   async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
     try {
-      const userCredential = await auth.signInWithEmailAndPassword(email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
 
       if (!firebaseUser) {
@@ -102,18 +102,23 @@ export const registerUser = createAsyncThunk(
   'auth/registerUser',
   async ({ email, password, displayName }: { email: string; password: string; displayName: string }, { rejectWithValue }) => {
     try {
-      const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
 
       if (!firebaseUser) {
         throw new Error('Registration failed');
       }
 
+      // Update Firebase user profile with displayName
+      if (displayName) {
+        await firebaseUser.updateProfile({ displayName });
+      }
+
       // Create user profile in Firestore
       const userData = {
         userId: firebaseUser.uid,
         email: firebaseUser.email || '',
-        displayName: displayName,
+        displayName: displayName || firebaseUser.displayName || '',
         phone: '',
         profilePhotoURL: '',
         role: 'customer',
@@ -152,7 +157,7 @@ export const resetPassword = createAsyncThunk(
   'auth/resetPassword',
   async ({ email }: { email: string }, { rejectWithValue }) => {
     try {
-      await auth.sendPasswordResetEmail(email);
+      await sendPasswordResetEmail(auth, email);
       return { success: true, message: 'Password reset email sent' };
     } catch (error: any) {
       return rejectWithValue(error.message);
@@ -205,7 +210,7 @@ export const logoutUser = createAsyncThunk(
   'auth/logoutUser',
   async (_, { rejectWithValue }) => {
     try {
-      await auth.signOut();
+      await firebaseSignOut(auth);
       return { success: true };
     } catch (error: any) {
       return rejectWithValue(error.message);

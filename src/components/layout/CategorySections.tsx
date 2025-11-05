@@ -8,6 +8,7 @@ interface Category {
   name: string;
   icon?: string;
   isActive?: boolean;
+  imageURL?: string;
 }
 
 interface CategorySectionsProps {
@@ -48,23 +49,34 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
                 borderColor: isSelected ? theme.colors.primary : theme.colors.border,
               }
             ]}>
-              {/* Placeholder icon for visibility */}
-              <View style={{
-                width: 50,
-                height: 50,
-                borderRadius: 25,
-                backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginBottom: 8,
-              }}>
-                <Text style={{
-                  fontSize: 20,
-                  color: isSelected ? theme.colors.white : theme.colors.primary
+              {/* Use category image if available, otherwise placeholder that occupies entire card */}
+              {category.imageURL ? (
+                <Image
+                  source={{ uri: category.imageURL }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 12,
+                  }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: 12,
+                  backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}>
-                  📦
-                </Text>
-              </View>
+                  <Text style={{
+                    fontSize: 20,
+                    color: isSelected ? theme.colors.white : theme.colors.primary
+                  }}>
+                    📦
+                  </Text>
+                </View>
+              )}
             </View>
           </TouchableOpacity>
 
@@ -98,7 +110,7 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
               {/* Full-size image that covers the entire card */}
               <Image
                 source={{
-                  uri: category.icon || 'https://via.placeholder.com/150x150/FF6B6B/FFFFFF?text=' + encodeURIComponent(category.name.charAt(0))
+                  uri: category.imageURL || category.icon || 'https://via.placeholder.com/150x150/FF6B6B/FFFFFF?text=' + encodeURIComponent(category.name.charAt(0))
                 }}
                 style={styles.grid4Image}
                 resizeMode="cover"
@@ -145,25 +157,38 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
               alignItems: 'center',
               borderRadius: 16,
               borderWidth: isSelected ? 2 : 1,
+              width: '100%',
+              height: '100%',
             }}
           >
-            {/* Placeholder icon for visibility */}
-            <View style={{
-              width: 50,
-              height: 50,
-              borderRadius: 25,
-              backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginBottom: 4,
-            }}>
-              <Text style={{
-                fontSize: 20,
-                color: isSelected ? theme.colors.white : theme.colors.primary
+            {/* Use category image if available, otherwise placeholder that occupies entire card */}
+            {category.imageURL ? (
+              <Image
+                source={{ uri: category.imageURL }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: 16,
+                }}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={{
+                width: '100%',
+                height: '100%',
+                borderRadius: 16,
+                backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
+                justifyContent: 'center',
+                alignItems: 'center',
               }}>
-                📦
-              </Text>
-            </View>
+                <Text style={{
+                  fontSize: 20,
+                  color: isSelected ? theme.colors.white : theme.colors.primary
+                }}>
+                  📦
+                </Text>
+              </View>
+            )}
           </Card>
 
           {/* Category Name Below Card */}
@@ -198,16 +223,37 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
           onPress={() => onCategoryPress?.(category)}
           activeOpacity={0.7}
         >
-          {/* Icon placeholder */}
+          {/* Use category image if available, otherwise icon placeholder that occupies entire container */}
           <View style={styles.directIconContainer}>
-            <Text style={[
-              styles.directIcon,
-              {
-                color: isSelected ? theme.colors.primary : theme.colors.textSecondary
-              }
-            ]}>
-              📦
-            </Text>
+            {category.imageURL ? (
+              <Image
+                source={{ uri: category.imageURL }}
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                }}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+                <Text style={[
+                  styles.directIcon,
+                  {
+                    color: isSelected ? theme.colors.primary : theme.colors.textSecondary
+                  }
+                ]}>
+                  📦
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Category name */}
@@ -242,10 +288,30 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
           onPress={() => onCategoryPress?.(category)}
           activeOpacity={0.7}
         >
-          {showIcons && category.icon && (
-            <Text style={[styles.categoryIcon, { color: isSelected ? theme.colors.white : theme.colors.primary }]}>
-              {category.icon}
-            </Text>
+          {showIcons && (category.icon || category.imageURL) && (
+            category.imageURL ? (
+              <Image
+                source={{ uri: category.imageURL }}
+                style={styles.categoryImage}
+              />
+            ) : (
+              <View style={{
+                width: 16,
+                height: 16,
+                marginRight: 6,
+                backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
+                borderRadius: 8,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+                <Text style={[styles.categoryIcon, { 
+                  color: isSelected ? theme.colors.white : theme.colors.primary,
+                  fontSize: 12,
+                }]}>
+                  📦
+                </Text>
+              </View>
+            )
           )}
           <Text
             style={[
@@ -278,25 +344,38 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
             alignItems: 'center',
             borderRadius: 16,
             borderWidth: isSelected ? 2 : 1,
+            width: '100%',
+            height: '100%',
           }}
         >
-          {/* Placeholder icon for visibility */}
-          <View style={{
-            width: 50,
-            height: 50,
-            borderRadius: 25,
-            backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginBottom: 4,
-          }}>
-            <Text style={{
-              fontSize: 20,
-              color: isSelected ? theme.colors.white : theme.colors.primary
+          {/* Use category image if available, otherwise placeholder that occupies entire card */}
+          {category.imageURL ? (
+            <Image
+              source={{ uri: category.imageURL }}
+              style={{
+                width: '100%',
+                height: '100%',
+                borderRadius: 16,
+              }}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={{
+              width: '100%',
+              height: '100%',
+              borderRadius: 16,
+              backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
+              justifyContent: 'center',
+              alignItems: 'center',
             }}>
-              📦
-            </Text>
-          </View>
+              <Text style={{
+                fontSize: 20,
+                color: isSelected ? theme.colors.white : theme.colors.primary
+              }}>
+                📦
+              </Text>
+            </View>
+          )}
         </Card>
 
         {/* Category Name Below Card */}
@@ -486,6 +565,11 @@ const styles = StyleSheet.create({
   },
   categoryIcon: {
     fontSize: 16,
+    marginRight: 6,
+  },
+  categoryImage: {
+    width: 16,
+    height: 16,
     marginRight: 6,
   },
   categoryName: {
