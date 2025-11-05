@@ -30,11 +30,12 @@ export const IconButton: React.FC<IconButtonProps> = ({
     return sizes[size];
   };
 
-  const getVariantStyles = () => {
-    const baseStyles = {
-      width: getSize(),
-      height: getSize(),
-      borderRadius: getSize() / 2,
+  const getVariantStyles = (): ViewStyle => {
+    const size = getSize();
+    const baseStyles: ViewStyle = {
+      width: size,
+      height: size,
+      borderRadius: size / 2,
       justifyContent: 'center',
       alignItems: 'center',
     };
@@ -84,6 +85,29 @@ export const IconButton: React.FC<IconButtonProps> = ({
     }
   };
 
+  const renderIcon = () => {
+    if (typeof icon === 'string') {
+      return (
+        <Text style={[styles.iconText, { color: getIconColor(), fontSize: getSize() * 0.5 }]}>
+          {icon}
+        </Text>
+      );
+    }
+
+    // Handle React elements (like vector icons)
+    if (React.isValidElement(icon)) {
+      // Try to pass color and size props, but don't force them if they don't exist
+      const iconProps: any = {
+        color: getIconColor(),
+        size: getSize() * 0.5,
+      };
+      
+      return React.cloneElement(icon, iconProps);
+    }
+
+    return icon;
+  };
+
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -97,16 +121,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
         style,
       ]}
     >
-      {typeof icon === 'string' ? (
-        <Text style={[styles.iconText, { color: getIconColor(), fontSize: getSize() * 0.5 }]}>
-          {icon}
-        </Text>
-      ) : (
-        React.cloneElement(icon as React.ReactElement, {
-          color: getIconColor(),
-          size: getSize() * 0.5,
-        })
-      )}
+      {renderIcon()}
     </TouchableOpacity>
   );
 };

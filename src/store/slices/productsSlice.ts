@@ -11,6 +11,7 @@ interface Product {
   chefId: string;
   rating: number;
   isAvailable: boolean;
+  isFavorited?: boolean; // Add this line
 }
 
 interface Category {
@@ -64,6 +65,7 @@ interface ProductsState {
   totalCount: number;
   currentPage: number;
   totalPages: number;
+  favoriteProducts: string[]; // Add this line to track favorite product IDs
 }
 
 const initialProductsState: ProductsState = {
@@ -85,6 +87,7 @@ const initialProductsState: ProductsState = {
   totalCount: 0,
   currentPage: 1,
   totalPages: 1,
+  favoriteProducts: [], // Initialize as empty array
 };
 
 export const productsSlice = createSlice({
@@ -226,11 +229,34 @@ export const productsSlice = createSlice({
     },
 
     toggleProductFavorite: (state, action: PayloadAction<string>) => {
-      const product = state.products.find(p => p.id === action.payload);
+      const productId = action.payload;
+      
+      // Toggle in the favorite products array
+      const favoriteIndex = state.favoriteProducts.indexOf(productId);
+      if (favoriteIndex >= 0) {
+        // Remove from favorites
+        state.favoriteProducts.splice(favoriteIndex, 1);
+      } else {
+        // Add to favorites
+        state.favoriteProducts.push(productId);
+      }
+      
+      // Update the product in products array
+      const product = state.products.find(p => p.id === productId);
       if (product) {
-        // This would typically be handled by a backend call
-        // For now, we just update the local state
-        console.log('Toggling favorite for product:', action.payload);
+        product.isFavorited = !product.isFavorited;
+      }
+      
+      // Update in featured products array if exists
+      const featuredProduct = state.featuredProducts.find((p: Product) => p.id === productId);
+      if (featuredProduct) {
+        featuredProduct.isFavorited = !featuredProduct.isFavorited;
+      }
+      
+      // Update in popular products array if exists
+      const popularProduct = state.popularProducts.find((p: Product) => p.id === productId);
+      if (popularProduct) {
+        popularProduct.isFavorited = !popularProduct.isFavorited;
       }
     },
 

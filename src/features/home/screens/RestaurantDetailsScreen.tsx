@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.section.medium,
   },
   galleryImage: {
-    width: 120,
+    width: 140, // Increased from 120 to 140 for better visibility
     height: 120,
     borderRadius: BORDERS.radius.medium,
     // Removed marginRight for edge-to-edge layout

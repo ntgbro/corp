@@ -7,15 +7,16 @@ import HomeScreen from '../features/home/screens/HomeScreen';
 import { ProductStackNavigator } from './ProductStackNavigator';
 import { CartStackNavigator } from './CartStackNavigator';
 import { useCart } from '../contexts/CartContext';
-import { SettingsNavigator } from '../features/settings/navigation/SettingsNavigator';
+import { ProfileScreen } from '../features/settings/screens/ProfileScreen';
+import { HomeIcon, CategoryIcon, CartIcon, OrderIcon, ProfileIcon } from '../components/common'; // Import the new SVG icons
 
 // Placeholder Screen Components (to avoid inline functions)
 const OrdersScreen: React.FC = () => {
   const { theme } = useThemeContext();
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text style={{ fontSize: 48, color: theme.colors.textSecondary }}>📦</Text>
-      <Text style={{ fontSize: 18, fontWeight: '600', color: theme.colors.text, marginTop: 16 }}>📦 Orders</Text>
+      <OrderIcon size={48} color={theme.colors.textSecondary} />
+      <Text style={{ fontSize: 18, fontWeight: '600', color: theme.colors.text, marginTop: 16 }}>Orders</Text>
       <Text style={{ fontSize: 14, marginTop: 8, color: theme.colors.textSecondary }}>Order management coming soon!</Text>
     </View>
   );
@@ -25,7 +26,7 @@ const OrderDetailsScreen: React.FC = () => {
   const { theme } = useThemeContext();
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text style={{ fontSize: 48, color: theme.colors.textSecondary }}>📋</Text>
+      <OrderIcon size={48} color={theme.colors.textSecondary} />
       <Text style={{ fontSize: 18, fontWeight: '600', color: theme.colors.text, marginTop: 16 }}>Order Details</Text>
     </View>
   );
@@ -38,7 +39,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
 
   return (
     <View style={{
-      backgroundColor: theme.colors.surface,
+      backgroundColor: '#F5DEB3', // Match header color
       borderTopColor: theme.colors.border,
       borderTopWidth: 1,
       paddingTop: 8,
@@ -73,32 +74,26 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
           }
         };
 
-        let icon;
         let displayLabel;
 
         switch (route.name) {
           case 'Home':
-            icon = '🏠';
             displayLabel = isFocused ? 'Home' : '';
             break;
           case 'Product':
-            icon = '🛍️';
             displayLabel = isFocused ? 'Products' : '';
             break;
+          case 'Cart':
           case 'CartStack':
-            icon = '🛒';
-            displayLabel = isFocused ? 'Cart' : 'Cart';
+            displayLabel = isFocused ? 'Cart' : '';
             break;
           case 'Orders':
-            icon = '📦';
-            displayLabel = isFocused ? 'Orders' : 'Orders';
+            displayLabel = isFocused ? 'Orders' : '';
             break;
-          case 'ProfileMain': // This should match the type definition
-            icon = '👤';
+          case 'Profile':
             displayLabel = isFocused ? 'Profile' : '';
             break;
           default:
-            icon = '🛒';
             displayLabel = route.name;
         }
 
@@ -115,13 +110,37 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
             }}
           >
             <View style={{ position: 'relative' }}>
-              <Text style={{
-                fontSize: 24,
-                color: isFocused ? theme.colors.primary : theme.colors.textSecondary
-              }}>
-                {icon}
-              </Text>
-              {route.name === 'CartStack' && cartState.totalItems > 0 && (
+              {route.name === 'Home' && (
+                <HomeIcon 
+                  size={26} 
+                  color={isFocused ? '#754C29' : 'black'} 
+                />
+              )}
+              {route.name === 'Product' && (
+                <CategoryIcon 
+                  size={32} 
+                  color={isFocused ? '#754C29' : 'black'} 
+                />
+              )}
+              {(route.name === 'Cart' || route.name === 'CartStack') && (
+                <CartIcon 
+                  size={30} 
+                  color={isFocused ? '#754C29' : 'black'} 
+                />
+              )}
+              {route.name === 'Orders' && (
+                <OrderIcon 
+                  size={34} 
+                  color={isFocused ? '#754C29' : 'black'} 
+                />
+              )}
+              {route.name === 'Profile' && (
+                <ProfileIcon 
+                  size={28} 
+                  color={isFocused ? '#754C29' : 'black'} 
+                />
+              )}
+              {(route.name === 'Cart' || route.name === 'CartStack') && cartState.totalItems > 0 && (
                 <View style={{
                   position: 'absolute',
                   top: -8,
@@ -149,7 +168,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
                 fontSize: 12,
                 fontWeight: '500',
                 marginTop: 2,
-                color: isFocused ? theme.colors.primary : theme.colors.textSecondary
+                color: isFocused ? '#754C29' : theme.colors.textSecondary
               }}>
                 {displayLabel}
               </Text>
@@ -189,11 +208,11 @@ export const MainTabNavigator: React.FC = () => {
         name="CartStack"
         component={CartStackNavigator}
         options={{
-          tabBarLabel: 'Cart',
+          tabBarLabel: ({ focused }) => focused ? 'Cart' : '',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 24, color }}>🛒</Text>
+              <CartIcon size={24} color={color} />
               {useCart().state.totalItems > 0 && (
                 <View style={{
                   position: 'absolute',
@@ -219,12 +238,12 @@ export const MainTabNavigator: React.FC = () => {
         name="Orders"
         component={OrdersScreen}
         options={{
-          tabBarLabel: ({ focused }) => focused ? 'Orders' : 'Orders',
+          tabBarLabel: ({ focused }) => focused ? 'Orders' : '',
         }}
       />
       <Tab.Screen
-        name="ProfileMain" // Changed from 'Profile' to 'ProfileMain' to match ProfileTabParamList
-        component={SettingsNavigator}
+        name="Profile"
+        component={ProfileScreen}
         options={{
           tabBarLabel: ({ focused }) => focused ? 'Profile' : '',
           headerShown: false,

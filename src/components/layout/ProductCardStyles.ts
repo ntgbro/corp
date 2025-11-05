@@ -59,18 +59,18 @@ export const ProductCardStyles = StyleSheet.create({
   // Add to cart button
   addToCartButton: {
     backgroundColor: '#007AFF',
-    borderRadius: BORDERS.radius.small,
+    borderRadius: 12, // Reset to specification value
     paddingHorizontal: SPACING.content.medium,
-    paddingVertical: SPACING.content.medium,
+    paddingVertical: SPACING.content.small,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 0, // Reduced from SPACING.content.small to move button up
-    minHeight: 36, // Reset to a reasonable size
-    alignSelf: 'flex-end', // Position at the bottom-right
+    marginTop: 0,
+    minHeight: 28, // Decreased from 30 to 28 to reduce height
+    alignSelf: 'flex-end',
   },
 
   addToCartText: {
-    fontSize: 16, // Increased for better visibility
+    fontSize: 14, // Updated to match project specification
     fontWeight: '600',
     color: '#fff',
   },
