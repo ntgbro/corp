@@ -6,22 +6,12 @@ import { MainTabParamList } from './types';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import { ProductStackNavigator } from './ProductStackNavigator';
 import { CartStackNavigator } from './CartStackNavigator';
+import { OrdersScreen } from '../features/settings/orders/screens/OrdersScreen';
 import { useCart } from '../contexts/CartContext';
-import { ProfileScreen } from '../features/settings/screens/ProfileScreen';
+import { SettingsNavigator } from '../features/settings';
 import { HomeIcon, CategoryIcon, CartIcon, OrderIcon, ProfileIcon } from '../components/common'; // Import the new SVG icons
 
 // Placeholder Screen Components (to avoid inline functions)
-const OrdersScreen: React.FC = () => {
-  const { theme } = useThemeContext();
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <OrderIcon size={48} color={theme.colors.textSecondary} />
-      <Text style={{ fontSize: 18, fontWeight: '600', color: theme.colors.text, marginTop: 16 }}>Orders</Text>
-      <Text style={{ fontSize: 14, marginTop: 8, color: theme.colors.textSecondary }}>Order management coming soon!</Text>
-    </View>
-  );
-};
-
 const OrderDetailsScreen: React.FC = () => {
   const { theme } = useThemeContext();
   return (
@@ -243,7 +233,7 @@ export const MainTabNavigator: React.FC = () => {
       />
       <Tab.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={SettingsNavigator}
         options={{
           tabBarLabel: ({ focused }) => focused ? 'Profile' : '',
           headerShown: false,
