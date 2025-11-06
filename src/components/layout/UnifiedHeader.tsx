@@ -193,9 +193,9 @@ export const FixedSearchHeader: React.FC<FixedSearchHeaderProps> = ({
       if (onSearch) {
         onSearch(searchQuery.trim());
       } else {
-        // Fallback to local implementation
+        // Fallback to local implementation - navigate to SearchResults in Product stack
         (navigation as any).navigate('Product', {
-          screen: 'Products',
+          screen: 'SearchResults',
           params: { searchQuery: searchQuery.trim() }
         });
       }
@@ -217,7 +217,7 @@ export const FixedSearchHeader: React.FC<FixedSearchHeaderProps> = ({
       notificationTimeoutRef.current = null;
     }, 2000);
     
-    // Navigate to Notifications screen directly using nested navigation
+    // Navigate to Notifications screen directly using nested navigation through Profile tab
     if (onNotificationPress) {
       onNotificationPress();
     } else {
@@ -317,9 +317,9 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       if (onSearch) {
         onSearch(searchQuery.trim());
       } else {
-        // Fallback to local implementation
+        // Fallback to local implementation - navigate to SearchResults in Product stack
         (navigation as any).navigate('Product', {
-          screen: 'Products',
+          screen: 'SearchResults',
           params: { searchQuery: searchQuery.trim() }
         });
       }
@@ -349,7 +349,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       notificationTimeoutRef.current = null;
     }, 2000);
     
-    // Navigate to Notifications screen directly using nested navigation
+    // Navigate to Notifications screen directly using nested navigation through Profile tab
     if (onNotificationPress) {
       onNotificationPress();
     } else {

@@ -95,9 +95,9 @@ export const SettingsIndex = () => {
         </TouchableOpacity>
       </View>
       
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        {/* Profile Section - Image, Name, and Email */}
-        <View style={styles.profileSection}>
+      <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        {/* Profile Section with Circular Photo */}
+        <View style={[styles.profileSection, { backgroundColor: theme.colors.surface }]}>
           {profileLoading ? (
             <View style={styles.profilePlaceholder}>
               <Text style={{ color: theme.colors.textSecondary }}>Loading...</Text>
@@ -148,7 +148,7 @@ export const SettingsIndex = () => {
             ))}
           </View>
         </View>
-      </View>
+      </ScrollView>
       
       {/* Options Menu Modal */}
       <Modal
@@ -221,7 +221,6 @@ export const SettingsIndex = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'space-between',
   },
   contentContainer: {
     flex: 1,
@@ -265,6 +264,7 @@ const styles = StyleSheet.create({
   profileSection: {
     marginVertical: 10,
     alignItems: 'center',
+    paddingVertical: 20,
   },
   profileContent: {
     alignItems: 'center',

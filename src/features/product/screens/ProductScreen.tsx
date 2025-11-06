@@ -11,7 +11,7 @@ import { SafeAreaWrapper } from '../../../components/layout';
 import { PRODUCT_CARD_DIMENSIONS } from '../../../components/layout/ProductCardStyles';
 import { SPACING, BORDERS, SHADOWS } from '../../../constants/ui';
 import { useThemeContext } from '../../../contexts/ThemeContext';
-import { useProductsByCategory } from '../hooks/useProducts';
+import { useProductsByCategory, useProductSearch } from '../hooks/useProducts';
 import { ProductGrid } from '../../../components/layout';
 import Typography from '../../../components/common/Typography';
 import { useCart } from '../../../contexts/CartContext';
@@ -32,16 +32,19 @@ const ProductScreen: React.FC = () => {
   const { theme } = useThemeContext();
   const { addToCart } = useCart();
 
-  // Always call the hook, then filter if needed
-  const { products: allProducts, loading: productsLoading, error: productsError } = useProductsByCategory('fresh', category, restaurantId ? 100 : 50);
+  // Use appropriate hook based on whether we have a search query
+  const { products: searchProducts, loading: searchLoading, error: searchError } = useProductSearch(searchQuery || '', 'fresh');
+  const { products: categoryProducts, loading: categoryLoading, error: categoryError } = useProductsByCategory('fresh', category, restaurantId ? 100 : 50);
 
-  // Filter products if restaurantId is provided
-  const products = restaurantId
-    ? allProducts.filter(product => product.restaurantId === restaurantId)
-    : allProducts;
+  // Determine which products to display based on searchQuery
+  const products = searchQuery 
+    ? searchProducts 
+    : restaurantId
+      ? categoryProducts.filter(product => product.restaurantId === restaurantId)
+      : categoryProducts;
 
-  const loading = productsLoading;
-  const error = productsError;
+  const loading = searchQuery ? searchLoading : categoryLoading;
+  const error = searchQuery ? searchError : categoryError;
 
   const [restaurant, setRestaurant] = React.useState<any>(null);
 
@@ -52,7 +55,7 @@ const ProductScreen: React.FC = () => {
   }, [restaurantId]);
 
   const handleProductPress = (product: any) => {
-    (navigation as any).navigate('ProductDetails', { menuItemId: product.id });
+    (navigation as any).navigate('Product', { screen: 'ProductDetails', params: { menuItemId: product.id } });
   };
 
   const handleAddToCart = (product: any) => {
