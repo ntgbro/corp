@@ -73,7 +73,7 @@ service cloud.firestore {
     }
     
     // User cart_items subcollection
-    match /users/{userId}/cart_items/{itemId} {
+    match /users/{userId}/cart/{cartId}/cart_items/{itemId} {
       // Allow users to manage their own cart items
       allow read, write, create, delete: if isOwner(userId);
     }

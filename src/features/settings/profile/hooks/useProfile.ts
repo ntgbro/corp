@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { db } from '../../../../config/firebase';
+import { db, storage } from '../../../../config/firebase';
 import { doc, getDoc, updateDoc } from '@react-native-firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from '@react-native-firebase/storage';
 
 export const useProfile = () => {
   const { user } = useAuth();
@@ -48,6 +49,7 @@ export const useProfile = () => {
         await updateDoc(userDocRef, {
           displayName: data.displayName,
           phone: data.phone,
+          profilePhotoURL: data.profilePhotoURL || profile?.profilePhotoURL || '',
         });
         
         setProfile(data);
@@ -62,10 +64,49 @@ export const useProfile = () => {
     }
   };
 
+  const uploadProfilePhoto = async (imageUri: string) => {
+    setSaving(true);
+    try {
+      if (user?.userId) {
+        // Upload image to Firebase Storage
+        const response = await fetch(imageUri);
+        const blob = await response.blob();
+        
+        const storageRef = ref(storage, `profile_photos/${user.userId}_${Date.now()}.jpg`);
+        await uploadBytes(storageRef, blob);
+        
+        // Get download URL
+        const downloadURL = await getDownloadURL(storageRef);
+        
+        // Update user document with new photo URL
+        const userDocRef = doc(db, 'users', user.userId);
+        await updateDoc(userDocRef, {
+          profilePhotoURL: downloadURL,
+        });
+        
+        // Update local state
+        setProfile((prev: any) => ({
+          ...prev,
+          profilePhotoURL: downloadURL,
+        }));
+        
+        return downloadURL;
+      } else {
+        throw new Error('User not authenticated');
+      }
+    } catch (error) {
+      console.error('Error uploading profile photo:', error);
+      throw error;
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     profile,
     loading,
     saving,
     updateProfile,
+    uploadProfilePhoto,
   };
 };

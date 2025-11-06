@@ -19,8 +19,8 @@ import { ProductData } from '../../../services/firebase/firestore/productService
 import { HomeService } from '../../home/services/homeService';
 import { PRODUCT_CARD_DIMENSIONS } from '../../../components/layout/ProductCardStyles';
 import { SPACING, BORDERS, SHADOWS } from '../../../constants/ui';
-import { toggleProductFavorite } from '../../../store/slices/productsSlice';
 import { RootState } from '../../../store';
+import { useWishlist } from '../../home/hooks/useWishlist';
 
 interface RouteParams {
   category: string;
@@ -40,11 +40,10 @@ const ProductsPage: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { favoriteProducts } = useSelector((state: RootState) => state.products);
-  console.log('Favorite products updated:', favoriteProducts);
   const { addToCart } = useCart();
   const { category } = route.params as RouteParams;
   const { theme } = useThemeContext();
+  const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
   // Get all products for this category from all restaurants
   const { products, loading, error } = useProductsByCategory('fresh', category, 100);
@@ -208,8 +207,22 @@ const ProductsPage: React.FC = () => {
                 <Typography style={styles.productImageEmoji}>🍽️</Typography>
               )}
               <FavoriteButton 
-                isFavorited={favoriteProducts.includes(product.id)}
-                onPress={() => dispatch(toggleProductFavorite(product.id))}
+                isFavorited={isInWishlist(product.id)}
+                onPress={async () => {
+                  try {
+                    if (isInWishlist(product.id)) {
+                      await removeFromWishlist(product.id);
+                    } else {
+                      await addToWishlist(product.id, {
+                        name: product.name,
+                        price: product.price,
+                        imageURL: product.imageURL || '',
+                      });
+                    }
+                  } catch (error) {
+                    console.error('Error toggling wishlist item:', error);
+                  }
+                }}
                 size={20}
                 style={styles.favoriteButton}
               />

@@ -75,6 +75,51 @@ export const initializeUserSubcollections = async (userId: string, retryCount = 
       updatedAt: new Date(),
     });
     
+    // 5. Create an empty sessions subcollection document
+    const sessionRef = doc(collection(db, 'users', userId, 'sessions'));
+    await setDoc(sessionRef, {
+      sessionId: sessionRef.id,
+      userId: userId,
+      deviceInfo: '',
+      ipAddress: '',
+      userAgent: '',
+      loginTime: new Date(),
+      lastActivity: new Date(),
+      isActive: true,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+    });
+    
+    // 6. Create an empty coupon_usage subcollection document
+    const couponUsageRef = doc(collection(db, 'users', userId, 'coupon_usage'));
+    await setDoc(couponUsageRef, {
+      usageId: couponUsageRef.id,
+      userId: userId,
+      couponId: '',
+      orderId: '',
+      discountAmount: 0,
+      usageDate: new Date(),
+      status: 'active',
+    });
+    
+    // 7. Create an empty cart_items subcollection document (as subcollection of cart)
+    // Add a small delay to ensure the cart document is fully created before creating subcollections
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const cartItemRef = doc(collection(db, 'users', userId, 'cart', cartRef.id, 'cart_items'));
+    await setDoc(cartItemRef, {
+      itemId: cartItemRef.id,
+      userId: userId,
+      productId: 'product123',
+      menuItemId: 'menu123',
+      name: 'Pizza',
+      price: 10,
+      quantity: 2,
+      totalPrice: 20,
+      customizations: [{ name: 'Extra Cheese', price: 2 }],
+      notes: 'No onions',
+      addedAt: new Date(),
+    });
+    
     console.log('User subcollections initialized successfully');
   } catch (error: any) {
     console.error('Error initializing user subcollections:', error);

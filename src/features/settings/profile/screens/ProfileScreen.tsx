@@ -9,13 +9,20 @@ import { useProfile } from '../hooks/useProfile';
 export const ProfileScreen = () => {
   const { theme } = useThemeContext();
   const navigation = useNavigation();
-  const { profile, loading, saving, updateProfile } = useProfile();
+  const { profile, loading, saving, updateProfile, uploadProfilePhoto } = useProfile();
 
   const handleSave = async (data: any) => {
     try {
+      // If there's a new profile photo, upload it first
+      if (data.profilePhotoURL && data.profilePhotoURL.startsWith('file://')) {
+        const downloadURL = await uploadProfilePhoto(data.profilePhotoURL);
+        data.profilePhotoURL = downloadURL;
+      }
+      
       await updateProfile(data);
       Alert.alert('Success', 'Profile updated successfully');
     } catch (error) {
+      console.error('Error updating profile:', error);
       Alert.alert('Error', 'Failed to update profile');
     }
   };
