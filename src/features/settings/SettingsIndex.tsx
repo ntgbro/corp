@@ -86,7 +86,7 @@ export const SettingsIndex = () => {
   return (
     <SafeAreaWrapper>
       <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.header, { color: theme.colors.text }]}>Settings</Text>
+        <Text style={[styles.header, { color: theme.colors.text }]}>profile</Text>
         
         {/* Profile Section with Circular Photo */}
         <View style={[styles.profileSection, { backgroundColor: theme.colors.surface }]}>

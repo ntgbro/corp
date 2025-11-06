@@ -16,13 +16,11 @@ import { SafeAreaWrapper } from '../../../components/layout';
 import { useThemeContext } from '../../../contexts/ThemeContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useRestaurants, useServices } from '../hooks/useHomeData';
-import { useCategories } from '../../product/hooks';
 import { usePromotions } from '../hooks/usePromotions';
 import RestaurantCard from '../components/RestaurantCard';
 // import ServiceCard from '../components/ServiceCard';
 import UnifiedHeader from '../../../components/layout/UnifiedHeader';
 import Typography from '../../../components/common/Typography';
-import CategorySections from '../../../components/layout/CategorySections';
 import { useLocationContext } from '../../../contexts/LocationContext';
 import { AppDispatch, RootState } from '../../../store';
 import {
@@ -38,7 +36,6 @@ const HomeScreen: React.FC = () => {
   const { user } = useAuth();
   const { restaurants, loading: restaurantsLoading } = useRestaurants(5);
   // const { services, loading: servicesLoading } = useServices();
-  const { categories, loading: categoriesLoading } = useCategories('fresh');
   const { promotions, loading: promotionsLoading } = usePromotions(1); // Get only the top priority promotion
   const {
     currentLocation,
@@ -74,13 +71,6 @@ const HomeScreen: React.FC = () => {
         params: { searchQuery: query.trim() }
       });
     }
-  };
-
-  const handleCategoryPress = (category: { id: string; name: string }) => {
-    (navigation as any).navigate('Product', {
-      screen: 'ProductsPage',
-      params: { category: category.id }
-    });
   };
 
   const handleLocationChange = () => {
@@ -210,27 +200,6 @@ const HomeScreen: React.FC = () => {
                 </View>
               )}
             />
-          )}
-        </View>
-
-        {/* Categories Section */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.titleContainer}>
-            <Typography variant="h5" color="text">Categories</Typography>
-          </View>
-          {categoriesLoading ? (
-            <ActivityIndicator />
-          ) : categories.length > 0 ? (
-            <CategorySections
-              categories={categories}
-              onCategoryPress={handleCategoryPress}
-              variant="grid3" // ✅ Changed from 'grid4' to 'grid3' for 3x3 grid layout
-              showIcons={false}
-            />
-          ) : (
-            <Typography variant="body2" color="secondary" style={{ textAlign: 'center' }}>
-              No categories available
-            </Typography>
           )}
         </View>
       </ScrollView>
