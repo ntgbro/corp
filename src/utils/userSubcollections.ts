@@ -15,7 +15,7 @@ export const initializeUserSubcollections = async (userId: string, retryCount = 
     // 1. Create a default address document
     const addressRef = doc(collection(db, 'users', userId, 'addresses'));
     await setDoc(addressRef, {
-      addressId: 'default',
+      addressId: addressRef.id,
       city: '',
       cityId: '',
       contactName: '',
@@ -28,12 +28,40 @@ export const initializeUserSubcollections = async (userId: string, retryCount = 
       line2: '',
       pincode: '',
       state: '',
+      userId: userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
     
-    // 2. Create an empty cart document
+    // 2. Create an empty wishlist document
+    const wishlistRef = doc(collection(db, 'users', userId, 'wishlist'));
+    await setDoc(wishlistRef, {
+      wishlistId: wishlistRef.id,
+      items: [],
+      userId: userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    
+    // 3. Create a welcome notification
+    const notificationRef = doc(collection(db, 'users', userId, 'notifications'));
+    await setDoc(notificationRef, {
+      notificationId: notificationRef.id,
+      title: 'Welcome!',
+      message: 'Welcome to our app. This is your notifications center where you will receive important updates.',
+      type: 'welcome',
+      isRead: false,
+      userId: userId,
+      createdAt: new Date(),
+      actionURL: '',
+      imageURL: '',
+      relatedOrderId: '',
+    });
+    
+    // 4. Create an empty cart document
     const cartRef = doc(collection(db, 'users', userId, 'cart'));
     await setDoc(cartRef, {
-      cartId: 'default',
+      cartId: cartRef.id,
       itemCount: 0,
       totalAmount: 0,
       status: 'active',
@@ -42,31 +70,10 @@ export const initializeUserSubcollections = async (userId: string, retryCount = 
       restaurantId: '',
       serviceId: '',
       warehouseId: '',
+      userId: userId,
       addedAt: new Date(),
       updatedAt: new Date(),
     });
-    
-    // 3. Create an empty cart_items subcollection (no initial documents needed)
-    
-    // 4. Create an empty coupon_usage subcollection (no initial documents needed)
-    
-    // 5. Create a welcome notification
-    const notificationRef = doc(collection(db, 'users', userId, 'notifications'));
-    await setDoc(notificationRef, {
-      title: 'Welcome!',
-      message: 'Welcome to our app. This is your notifications center where you will receive important updates.',
-      type: 'welcome',
-      isRead: false,
-      createdAt: new Date(),
-      actionURL: '',
-      imageURL: '',
-      notificationId: 'welcome',
-      relatedOrderId: '',
-    });
-    
-    // 6. Create an empty sessions subcollection (no initial documents needed)
-    
-    // 7. Create an empty wishlist subcollection (no initial documents needed)
     
     console.log('User subcollections initialized successfully');
   } catch (error: any) {

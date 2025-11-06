@@ -26,7 +26,6 @@ export const PreferencesScreen = () => {
   return (
     <SafeAreaWrapper>
       <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.header, { color: theme.colors.text }]}>Preferences</Text>
         <View style={styles.content}>
           {loading ? (
             <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
@@ -48,11 +47,6 @@ export const PreferencesScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    padding: 16,
   },
   content: {
     flex: 1,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -42,6 +42,22 @@ const HomeScreen: React.FC = () => {
     error: locationError,
   } = useLocationContext();
 
+  // Automatically get GPS location on app start
+  useEffect(() => {
+    const getLocation = async () => {
+      try {
+        await dispatch(detectCurrentLocation()).unwrap();
+      } catch (error) {
+        console.log('Could not get location on app start:', error);
+      }
+    };
+
+    // Only get location if we don't already have one
+    if (!currentLocation) {
+      getLocation();
+    }
+  }, [currentLocation, dispatch]);
+
   // Calculate card width for edge-to-edge layout (assuming 1.8 cards visible for narrower cards)
   const screenWidth = Dimensions.get('window').width;
   const cardWidth = (screenWidth - 30) / 1.8; // ✅ Decreased width by increasing divisor from 1.5 to 1.8 and increasing margin
@@ -64,65 +80,23 @@ const HomeScreen: React.FC = () => {
   };
 
   const handleLocationChange = () => {
-    Alert.alert(
-      'Set Delivery Location',
-      'How would you like to set your location?',
-      [
-        {
-          text: '📍 Use Current Location',
-          onPress: async () => {
-            try {
-              await dispatch(detectCurrentLocation()).unwrap();
-            } catch (error) {
-              Alert.alert('Location Error', 'Unable to detect your location. Please check your permissions and try again.');
-            }
-          },
-        },
-        {
-          text: '🎯 High Accuracy Location',
-          onPress: async () => {
-            try {
-              await dispatch(detectHighAccuracyLocation()).unwrap();
-            } catch (error) {
-              Alert.alert('Location Error', 'Unable to detect precise location. Please check your permissions and try again.');
-            }
-          },
-        },
-        {
-          text: '✏️ Enter Address Manually',
-          onPress: () => {
-            Alert.prompt(
-              'Enter Delivery Address',
-              'Please enter your delivery address:',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Set Location',
-                  onPress: async (address: string | undefined) => {
-                    if (address && address.trim().length > 0) {
-                      dispatch(setManualLocation({ address: address.trim() }));
-                    }
-                  }
-                }
-              ],
-              'plain-text'
-            );
-          },
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ]
-    );
+    // Simplified location change - directly use current location without dialog
+    const getLocation = async () => {
+      try {
+        await dispatch(detectCurrentLocation()).unwrap();
+      } catch (error) {
+        Alert.alert('Location Error', 'Unable to detect your location. Please check your permissions and try again.');
+      }
+    };
+    
+    getLocation();
   };
 
   const handleNotificationPress = () => {
-    Alert.alert(
-      'Notifications',
-      'You have no new notifications!',
-      [{ text: 'OK' }]
-    );
+    // Navigate directly to Notifications screen using nested navigation
+    (navigation as any).navigate('Profile', {
+      screen: 'Notifications'
+    });
   };
 
   return (

@@ -77,7 +77,8 @@ export const AddressesScreen = () => {
           <Text style={[styles.defaultBadge, { backgroundColor: theme.colors.primary }]}>Default</Text>
         )}
       </View>
-      <Text style={[styles.addressText, { color: theme.colors.text }]}>{address.address}</Text>
+      <Text style={[styles.addressText, { color: theme.colors.text }]}>{address.line1}</Text>
+      {address.line2 ? <Text style={[styles.addressText, { color: theme.colors.text }]}>{address.line2}</Text> : null}
       <Text style={[styles.addressText, { color: theme.colors.text }]}>
         {address.city}, {address.state} {address.zipCode}
       </Text>
@@ -111,19 +112,6 @@ export const AddressesScreen = () => {
   return (
     <SafeAreaWrapper>
       <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.headerContainer}>
-          <Text style={[styles.header, { color: theme.colors.text }]}>Addresses</Text>
-          <TouchableOpacity
-            style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
-            onPress={() => {
-              setEditingAddress(null);
-              setShowForm(true);
-            }}
-          >
-            <Text style={[styles.addButtonText, { color: theme.colors.white }]}>Add Address</Text>
-          </TouchableOpacity>
-        </View>
-
         {showForm ? (
           <View style={[styles.formContainer, { backgroundColor: theme.colors.surface }]}>
             <TouchableOpacity 
@@ -143,6 +131,18 @@ export const AddressesScreen = () => {
           </View>
         ) : (
           <View style={styles.content}>
+            <View style={styles.addButtonContainer}>
+              <TouchableOpacity
+                style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
+                onPress={() => {
+                  setEditingAddress(null);
+                  setShowForm(true);
+                }}
+              >
+                <Text style={[styles.addButtonText, { color: theme.colors.white }]}>Add Address</Text>
+              </TouchableOpacity>
+            </View>
+            
             {loading ? (
               <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
                 Loading addresses...
@@ -167,15 +167,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  addButtonContainer: {
+    alignItems: 'flex-end',
     padding: 16,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    paddingBottom: 8,
   },
   addButton: {
     borderRadius: 8,

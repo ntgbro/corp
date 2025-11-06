@@ -36,9 +36,9 @@ export const useWishlist = () => {
             const data = doc.data();
             wishlistData.push({
               id: doc.id,
-              name: `Item ${data.itemId || doc.id}`, // Placeholder, would need to fetch actual item details
+              name: data.name || `Item ${data.itemId || doc.id}`,
               price: data.price || 0,
-              image: 'https://via.placeholder.com/150', // Placeholder, would need to fetch actual image
+              image: data.image || 'https://via.placeholder.com/150',
               itemId: data.itemId || '',
               restaurantId: data.restaurantId || '',
               serviceId: data.serviceId || '',

@@ -37,8 +37,6 @@ export const HelpSupportScreen = () => {
   return (
     <SafeAreaWrapper>
       <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.header, { color: theme.colors.text }]}>Help & Support</Text>
-        
         <View style={[styles.supportCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
           <Text style={[styles.cardTitle, { color: theme.colors.text }]}>Need Help?</Text>
           <Text style={[styles.cardText, { color: theme.colors.textSecondary }]}>
@@ -81,11 +79,6 @@ export const HelpSupportScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    padding: 16,
   },
   supportCard: {
     borderWidth: 1,

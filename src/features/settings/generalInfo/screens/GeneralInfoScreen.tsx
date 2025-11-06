@@ -30,8 +30,6 @@ export const GeneralInfoScreen = () => {
   return (
     <SafeAreaWrapper>
       <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.header, { color: theme.colors.text }]}>General Information</Text>
-        
         <View style={[styles.infoCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
           <Text style={[styles.infoTitle, { color: theme.colors.text }]}>App Version</Text>
           <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>{appInfo.version}</Text>
@@ -63,11 +61,6 @@ export const GeneralInfoScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    padding: 16,
   },
   infoCard: {
     borderWidth: 1,

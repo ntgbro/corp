@@ -24,7 +24,6 @@ export const OrdersScreen = () => {
           <RefreshControl refreshing={loading} onRefresh={refreshOrders} />
         }
       >
-        <Text style={[styles.header, { color: theme.colors.text }]}>Order History</Text>
         <View style={styles.content}>
           {loading && orders.length === 0 ? (
             <View style={styles.loadingContainer}>
@@ -51,11 +50,6 @@ export const OrdersScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    padding: 16,
   },
   content: {
     flex: 1,

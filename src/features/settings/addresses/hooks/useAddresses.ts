@@ -7,18 +7,15 @@ import { QueryDocumentSnapshot } from '../../../../types/firebase';
 export interface Address {
   id: string;
   name: string;
-  address: string;
+  line1: string;
+  line2: string;
   city: string;
   state: string;
   zipCode: string;
   phone: string;
   isDefault: boolean;
-  line1: string;
-  line2: string;
   label: string;
   cityId: string;
-  contactName: string;
-  contactPhone: string;
   geoPoint: GeoPoint;
   isActive: boolean;
   addressId: string;
@@ -44,19 +41,16 @@ export const useAddresses = () => {
             const data = doc.data();
             addressesData.push({
               id: doc.id,
-              name: data.contactName || '',
-              address: `${data.line1 || ''} ${data.line2 || ''}`,
-              city: data.city || '',
-              state: data.state || '',
-              zipCode: data.pincode || '',
-              phone: data.contactPhone || '',
-              isDefault: data.isDefault || false,
+              name: data.name || '',
               line1: data.line1 || '',
               line2: data.line2 || '',
+              city: data.city || '',
+              state: data.state || '',
+              zipCode: data.zipCode || '',
+              phone: data.phone || '',
+              isDefault: data.isDefault || false,
               label: data.label || '',
               cityId: data.cityId || '',
-              contactName: data.contactName || '',
-              contactPhone: data.contactPhone || '',
               geoPoint: data.geoPoint,
               isActive: data.isActive || true,
               addressId: data.addressId || doc.id,

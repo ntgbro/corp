@@ -34,6 +34,7 @@ export const ScrollableLocationHeader: React.FC<ScrollableLocationHeaderProps> =
 
   const handleLocationChangePress = () => {
     setIsLocationIconActive(true);
+    // Directly call location change without showing dialog
     if (onLocationChange) {
       onLocationChange();
     }
@@ -140,18 +141,18 @@ export const ScrollableLocationHeader: React.FC<ScrollableLocationHeaderProps> =
               </Text>
             </View>
 
-            {/* Change Location Button */}
+            {/* Change Location Button - Simplified to direct action */}
             <TouchableOpacity
               onPress={handleLocationChangePress}
               style={styles.locationPinContainer}
-              activeOpacity={1.0} // No opacity change to prevent shifting
-              disabled={locationLoading} // Disable when loading
+              activeOpacity={1.0}
+              disabled={locationLoading}
             >
               <LocationIcon 
                 size={30} 
                 color={isLocationIconActive ? '#754C29' : 'black'} 
                 style={[
-                  locationLoading && styles.locationPinLoading // Add loading animation style
+                  locationLoading && styles.locationPinLoading
                 ]}
               />
             </TouchableOpacity>
@@ -216,8 +217,13 @@ export const FixedSearchHeader: React.FC<FixedSearchHeaderProps> = ({
       notificationTimeoutRef.current = null;
     }, 2000);
     
+    // Navigate to Notifications screen directly using nested navigation
     if (onNotificationPress) {
       onNotificationPress();
+    } else {
+      (navigation as any).navigate('Profile', {
+        screen: 'Notifications'
+      });
     }
   };
 
@@ -322,6 +328,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
   const handleLocationChangePress = () => {
     setIsLocationIconActive(true);
+    // Directly call location change without showing dialog
     if (onLocationChange) {
       onLocationChange();
     }
@@ -342,8 +349,13 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       notificationTimeoutRef.current = null;
     }, 2000);
     
+    // Navigate to Notifications screen directly using nested navigation
     if (onNotificationPress) {
       onNotificationPress();
+    } else {
+      (navigation as any).navigate('Profile', {
+        screen: 'Notifications'
+      });
     }
   };
 
@@ -460,18 +472,18 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               {currentLocation?.address ? formatLocationAddress(currentLocation.address).display : 'Set Location'}
             </Text>
 
-            {/* Change Location Button */}
+            {/* Change Location Button - Simplified to direct action */}
             <TouchableOpacity
               onPress={handleLocationChangePress}
               style={styles.locationPinContainer}
-              activeOpacity={1.0} // No opacity change to prevent shifting
-              disabled={locationLoading} // Disable when loading
+              activeOpacity={1.0}
+              disabled={locationLoading}
             >
               <LocationIcon 
                 size={30} 
                 color={isLocationIconActive ? '#754C29' : 'black'} 
                 style={[
-                  locationLoading && styles.locationPinLoading // Add loading animation style
+                  locationLoading && styles.locationPinLoading
                 ]}
               />
             </TouchableOpacity>
