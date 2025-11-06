@@ -10,6 +10,7 @@ import { OrdersScreen } from '../features/settings/orders/screens/OrdersScreen';
 import { useCart } from '../contexts/CartContext';
 import { SettingsNavigator } from '../features/settings';
 import { HomeIcon, CategoryIcon, CartIcon, OrderIcon, ProfileIcon } from '../components/common'; // Import the new SVG icons
+import CategoriesScreen from '../features/product/screens/CategoriesScreen';
 
 // Placeholder Screen Components (to avoid inline functions)
 const OrderDetailsScreen: React.FC = () => {
@@ -70,9 +71,13 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
           case 'Home':
             displayLabel = isFocused ? 'Home' : '';
             break;
-          case 'Product':
-            displayLabel = isFocused ? 'Products' : '';
+          case 'Categories':
+            displayLabel = isFocused ? 'Categories' : '';
             break;
+          // Comment out Products tab
+          // case 'Product':
+          //   displayLabel = isFocused ? 'Products' : '';
+          //   break;
           case 'Cart':
           case 'CartStack':
             displayLabel = isFocused ? 'Cart' : '';
@@ -106,12 +111,20 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
                   color={isFocused ? '#754C29' : 'black'} 
                 />
               )}
+              {route.name === 'Categories' && (
+                <CategoryIcon 
+                  size={32} 
+                  color={isFocused ? '#754C29' : 'black'} 
+                />
+              )}
+              {/* Comment out Products icon
               {route.name === 'Product' && (
                 <CategoryIcon 
                   size={32} 
                   color={isFocused ? '#754C29' : 'black'} 
                 />
               )}
+              */}
               {(route.name === 'Cart' || route.name === 'CartStack') && (
                 <CartIcon 
                   size={30} 
@@ -188,12 +201,21 @@ export const MainTabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen
+        name="Categories"
+        component={CategoriesScreen}
+        options={{
+          tabBarLabel: ({ focused }) => focused ? 'Categories' : '',
+        }}
+      />
+      {/* Comment out Products tab
+      <Tab.Screen
         name="Product"
         component={ProductStackNavigator}
         options={{
           tabBarLabel: ({ focused }) => focused ? 'Products' : '',
         }}
       />
+      */}
       <Tab.Screen
         name="CartStack"
         component={CartStackNavigator}
