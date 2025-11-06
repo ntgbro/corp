@@ -55,7 +55,7 @@ const ProductScreen: React.FC = () => {
   }, [restaurantId]);
 
   const handleProductPress = (product: any) => {
-    (navigation as any).navigate('ProductDetails', { menuItemId: product.id });
+    (navigation as any).navigate('Product', { screen: 'ProductDetails', params: { menuItemId: product.id } });
   };
 
   const handleAddToCart = (product: any) => {

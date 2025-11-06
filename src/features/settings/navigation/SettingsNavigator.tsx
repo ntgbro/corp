@@ -56,7 +56,7 @@ export const SettingsNavigator = () => {
         name="Orders" 
         component={OrdersScreen}
         options={{ 
-          title: 'Order History',
+          title: 'Order history',
         }}
       />
       <Stack.Screen 

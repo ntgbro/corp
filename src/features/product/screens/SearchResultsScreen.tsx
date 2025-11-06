@@ -28,7 +28,7 @@ const SearchResultsScreen: React.FC = () => {
   const { products, loading, error } = useProductSearch(searchQuery, 'fresh');
 
   const handleProductPress = (product: any) => {
-    (navigation as any).navigate('Main', { screen: 'ProductDetails', params: { menuItemId: product.id } });
+    (navigation as any).navigate('Product', { screen: 'ProductDetails', params: { menuItemId: product.id } });
   };
 
   const handleAddToCart = (product: any) => {

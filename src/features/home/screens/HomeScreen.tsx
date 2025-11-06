@@ -65,9 +65,9 @@ const HomeScreen: React.FC = () => {
 
   const handleSearch = (query: string) => {
     if (query.trim().length > 0) {
-      // Navigate to search results only when Enter is pressed
+      // Navigate to search results through Product stack
       (navigation as any).navigate('Product', {
-        screen: 'Products',
+        screen: 'SearchResults',
         params: { searchQuery: query.trim() }
       });
     }
@@ -87,7 +87,7 @@ const HomeScreen: React.FC = () => {
   };
 
   const handleNotificationPress = () => {
-    // Navigate directly to Notifications screen using nested navigation
+    // Navigate directly to Notifications screen using nested navigation through Profile tab
     (navigation as any).navigate('Profile', {
       screen: 'Notifications'
     });

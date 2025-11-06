@@ -19,6 +19,7 @@ const CategoriesScreen: React.FC = () => {
   const { categories, loading, error } = useCategories('fresh');
 
   const handleCategoryPress = (category: { id: string; name: string }) => {
+    // Navigate to the Product tab and then to ProductsPage screen
     (navigation as any).navigate('Product', {
       screen: 'ProductsPage',
       params: { category: category.id }

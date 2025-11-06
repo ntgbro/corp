@@ -34,13 +34,13 @@ const RestaurantDetailsScreen: React.FC = () => {
   const handleMenuItemPress = (menuItemId: string) => {
     console.log('Navigator state:', navigation.getState());
     console.log('Attempting to navigate to ProductDetails with menuItemId:', menuItemId);
-    (navigation as any).navigate('ProductDetails', { menuItemId });
+    (navigation as any).navigate('Product', { screen: 'ProductDetails', params: { menuItemId } });
   };
 
   const handleSeeAllPress = (category: string) => {
-    // Navigate to products page with the specific category and restaurant
+    // Navigate to products page with the specific category and restaurant through Product stack
     (navigation as any).navigate('Product', {
-      screen: 'Products', // ✅ Changed from 'ProductScreen' to 'Products'
+      screen: 'Products',
       params: {
         category,
         restaurantId: restaurantId

@@ -54,7 +54,7 @@ export const ProductStackNavigator: React.FC = () => {
           header: (props) => (
             <UnifiedHeader
               title={`${(props.route.params as any)?.category || 'Category'} Restaurants`}
-              showBackButton={props.navigation.canGoBack()}
+              showBackButton={true}
               onBackPress={props.navigation.goBack}
               showLocation={false}
               showSearch={false}
@@ -67,6 +67,15 @@ export const ProductStackNavigator: React.FC = () => {
         component={RestaurantDetailsScreen}
         options={{
           headerTitle: 'Restaurant Details',
+          header: (props) => (
+            <UnifiedHeader
+              title="Restaurant Details"
+              showBackButton={true}
+              onBackPress={props.navigation.goBack}
+              showLocation={false}
+              showSearch={false}
+            />
+          ),
         }}
       />
       <Stack.Screen
@@ -74,6 +83,15 @@ export const ProductStackNavigator: React.FC = () => {
         component={ProductDetailsScreen}
         options={{
           headerTitle: 'Product Details',
+          header: (props) => (
+            <UnifiedHeader
+              title="Product Details"
+              showBackButton={true}
+              onBackPress={props.navigation.goBack}
+              showLocation={false}
+              showSearch={false}
+            />
+          ),
         }}
       />
       <Stack.Screen

@@ -16,17 +16,17 @@ export const SettingsIndex = () => {
   const { signOut, loading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
 
   const settingsSections = [
-    { id: 'profile', title: 'Profile', description: 'Manage your personal information', icon: '👤' },
-    { id: 'orders', title: 'Orders', description: 'View your order history', icon: '📦' },
-    { id: 'wishlist', title: 'Wishlist', description: 'View your saved items', icon: '❤️' },
-    { id: 'addresses', title: 'Addresses', description: 'Manage your saved addresses', icon: '📍' },
-    { id: 'preferences', title: 'Preferences', description: 'Manage your app preferences', icon: '⚙️' },
-    { id: 'notifications', title: 'Notifications', description: 'Manage your notification preferences', icon: '🔔' },
-    { id: 'generalInfo', title: 'General Information', description: 'App version and information', icon: 'ℹ️' },
-    { id: 'helpSupport', title: 'Help & Support', description: 'Get help and support', icon: '❓' },
-    { id: 'socialMedia', title: 'Follow Us', description: 'Connect with us on social media', icon: '🌐' },
+    { id: 'orders', title: 'Orders', icon: '📦' },
+    { id: 'wishlist', title: 'Wishlist', icon: '❤️' },
+    { id: 'addresses', title: 'Addresses', icon: '📍' },
+    { id: 'preferences', title: 'Preferences', icon: '⚙️' },
+    { id: 'notifications', title: 'Notifications', icon: '🔔' },
+    { id: 'generalInfo', title: 'General Information', icon: 'ℹ️' },
+    { id: 'helpSupport', title: 'Help & Support', icon: '❓' },
+    { id: 'socialMedia', title: 'Follow Us', icon: '🌐' },
   ];
 
   const handleNavigate = (sectionId: string) => {
@@ -85,9 +85,17 @@ export const SettingsIndex = () => {
 
   return (
     <SafeAreaWrapper>
+      <View style={[styles.headerContainer, { backgroundColor: theme.colors.background }]}>
+        <Text style={[styles.header, { color: theme.colors.text }]}>Profile</Text>
+        <TouchableOpacity 
+          style={styles.optionsButton}
+          onPress={() => setShowOptionsMenu(true)}
+        >
+          <Text style={[styles.optionsIcon, { color: theme.colors.text }]}>⋮</Text>
+        </TouchableOpacity>
+      </View>
+      
       <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.header, { color: theme.colors.text }]}>profile</Text>
-        
         {/* Profile Section with Circular Photo */}
         <View style={[styles.profileSection, { backgroundColor: theme.colors.surface }]}>
           {profileLoading ? (
@@ -95,59 +103,86 @@ export const SettingsIndex = () => {
               <Text style={{ color: theme.colors.textSecondary }}>Loading...</Text>
             </View>
           ) : (
-            <TouchableOpacity 
-              style={styles.profileContainer}
-              onPress={() => handleNavigate('profile')}
-            >
-              {profile?.profilePhotoURL ? (
-                <Image 
-                  source={{ uri: profile.profilePhotoURL }} 
-                  style={styles.profileImage}
-                />
-              ) : (
-                <View style={[styles.profileImagePlaceholder, { backgroundColor: theme.colors.background }]}>
-                  <Text style={{ fontSize: 24, color: theme.colors.textSecondary }}>👤</Text>
-                </View>
-              )}
-              <View style={styles.profileInfo}>
-                <Text style={[styles.profileName, { color: theme.colors.text }]}>{profile?.displayName || 'User'}</Text>
-                <Text style={[styles.profileEmail, { color: theme.colors.textSecondary }]}>{profile?.email || ''}</Text>
-              </View>
-              <Text style={[styles.chevron, { color: theme.colors.textSecondary }]}>›</Text>
-            </TouchableOpacity>
+            <View style={styles.profileContent}>
+              <TouchableOpacity onPress={() => handleNavigate('profile')}>
+                {profile?.profilePhotoURL ? (
+                  <Image 
+                    source={{ uri: profile.profilePhotoURL }} 
+                    style={styles.profileImage}
+                  />
+                ) : (
+                  <View style={[styles.profileImagePlaceholder, { backgroundColor: theme.colors.background }]}>
+                    <Text style={{ fontSize: 24, color: theme.colors.textSecondary }}>👤</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <Text style={[styles.profileName, { color: theme.colors.text }]}>{profile?.displayName || 'User'}</Text>
+              <Text style={[styles.profileEmail, { color: theme.colors.textSecondary }]}>{profile?.email || ''}</Text>
+            </View>
           )}
         </View>
         
-        <View style={styles.content}>
-          {settingsSections.map((section) => (
-            <TouchableOpacity
-              key={section.id}
-              style={[styles.sectionCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
-              onPress={() => handleNavigate(section.id)}
-            >
-              <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionIcon, { color: theme.colors.primary }]}>{section.icon}</Text>
-                <View style={styles.sectionText}>
-                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{section.title}</Text>
-                  <Text style={[styles.sectionDescription, { color: theme.colors.textSecondary }]}>{section.description}</Text>
+        <View style={styles.contentContainer}>
+          {/* Wrapped Settings Options in One Card */}
+          <View style={[styles.settingsCard, { backgroundColor: '#FBF5EB', borderColor: theme.colors.border }]}>
+            {settingsSections.map((section, index) => (
+              <TouchableOpacity
+                key={section.id}
+                style={[
+                  styles.sectionItem, 
+                  { 
+                    borderBottomWidth: index !== settingsSections.length - 1 ? StyleSheet.hairlineWidth : 0,
+                    borderBottomColor: theme.colors.border 
+                  }
+                ]}
+                onPress={() => handleNavigate(section.id)}
+              >
+                <View style={styles.sectionHeader}>
+                  <Text style={[styles.sectionIcon, { color: theme.colors.primary }]}>{section.icon}</Text>
+                  <View style={styles.sectionText}>
+                    <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{section.title}</Text>
+                  </View>
+                  <Text style={[styles.chevron, { color: theme.colors.textSecondary }]}>›</Text>
                 </View>
-                <Text style={[styles.chevron, { color: theme.colors.textSecondary }]}>›</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-          
-          {/* Logout Button */}
-          <TouchableOpacity
-            style={[styles.logoutButton, { backgroundColor: theme.colors.error, borderColor: theme.colors.error }]}
-            onPress={confirmLogout}
-            disabled={loading}
-          >
-            <Text style={[styles.logoutText, { color: theme.colors.white }]}>
-              {loading ? 'Logging out...' : 'Logout'}
-            </Text>
-          </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </ScrollView>
+      
+      {/* Options Menu Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showOptionsMenu}
+        onRequestClose={() => setShowOptionsMenu(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          onPress={() => setShowOptionsMenu(false)}
+        >
+          <View style={[styles.optionsMenu, { backgroundColor: theme.colors.surface }]}>
+            <TouchableOpacity 
+              style={[styles.optionItem, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.border }]}
+              onPress={() => {
+                setShowOptionsMenu(false);
+                handleNavigate('profile');
+              }}
+            >
+              <Text style={[styles.optionText, { color: theme.colors.text }]}>Edit Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.optionItem}
+              onPress={() => {
+                setShowOptionsMenu(false);
+                confirmLogout();
+              }}
+            >
+              <Text style={[styles.optionText, { color: theme.colors.text }]}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
       
       {/* Logout Confirmation Modal */}
       <Modal
@@ -187,52 +222,80 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  contentContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  optionsButton: {
+    padding: 10,
+  },
+  optionsIcon: {
+    fontSize: 24,
+  },
+  optionsMenu: {
+    position: 'absolute',
+    right: 16,
+    top: 50,
+    borderRadius: 8,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    minWidth: 150,
+  },
+  optionItem: {
     padding: 16,
+  },
+  optionText: {
+    fontSize: 16,
   },
   profileSection: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 12,
-    padding: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    marginVertical: 10,
+    alignItems: 'center',
+    paddingVertical: 20,
   },
-  profileContainer: {
-    flexDirection: 'row',
+  profileContent: {
     alignItems: 'center',
   },
   profileImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 16,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    marginBottom: 12,
   },
   profileImagePlaceholder: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 16,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#e0e0e0',
+    marginBottom: 12,
   },
   profileInfo: {
     flex: 1,
   },
   profileName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   profileEmail: {
-    fontSize: 14,
+    fontSize: 16,
+    marginBottom: 8,
   },
   profilePlaceholder: {
     padding: 20,
@@ -242,11 +305,20 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
   },
-  sectionCard: {
-    borderWidth: 1,
-    borderRadius: 12,
-    marginBottom: 12,
+  settingsCard: {
+    marginTop: 16,
+    marginBottom: 0,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
     overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  sectionItem: {
+    backgroundColor: 'transparent',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -269,7 +341,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   chevron: {
-    fontSize: 16,
+    fontSize: 24,
   },
   logoutButton: {
     borderWidth: 1,
@@ -278,6 +350,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 24,
     marginBottom: 16,
+    marginHorizontal: 16,
   },
   logoutText: {
     fontSize: 16,
