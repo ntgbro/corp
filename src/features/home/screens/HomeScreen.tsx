@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Image,
+  TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -15,6 +17,7 @@ import { useThemeContext } from '../../../contexts/ThemeContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useRestaurants, useServices } from '../hooks/useHomeData';
 import { useCategories } from '../../product/hooks';
+import { usePromotions } from '../hooks/usePromotions';
 import RestaurantCard from '../components/RestaurantCard';
 // import ServiceCard from '../components/ServiceCard';
 import UnifiedHeader from '../../../components/layout/UnifiedHeader';
@@ -36,6 +39,7 @@ const HomeScreen: React.FC = () => {
   const { restaurants, loading: restaurantsLoading } = useRestaurants(5);
   // const { services, loading: servicesLoading } = useServices();
   const { categories, loading: categoriesLoading } = useCategories('fresh');
+  const { promotions, loading: promotionsLoading } = usePromotions(1); // Get only the top priority promotion
   const {
     currentLocation,
     loading: locationLoading,
@@ -99,6 +103,11 @@ const HomeScreen: React.FC = () => {
     });
   };
 
+  const handlePromotionPress = (promotion: any) => {
+    // Handle promotion press - could navigate to a promotion details screen or specific offer
+    console.log('Promotion pressed:', promotion);
+  };
+
   return (
     <SafeAreaWrapper style={{ backgroundColor: theme.colors.background, flex: 1 }}>
       <UnifiedHeader
@@ -119,6 +128,33 @@ const HomeScreen: React.FC = () => {
         showsVerticalScrollIndicator={true}
         nestedScrollEnabled={true}
       >
+        {/* Promotions Banner */}
+        {!promotionsLoading && promotions.length > 0 && (
+          <View style={styles.promotionBannerContainer}>
+            <TouchableOpacity 
+              style={styles.promotionBanner}
+              onPress={() => handlePromotionPress(promotions[0])}
+            >
+              {promotions[0].bannerImage ? (
+                <Image 
+                  source={{ uri: promotions[0].bannerImage }} 
+                  style={styles.promotionImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[styles.promotionPlaceholder, { backgroundColor: theme.colors.surface }]}>
+                  <Typography variant="body1" color="text">
+                    {promotions[0].title}
+                  </Typography>
+                  <Typography variant="caption" color="secondary">
+                    {promotions[0].description}
+                  </Typography>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Services Section - Currently Commented Out */}
         {/*
         <View style={styles.compactSectionContainer}>
@@ -203,6 +239,30 @@ const HomeScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  promotionBannerContainer: {
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  promotionBanner: {
+    height: 150,
+    borderRadius: 12,
+  },
+  promotionImage: {
+    width: '100%',
+    height: '100%',
+  },
+  promotionPlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
   compactSectionContainer: {
     marginBottom: 0,
     marginTop: 1,
