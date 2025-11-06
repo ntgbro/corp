@@ -23,7 +23,6 @@ export const ProfileScreen = () => {
   return (
     <SafeAreaWrapper>
       <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.header, { color: theme.colors.text }]}>Profile</Text>
         <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           {loading ? (
             <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
@@ -45,11 +44,6 @@ export const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    padding: 16,
   },
   card: {
     margin: 16,

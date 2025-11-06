@@ -40,52 +40,73 @@ export const SettingsNavigator = () => {
       <Stack.Screen 
         name="SettingsHome" 
         component={SettingsIndex}
-        options={{ title: 'Settings' }}
+        options={{ 
+          title: 'Settings',
+          headerShown: false, // Keep the custom header for the main settings page
+        }}
       />
       <Stack.Screen 
         name="SettingsProfile" // Changed from 'Profile' to 'SettingsProfile'
         component={ProfileScreen}
-        options={{ title: 'Profile' }}
+        options={{ 
+          title: 'Profile',
+        }}
       />
       <Stack.Screen 
         name="Orders" 
         component={OrdersScreen}
-        options={{ title: 'Order History' }}
+        options={{ 
+          title: 'Order History',
+        }}
       />
       <Stack.Screen 
         name="Wishlist" 
         component={WishlistScreen}
-        options={{ title: 'Wishlist' }}
+        options={{ 
+          title: 'Wishlist',
+        }}
       />
       <Stack.Screen 
         name="Addresses" 
         component={AddressesScreen}
-        options={{ title: 'Addresses' }}
+        options={{ 
+          title: 'Addresses',
+        }}
       />
       <Stack.Screen 
         name="Preferences" 
         component={PreferencesScreen}
-        options={{ title: 'Preferences' }}
+        options={{ 
+          title: 'Preferences',
+        }}
       />
       <Stack.Screen 
         name="Notifications" 
         component={NotificationsScreen}
-        options={{ title: 'Notifications' }}
+        options={{ 
+          title: 'Notifications',
+        }}
       />
       <Stack.Screen 
         name="GeneralInfo" 
         component={GeneralInfoScreen}
-        options={{ title: 'General Information' }}
+        options={{ 
+          title: 'General Information',
+        }}
       />
       <Stack.Screen 
         name="HelpSupport" 
         component={HelpSupportScreen}
-        options={{ title: 'Help & Support' }}
+        options={{ 
+          title: 'Help & Support',
+        }}
       />
       <Stack.Screen 
         name="SocialMedia" 
         component={SocialMediaScreen}
-        options={{ title: 'Follow Us' }}
+        options={{ 
+          title: 'Follow Us',
+        }}
       />
     </Stack.Navigator>
   );

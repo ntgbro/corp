@@ -5,7 +5,8 @@ import { useThemeContext } from '../../../../contexts/ThemeContext';
 interface AddressFormProps {
   initialData?: {
     name?: string;
-    address?: string;
+    line1?: string;
+    line2?: string;
     city?: string;
     state?: string;
     zipCode?: string;
@@ -23,7 +24,8 @@ export const AddressForm: React.FC<AddressFormProps> = ({
   const { theme } = useThemeContext();
   const [formData, setFormData] = useState({
     name: initialData.name || '',
-    address: initialData.address || '',
+    line1: initialData.line1 || '',
+    line2: initialData.line2 || '',
     city: initialData.city || '',
     state: initialData.state || '',
     zipCode: initialData.zipCode || '',
@@ -33,7 +35,8 @@ export const AddressForm: React.FC<AddressFormProps> = ({
   useEffect(() => {
     setFormData({
       name: initialData.name || '',
-      address: initialData.address || '',
+      line1: initialData.line1 || '',
+      line2: initialData.line2 || '',
       city: initialData.city || '',
       state: initialData.state || '',
       zipCode: initialData.zipCode || '',
@@ -63,19 +66,36 @@ export const AddressForm: React.FC<AddressFormProps> = ({
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={[styles.label, { color: theme.colors.text }]}>Address</Text>
+        <Text style={[styles.label, { color: theme.colors.text }]}>Address Line 1</Text>
         <TextInput
           style={[styles.input, { 
             backgroundColor: theme.colors.surface,
             color: theme.colors.text,
             borderColor: theme.colors.border,
           }]}
-          value={formData.address}
-          onChangeText={(text) => setFormData({ ...formData, address: text })}
-          placeholder="Street address"
+          value={formData.line1}
+          onChangeText={(text) => setFormData({ ...formData, line1: text })}
+          placeholder="Address line 1"
           placeholderTextColor={theme.colors.textSecondary}
           multiline
-          numberOfLines={3}
+          numberOfLines={2}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={[styles.label, { color: theme.colors.text }]}>Address Line 2 (Optional)</Text>
+        <TextInput
+          style={[styles.input, { 
+            backgroundColor: theme.colors.surface,
+            color: theme.colors.text,
+            borderColor: theme.colors.border,
+          }]}
+          value={formData.line2}
+          onChangeText={(text) => setFormData({ ...formData, line2: text })}
+          placeholder="Address line 2 (Apartment, suite, etc.)"
+          placeholderTextColor={theme.colors.textSecondary}
+          multiline
+          numberOfLines={2}
         />
       </View>
 

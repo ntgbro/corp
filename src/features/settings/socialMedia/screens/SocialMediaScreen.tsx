@@ -12,8 +12,6 @@ export const SocialMediaScreen = () => {
   return (
     <SafeAreaWrapper>
       <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.header, { color: theme.colors.text }]}>Follow Us</Text>
-        
         <View style={[styles.content, { backgroundColor: theme.colors.surface }]}>
           <Text style={[styles.description, { color: theme.colors.textSecondary }]}>
             Stay connected with us on social media for the latest updates, promotions, and news.
@@ -35,11 +33,6 @@ export const SocialMediaScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    padding: 16,
   },
   content: {
     margin: 16,

@@ -15,6 +15,7 @@ import FavoriteButton from '../../components/common/FavoriteButton';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleProductFavorite } from '../../store/slices/productsSlice';
 import { RootState } from '../../store';
+import { useWishlist } from '../../features/home/hooks/useWishlist';
 
 export interface ProductData {
   id: string;
@@ -49,10 +50,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   size = 'medium',
 }) => {
   const theme = useTheme();
-  const dispatch = useDispatch();
-  const { favoriteProducts } = useSelector((state: RootState) => state.products);
+  const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+
+  // Check if product is in wishlist
+  const isFavorited = isInWishlist(product.id);
 
   const Container = onPress ? TouchableOpacity : View;
 
@@ -164,6 +168,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
+  const handleToggleFavorite = async () => {
+    if (isTogglingFavorite) return;
+    
+    setIsTogglingFavorite(true);
+    try {
+      if (isFavorited) {
+        await removeFromWishlist(product.id);
+      } else {
+        await addToWishlist(product.id, {
+          name: product.name,
+          price: product.price,
+          image: product.image || product.imageURL || '',
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    } finally {
+      setIsTogglingFavorite(false);
+    }
+  };
+
   return (
     <Container
       onPress={onPress}
@@ -193,8 +218,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </View>
         )}
         <FavoriteButton
-          isFavorited={favoriteProducts.includes(product.id)}
-          onPress={() => dispatch(toggleProductFavorite(product.id))}
+          isFavorited={isFavorited}
+          onPress={handleToggleFavorite}
           size={20}
           style={styles.favoriteButton}
         />

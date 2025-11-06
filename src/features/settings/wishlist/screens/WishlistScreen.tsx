@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
 import { SafeAreaWrapper } from '../../../../components/layout';
 import { useThemeContext } from '../../../../contexts/ThemeContext';
 import { WishlistItem } from '../components/WishlistItem';
@@ -30,8 +30,7 @@ export const WishlistScreen = () => {
 
   return (
     <SafeAreaWrapper>
-      <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.header, { color: theme.colors.text }]}>Wishlist</Text>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.content}>
           {loading && wishlist.length === 0 ? (
             <View style={styles.loadingContainer}>
@@ -55,7 +54,7 @@ export const WishlistScreen = () => {
             />
           )}
         </View>
-      </ScrollView>
+      </View>
     </SafeAreaWrapper>
   );
 };
@@ -63,11 +62,6 @@ export const WishlistScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    padding: 16,
   },
   content: {
     flex: 1,

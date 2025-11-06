@@ -59,20 +59,6 @@ export const NotificationsScreen = () => {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        <View style={styles.headerContainer}>
-          <Text style={[styles.header, { color: theme.colors.text }]}>Notifications</Text>
-          {unreadCount > 0 && (
-            <TouchableOpacity 
-              style={[styles.markAllButton, { backgroundColor: theme.colors.primary }]}
-              onPress={handleMarkAllAsRead}
-            >
-              <Text style={[styles.markAllText, { color: theme.colors.white }]}>
-                Mark All as Read
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-        
         <View style={styles.content}>
           {loading ? (
             <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
@@ -91,7 +77,21 @@ export const NotificationsScreen = () => {
               </Text>
             </View>
           ) : (
-            renderNotificationItems()
+            <>
+              {unreadCount > 0 && (
+                <View style={styles.headerActions}>
+                  <TouchableOpacity 
+                    style={[styles.markAllButton, { backgroundColor: theme.colors.primary }]}
+                    onPress={handleMarkAllAsRead}
+                  >
+                    <Text style={[styles.markAllText, { color: theme.colors.white }]}>
+                      Mark All as Read
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              {renderNotificationItems()}
+            </>
           )}
         </View>
       </ScrollView>
@@ -103,15 +103,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  headerActions: {
+    alignItems: 'flex-end',
     padding: 16,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    paddingBottom: 8,
   },
   markAllButton: {
     borderRadius: 8,

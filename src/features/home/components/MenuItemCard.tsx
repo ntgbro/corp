@@ -6,9 +6,7 @@ import AddToCartButton from '../../../components/common/AddToCartButton';
 import { useCart } from '../../../contexts/CartContext';
 import { CARD_DIMENSIONS, SPACING, BORDERS, SHADOWS } from '../../../constants/ui';
 import FavoriteButton from '../../../components/common/FavoriteButton';
-import { useDispatch, useSelector } from 'react-redux';
-import { toggleProductFavorite } from '../../../store/slices/productsSlice';
-import { RootState } from '../../../store';
+import { useWishlist } from '../hooks/useWishlist';
 
 interface MenuItemCardProps {
   menuItem: MenuItem;
@@ -18,9 +16,27 @@ interface MenuItemCardProps {
 
 const MenuItemCard: React.FC<MenuItemCardProps> = ({ menuItem, onPress, onAddToCart }) => {
   const { theme } = useThemeContext();
-  const dispatch = useDispatch();
-  const { favoriteProducts } = useSelector((state: RootState) => state.products);
+  const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
+
+  // Check if menu item is in wishlist
+  const isFavorited = isInWishlist(menuItem.menuItemId);
+
+  const handleToggleFavorite = async () => {
+    try {
+      if (isFavorited) {
+        await removeFromWishlist(menuItem.menuItemId);
+      } else {
+        await addToWishlist(menuItem.menuItemId, {
+          name: menuItem.name,
+          price: menuItem.price,
+          image: menuItem.mainImageURL || menuItem.imageURL || '',
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
 
   const handleAddToCart = () => {
     // Add item to cart using cart context
@@ -63,8 +79,8 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ menuItem, onPress, onAddToC
           </View>
         )}
         <FavoriteButton
-          isFavorited={favoriteProducts.includes(menuItem.menuItemId)}
-          onPress={() => dispatch(toggleProductFavorite(menuItem.menuItemId))}
+          isFavorited={isFavorited}
+          onPress={handleToggleFavorite}
           size={20}
           style={styles.favoriteButton}
         />
