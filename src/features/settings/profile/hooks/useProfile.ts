@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { db, storage } from '../../../../config/firebase';
 import { doc, getDoc, updateDoc } from '@react-native-firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from '@react-native-firebase/storage';
+import { ref, getDownloadURL, putFile } from '@react-native-firebase/storage';
 
 export const useProfile = () => {
   const { user } = useAuth();
@@ -68,12 +68,17 @@ export const useProfile = () => {
     setSaving(true);
     try {
       if (user?.userId) {
-        // Upload image to Firebase Storage
-        const response = await fetch(imageUri);
-        const blob = await response.blob();
+        // Remove file:// prefix if present
+        const filePath = imageUri.startsWith('file://') ? imageUri.slice(7) : imageUri;
         
-        const storageRef = ref(storage, `profile_photos/${user.userId}_${Date.now()}.jpg`);
-        await uploadBytes(storageRef, blob);
+        // Create a reference to the file path within the user's directory
+        const storageRef = ref(storage, `users/${user.userId}/profile_photos/${Date.now()}.jpg`);
+        
+        // Upload the file using putFile function (modular API)
+        const uploadTask = putFile(storageRef, filePath);
+        
+        // Wait for the upload to complete
+        await uploadTask;
         
         // Get download URL
         const downloadURL = await getDownloadURL(storageRef);
