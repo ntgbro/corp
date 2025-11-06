@@ -133,7 +133,7 @@ export const AddressesScreen = () => {
           <View style={styles.content}>
             <View style={styles.addButtonContainer}>
               <TouchableOpacity
-                style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
+                style={[styles.addButton, { backgroundColor: '#754C29' }]}
                 onPress={() => {
                   setEditingAddress(null);
                   setShowForm(true);
