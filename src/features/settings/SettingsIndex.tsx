@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, ToastAndroid, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, ToastAndroid, Platform, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaWrapper } from '../../components/layout';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import { SettingsStackParamList } from './navigation/SettingsNavigator';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProfile } from './profile/hooks/useProfile';
 
 type SettingsNavigationProp = StackNavigationProp<SettingsStackParamList, 'SettingsHome'>;
 
@@ -13,6 +14,7 @@ export const SettingsIndex = () => {
   const { theme } = useThemeContext();
   const navigation = useNavigation<SettingsNavigationProp>();
   const { signOut, loading } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const settingsSections = [
@@ -85,6 +87,37 @@ export const SettingsIndex = () => {
     <SafeAreaWrapper>
       <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Text style={[styles.header, { color: theme.colors.text }]}>Settings</Text>
+        
+        {/* Profile Section with Circular Photo */}
+        <View style={[styles.profileSection, { backgroundColor: theme.colors.surface }]}>
+          {profileLoading ? (
+            <View style={styles.profilePlaceholder}>
+              <Text style={{ color: theme.colors.textSecondary }}>Loading...</Text>
+            </View>
+          ) : (
+            <TouchableOpacity 
+              style={styles.profileContainer}
+              onPress={() => handleNavigate('profile')}
+            >
+              {profile?.profilePhotoURL ? (
+                <Image 
+                  source={{ uri: profile.profilePhotoURL }} 
+                  style={styles.profileImage}
+                />
+              ) : (
+                <View style={[styles.profileImagePlaceholder, { backgroundColor: theme.colors.background }]}>
+                  <Text style={{ fontSize: 24, color: theme.colors.textSecondary }}>👤</Text>
+                </View>
+              )}
+              <View style={styles.profileInfo}>
+                <Text style={[styles.profileName, { color: theme.colors.text }]}>{profile?.displayName || 'User'}</Text>
+                <Text style={[styles.profileEmail, { color: theme.colors.textSecondary }]}>{profile?.email || ''}</Text>
+              </View>
+              <Text style={[styles.chevron, { color: theme.colors.textSecondary }]}>›</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        
         <View style={styles.content}>
           {settingsSections.map((section) => (
             <TouchableOpacity
@@ -158,6 +191,52 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     padding: 16,
+  },
+  profileSection: {
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+    padding: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  profileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
+  },
+  profileImagePlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  profileEmail: {
+    fontSize: 14,
+  },
+  profilePlaceholder: {
+    padding: 20,
+    alignItems: 'center',
   },
   content: {
     flex: 1,

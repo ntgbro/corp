@@ -1,27 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image } from 'react-native';
 import { useThemeContext } from '../../../../contexts/ThemeContext';
+import { launchImageLibrary, Asset, ImagePickerResponse } from 'react-native-image-picker';
 
 interface EditProfileFormProps {
   initialData?: {
     displayName?: string;
     email?: string;
     phone?: string;
+    profilePhotoURL?: string;
   };
   onSave: (data: any) => void;
   saving?: boolean;
+  onPhotoChange?: (photoURL: string) => void;
 }
 
 export const EditProfileForm: React.FC<EditProfileFormProps> = ({
   initialData = {},
   onSave,
   saving = false,
+  onPhotoChange,
 }) => {
   const { theme } = useThemeContext();
   const [formData, setFormData] = useState({
     displayName: initialData.displayName || '',
     email: initialData.email || '',
     phone: initialData.phone || '',
+    profilePhotoURL: initialData.profilePhotoURL || '',
   });
 
   useEffect(() => {
@@ -29,6 +34,7 @@ export const EditProfileForm: React.FC<EditProfileFormProps> = ({
       displayName: initialData.displayName || '',
       email: initialData.email || '',
       phone: initialData.phone || '',
+      profilePhotoURL: initialData.profilePhotoURL || '',
     });
   }, [initialData]);
 
@@ -36,8 +42,60 @@ export const EditProfileForm: React.FC<EditProfileFormProps> = ({
     onSave(formData);
   };
 
+  const selectProfilePhoto = () => {
+    const options = {
+      mediaType: 'photo' as const,
+      quality: 0.8 as const,
+      maxWidth: 500,
+      maxHeight: 500,
+    };
+
+    launchImageLibrary(options, (response: ImagePickerResponse) => {
+      if (response.didCancel || response.errorCode) {
+        console.log('User cancelled image picker or error occurred');
+        return;
+      }
+
+      if (response.assets && response.assets.length > 0) {
+        const imageUri = response.assets[0].uri;
+        if (imageUri) {
+          setFormData({ ...formData, profilePhotoURL: imageUri });
+          if (onPhotoChange) {
+            onPhotoChange(imageUri);
+          }
+        }
+      }
+    });
+  };
+
   return (
     <View style={styles.container}>
+      {/* Profile Photo Section */}
+      <View style={styles.photoSection}>
+        <TouchableOpacity onPress={selectProfilePhoto}>
+          {formData.profilePhotoURL ? (
+            <Image 
+              source={{ uri: formData.profilePhotoURL }} 
+              style={styles.profileImage}
+            />
+          ) : (
+            <View style={[styles.profileImagePlaceholder, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.placeholderText, { color: theme.colors.textSecondary }]}>
+                Add Photo
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.changePhotoButton, { backgroundColor: theme.colors.primary }]}
+          onPress={selectProfilePhoto}
+        >
+          <Text style={[styles.changePhotoText, { color: theme.colors.white }]}>
+            Change Photo
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.inputGroup}>
         <Text style={[styles.label, { color: theme.colors.text }]}>Full Name</Text>
         <TextInput
@@ -66,6 +124,7 @@ export const EditProfileForm: React.FC<EditProfileFormProps> = ({
           placeholder="Enter your email"
           placeholderTextColor={theme.colors.textSecondary}
           keyboardType="email-address"
+          editable={false}
         />
       </View>
 
@@ -101,6 +160,39 @@ export const EditProfileForm: React.FC<EditProfileFormProps> = ({
 const styles = StyleSheet.create({
   container: {
     padding: 16,
+  },
+  photoSection: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  profileImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 15,
+  },
+  profileImagePlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+  },
+  placeholderText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  changePhotoButton: {
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  changePhotoText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   inputGroup: {
     marginBottom: 20,
