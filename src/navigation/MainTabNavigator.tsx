@@ -50,8 +50,8 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
         const label = options.tabBarLabel !== undefined ? options.tabBarLabel : route.name;
         const isFocused = state.index === index;
 
-        // Don't render the OrderDetails tab
-        if (route.name === 'OrderDetails') return null;
+        // Don't render the OrderDetails tab or Product tab
+        if (route.name === 'OrderDetails' || route.name === 'Product') return null;
 
         const onPress = () => {
           const event = navigation.emit({
@@ -74,10 +74,6 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
           case 'Categories':
             displayLabel = isFocused ? 'Categories' : '';
             break;
-          // Comment out Products tab
-          // case 'Product':
-          //   displayLabel = isFocused ? 'Products' : '';
-          //   break;
           case 'Cart':
           case 'CartStack':
             displayLabel = isFocused ? 'Cart' : '';
@@ -117,14 +113,6 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
                   color={isFocused ? '#754C29' : 'black'} 
                 />
               )}
-              {/* Comment out Products icon
-              {route.name === 'Product' && (
-                <CategoryIcon 
-                  size={32} 
-                  color={isFocused ? '#754C29' : 'black'} 
-                />
-              )}
-              */}
               {(route.name === 'Cart' || route.name === 'CartStack') && (
                 <CartIcon 
                   size={30} 
@@ -207,15 +195,13 @@ export const MainTabNavigator: React.FC = () => {
           tabBarLabel: ({ focused }) => focused ? 'Categories' : '',
         }}
       />
-      {/* Comment out Products tab
       <Tab.Screen
         name="Product"
         component={ProductStackNavigator}
         options={{
-          tabBarLabel: ({ focused }) => focused ? 'Products' : '',
+          tabBarButton: () => null, // Hide from tab bar but keep functionality
         }}
       />
-      */}
       <Tab.Screen
         name="CartStack"
         component={CartStackNavigator}
