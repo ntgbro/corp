@@ -5,6 +5,7 @@ import ProductScreen from '../features/product/screens/ProductScreen';
 import ProductsPage from '../features/product/screens/ProductsPage';
 import RestaurantDetailsScreen from '../features/home/screens/RestaurantDetailsScreen';
 import ProductDetailsScreen from '../features/product/screens/ProductDetailsScreen';
+import SearchResultsScreen from '../features/product/screens/SearchResultsScreen';
 import UnifiedHeader from '../components/layout/UnifiedHeader';
 import { useThemeContext } from '../contexts/ThemeContext';
 
@@ -77,17 +78,17 @@ export const ProductStackNavigator: React.FC = () => {
       />
       <Stack.Screen
         name="SearchResults"
-        component={ProductScreen}
+        component={SearchResultsScreen}
         options={({ route }) => ({
           headerShown: true,
-          headerTitle: getHeaderTitleForProducts(route),
+          headerTitle: `Search: "${(route.params as any)?.searchQuery}"`,
           header: (props) => (
             <UnifiedHeader
-              title={getHeaderTitleForProducts(props.route)}
+              title={`Search: "${(route.params as any)?.searchQuery}"`}
               showBackButton={props.navigation.canGoBack()}
               onBackPress={props.navigation.goBack}
               showLocation={false}
-              showSearch={false}
+              showSearch={true}
             />
           ),
         })}
