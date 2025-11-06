@@ -193,9 +193,9 @@ export const FixedSearchHeader: React.FC<FixedSearchHeaderProps> = ({
       if (onSearch) {
         onSearch(searchQuery.trim());
       } else {
-        // Fallback to local implementation
-        (navigation as any).navigate('Product', {
-          screen: 'Products',
+        // Fallback to local implementation - navigate to SearchResults in Main stack
+        (navigation as any).navigate('Main', {
+          screen: 'SearchResults',
           params: { searchQuery: searchQuery.trim() }
         });
       }
@@ -317,9 +317,9 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       if (onSearch) {
         onSearch(searchQuery.trim());
       } else {
-        // Fallback to local implementation
-        (navigation as any).navigate('Product', {
-          screen: 'Products',
+        // Fallback to local implementation - navigate to SearchResults in Main stack
+        (navigation as any).navigate('Main', {
+          screen: 'SearchResults',
           params: { searchQuery: searchQuery.trim() }
         });
       }

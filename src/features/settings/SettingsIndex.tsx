@@ -98,6 +98,11 @@ export const SettingsIndex = () => {
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         {/* Profile Section - Image, Name, and Email */}
         <View style={styles.profileSection}>
+      <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <Text style={[styles.header, { color: theme.colors.text }]}>profile</Text>
+        
+        {/* Profile Section with Circular Photo */}
+        <View style={[styles.profileSection, { backgroundColor: theme.colors.surface }]}>
           {profileLoading ? (
             <View style={styles.profilePlaceholder}>
               <Text style={{ color: theme.colors.textSecondary }}>Loading...</Text>
