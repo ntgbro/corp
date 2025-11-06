@@ -183,83 +183,13 @@ const RestaurantDetailsScreen: React.FC = () => {
             </View>
 
             <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
-              <Typography variant="caption" color="secondary" style={styles.detailLabel}>⏱️ Delivery</Typography>
-              <Typography variant="body2" color="text" style={styles.detailValue}>
-                {restaurant.avgDeliveryTime || 'Not specified'}
-              </Typography>
-            </View>
-
-            <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
               <Typography variant="caption" color="secondary" style={styles.detailLabel}>💰 Min Order</Typography>
               <Typography variant="body2" color="text" style={styles.detailValue}>
                 ₹{restaurant.minOrderAmount || 'Not specified'}
               </Typography>
             </View>
 
-            <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
-              <Typography variant="caption" color="secondary" style={styles.detailLabel}>🚚 Delivery Fee</Typography>
-              <Typography variant="body2" color="text" style={styles.detailValue}>
-                ₹{restaurant.deliveryCharges || 'Free'}
-              </Typography>
-            </View>
-
-            <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
-              <Typography variant="caption" color="secondary" style={styles.detailLabel}>🎯 Price Range</Typography>
-              <Typography variant="body2" color="text" style={styles.detailValue}>
-                {restaurant.priceRange || 'Not specified'}
-              </Typography>
-            </View>
-
-            {/* Enhanced Details */}
-            {restaurant.maxDeliveryRadius && (
-              <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
-                <Typography variant="caption" color="secondary" style={styles.detailLabel}>📏 Delivery Radius</Typography>
-                <Typography variant="body2" color="text" style={styles.detailValue}>
-                  {restaurant.maxDeliveryRadius} km
-                </Typography>
-              </View>
-            )}
-
-            {restaurant.freeDeliveryAbove && (
-              <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
-                <Typography variant="caption" color="secondary" style={styles.detailLabel}>🎁 Free Delivery</Typography>
-                <Typography variant="body2" color="text" style={styles.detailValue}>
-                  Above ₹{restaurant.freeDeliveryAbove}
-                </Typography>
-              </View>
-            )}
-
-            {/* Payment Methods */}
-            <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
-              <Typography variant="caption" color="secondary" style={styles.detailLabel}>💳 Payment</Typography>
-              <Typography variant="body2" color="text" style={styles.detailValue}>
-                {restaurant.hasOnlinePayment && restaurant.hasCashOnDelivery
-                  ? 'Online + Cash'
-                  : restaurant.hasOnlinePayment
-                  ? 'Online Only'
-                  : restaurant.hasCashOnDelivery
-                  ? 'Cash Only'
-                  : 'Not specified'}
-              </Typography>
-            </View>
-
-            {/* Veg/Non-Veg */}
-            <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
-              <Typography variant="caption" color="secondary" style={styles.detailLabel}>🥗 Type</Typography>
-              <Typography variant="body2" color="text" style={styles.detailValue}>
-                {restaurant.isPureVeg ? 'Pure Veg' : 'Veg & Non-Veg'}
-              </Typography>
-            </View>
-
-            {/* Services */}
-            {restaurant.serviceIds && restaurant.serviceIds.length > 0 && (
-              <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
-                <Typography variant="caption" color="secondary" style={styles.detailLabel}>🏪 Services</Typography>
-                <Typography variant="body2" color="text" style={styles.detailValue}>
-                  {restaurant.serviceIds.join(', ')}
-                </Typography>
-              </View>
-            )}
+            
 
             {/* Setup Status */}
             {restaurant.needsSetup !== undefined && (
@@ -271,25 +201,6 @@ const RestaurantDetailsScreen: React.FC = () => {
               </View>
             )}
           </View>
-
-          {/* Operating Hours */}
-          {restaurant.openHours && (
-            <View style={styles.hoursSection}>
-              <Typography variant="h6" color="text" style={styles.sectionTitle}>Operating Hours</Typography>
-              <View style={styles.hoursGrid}>
-                {Object.entries(restaurant.openHours).map(([day, hours]) => (
-                  <View key={day} style={[styles.hourItem, { backgroundColor: '#FBF5EB' }]}>
-                    <Typography variant="caption" color="secondary" style={styles.dayLabel}>
-                      {day.charAt(0).toUpperCase() + day.slice(1)}
-                    </Typography>
-                    <Typography variant="body2" color="text" style={styles.hourValue}>
-                      {hours.open} - {hours.close}
-                    </Typography>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
 
           {/* Delivery Locations */}
           {restaurant.deliveryLocations && restaurant.deliveryLocations.length > 0 && (
