@@ -27,6 +27,18 @@ const OrderDetailsScreen: React.FC = () => {
 const CustomTabBar = ({ state, descriptors, navigation }: any) => {
   const { theme } = useThemeContext();
   const { state: cartState } = useCart();
+  
+  // Check if we're on the Profile screen to hide the tab bar
+  const currentRoute = state.routes[state.index];
+  const isProfileScreen = currentRoute.name === 'Profile';
+  
+  // Debugging: log the current route
+  console.log('Current route:', currentRoute.name, 'Index:', state.index);
+
+  // Don't render the tab bar if we're on the Profile screen
+  if (isProfileScreen) {
+    return null;
+  }
 
   return (
     <View style={{
