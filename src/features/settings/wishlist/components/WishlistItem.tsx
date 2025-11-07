@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { useThemeContext } from '../../../../contexts/ThemeContext';
+import { WishlistButton } from './WishlistButton';
 
 interface WishlistItemProps {
   id: string;
@@ -20,6 +21,8 @@ export const WishlistItem: React.FC<WishlistItemProps> = ({
   onAddToCart,
 }) => {
   const { theme } = useThemeContext();
+  const screenWidth = Dimensions.get('window').width;
+  const cardWidth = (screenWidth - 16 - 8) / 2; // Increased from (screenWidth - 32 - 12) / 2
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -29,31 +32,35 @@ export const WishlistItem: React.FC<WishlistItemProps> = ({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+    <View style={[styles.container, { backgroundColor: '#FBF5EB', borderColor: theme.colors.border, width: cardWidth }]}>
+      {/* Favorite Icon at top-right */}
+      <TouchableOpacity style={styles.favoriteButton} onPress={() => onRemove(id)}>
+        <Text style={styles.favoriteIcon}>❤️</Text>
+      </TouchableOpacity>
+      
+      {/* Product Image at top */}
       <Image
         source={{ uri: image }}
         style={styles.image}
         resizeMode="cover"
       />
-      <View style={styles.details}>
-        <Text style={[styles.name, { color: theme.colors.text }]} numberOfLines={2}>
-          {name}
-        </Text>
+      
+      {/* Product Name below image */}
+      <Text style={[styles.name, { color: theme.colors.text }]} numberOfLines={2}>
+        {name}
+      </Text>
+      
+      {/* Spacer to push price and button to the bottom */}
+      <View style={styles.spacer} />
+      
+      {/* Price and Add to Cart Button at the bottom */}
+      <View style={styles.bottomRow}>
         <Text style={[styles.price, { color: theme.colors.primary }]}>{formatPrice(price)}</Text>
-      </View>
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: theme.colors.error }]}
-          onPress={() => onRemove(id)}
-        >
-          <Text style={[styles.actionText, { color: theme.colors.white }]}>Remove</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: theme.colors.primary }]}
+        <WishlistButton
+          title="Add to Cart"
           onPress={() => onAddToCart(id)}
-        >
-          <Text style={[styles.actionText, { color: theme.colors.white }]}>Add to Cart</Text>
-        </TouchableOpacity>
+          size="small"
+        />
       </View>
     </View>
   );
@@ -61,42 +68,45 @@ export const WishlistItem: React.FC<WishlistItemProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
     borderWidth: 1,
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
+    padding: 8,
+    margin: 4, // Decreased from 6 to 4
+    position: 'relative',
+    flexDirection: 'column',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 12, // Adjusted to match padding
+    right: 12, // Adjusted to match padding
+    zIndex: 1,
+    padding: 4,
+  },
+  favoriteIcon: {
+    fontSize: 18,
   },
   image: {
-    width: 80,
-    height: 80,
+    width: '100%',
+    height: 130,
     borderRadius: 8,
-    marginRight: 12,
-  },
-  details: {
-    flex: 1,
-    justifyContent: 'center',
+    marginBottom: 12, // Keep some space below image
   },
   name: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
-    marginBottom: 4,
+    marginBottom: 12, // Keep some space below name
+  },
+  spacer: {
+    flex: 1,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 'auto',
   },
   price: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  actions: {
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  actionButton: {
-    borderRadius: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-  },
-  actionText: {
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: '600',
   },
 });

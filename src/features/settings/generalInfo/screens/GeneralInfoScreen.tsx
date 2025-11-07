@@ -61,6 +61,7 @@ export const GeneralInfoScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: 16, // Add padding at the top
   },
   infoCard: {
     borderWidth: 1,

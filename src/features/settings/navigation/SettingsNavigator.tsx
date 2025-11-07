@@ -35,6 +35,10 @@ export const SettingsNavigator = () => {
         headerTitleStyle: {
           fontWeight: '600',
         },
+        headerStyle: {
+          backgroundColor: '#F5DEB3',
+        },
+        headerTintColor: '#000000',
       }}
     >
       <Stack.Screen 
@@ -56,7 +60,7 @@ export const SettingsNavigator = () => {
         name="Orders" 
         component={OrdersScreen}
         options={{ 
-          title: 'Order History',
+          title: 'Order history',
         }}
       />
       <Stack.Screen 
@@ -64,6 +68,14 @@ export const SettingsNavigator = () => {
         component={WishlistScreen}
         options={{ 
           title: 'Wishlist',
+          headerStyle: {
+            backgroundColor: '#F5DEB3',
+          },
+          headerTitleStyle: {
+            color: '#000000', // Black text color
+            fontWeight: '600',
+          },
+          headerTintColor: '#000000', // Black color for back button and other header icons
         }}
       />
       <Stack.Screen 

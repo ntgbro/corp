@@ -14,7 +14,7 @@ export type MainStackParamList = {
   Products: undefined;
   RestaurantItems: { restaurantId?: string; category?: string };
   ProductsPage: { category: string }; // Shows restaurants for a category
-  SearchResults: { searchQuery?: string; category?: string; restaurantId?: string };
+  SearchResults: { searchQuery: string }; // Make searchQuery required for SearchResults
   ChefProfile: { chefId: string };
   RestaurantDetails: { restaurantId: string };
   ProductDetails: { menuItemId: string };
@@ -31,12 +31,10 @@ export type CartStackParamList = {
 
 export type MainTabParamList = {
   Home: undefined;
-  Product: undefined;
-  Products: undefined;
+  Categories: undefined;
+  Product: undefined; // Add Product to the type definition
   CartStack: undefined;
   Orders: undefined;
   Profile: undefined;
-  ProductDetails: { menuItemId: string };
   OrderDetails: { orderId: string };
-  SearchResults: { searchQuery?: string; category?: string; restaurantId?: string };
 };

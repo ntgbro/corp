@@ -10,6 +10,7 @@ import { OrdersScreen } from '../features/settings/orders/screens/OrdersScreen';
 import { useCart } from '../contexts/CartContext';
 import { SettingsNavigator } from '../features/settings';
 import { HomeIcon, CategoryIcon, CartIcon, OrderIcon, ProfileIcon } from '../components/common'; // Import the new SVG icons
+import CategoriesScreen from '../features/product/screens/CategoriesScreen';
 
 // Placeholder Screen Components (to avoid inline functions)
 const OrderDetailsScreen: React.FC = () => {
@@ -26,6 +27,18 @@ const OrderDetailsScreen: React.FC = () => {
 const CustomTabBar = ({ state, descriptors, navigation }: any) => {
   const { theme } = useThemeContext();
   const { state: cartState } = useCart();
+  
+  // Check if we're on the Profile screen to hide the tab bar
+  const currentRoute = state.routes[state.index];
+  const isProfileScreen = currentRoute.name === 'Profile';
+  
+  // Debugging: log the current route
+  console.log('Current route:', currentRoute.name, 'Index:', state.index);
+
+  // Don't render the tab bar if we're on the Profile screen
+  if (isProfileScreen) {
+    return null;
+  }
 
   return (
     <View style={{
@@ -49,8 +62,8 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
         const label = options.tabBarLabel !== undefined ? options.tabBarLabel : route.name;
         const isFocused = state.index === index;
 
-        // Don't render the OrderDetails tab
-        if (route.name === 'OrderDetails') return null;
+        // Don't render the OrderDetails tab or Product tab
+        if (route.name === 'OrderDetails' || route.name === 'Product') return null;
 
         const onPress = () => {
           const event = navigation.emit({
@@ -70,8 +83,8 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
           case 'Home':
             displayLabel = isFocused ? 'Home' : '';
             break;
-          case 'Product':
-            displayLabel = isFocused ? 'Products' : '';
+          case 'Categories':
+            displayLabel = isFocused ? 'Categories' : '';
             break;
           case 'Cart':
           case 'CartStack':
@@ -106,7 +119,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
                   color={isFocused ? '#754C29' : 'black'} 
                 />
               )}
-              {route.name === 'Product' && (
+              {route.name === 'Categories' && (
                 <CategoryIcon 
                   size={32} 
                   color={isFocused ? '#754C29' : 'black'} 
@@ -188,10 +201,17 @@ export const MainTabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen
+        name="Categories"
+        component={CategoriesScreen}
+        options={{
+          tabBarLabel: ({ focused }) => focused ? 'Categories' : '',
+        }}
+      />
+      <Tab.Screen
         name="Product"
         component={ProductStackNavigator}
         options={{
-          tabBarLabel: ({ focused }) => focused ? 'Products' : '',
+          tabBarButton: () => null, // Hide from tab bar but keep functionality
         }}
       />
       <Tab.Screen

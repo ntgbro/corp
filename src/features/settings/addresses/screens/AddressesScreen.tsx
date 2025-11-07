@@ -67,14 +67,14 @@ export const AddressesScreen = () => {
     <View 
       key={address.id} 
       style={[styles.addressCard, { 
-        backgroundColor: theme.colors.surface, 
-        borderColor: address.isDefault ? theme.colors.primary : theme.colors.border 
+        backgroundColor: '#FBF5EB', 
+        borderColor: address.isDefault ? '#3b82f6' : theme.colors.border 
       }]}
     >
       <View style={styles.addressHeader}>
         <Text style={[styles.addressName, { color: theme.colors.text }]}>{address.name}</Text>
         {address.isDefault && (
-          <Text style={[styles.defaultBadge, { backgroundColor: theme.colors.primary }]}>Default</Text>
+          <Text style={[styles.defaultBadge, { backgroundColor: '#3b82f6' }]}>Default</Text>
         )}
       </View>
       <Text style={[styles.addressText, { color: theme.colors.text }]}>{address.line1}</Text>

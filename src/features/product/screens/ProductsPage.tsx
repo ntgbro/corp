@@ -49,7 +49,7 @@ const ProductsPage: React.FC = () => {
   const { products, loading, error } = useProductsByCategory('fresh', category, 100);
 
   const handleProductPress = (product: any) => {
-    (navigation as any).navigate('ProductDetails', { menuItemId: product.id });
+    (navigation as any).navigate('Product', { screen: 'ProductDetails', params: { menuItemId: product.id } });
   };
 
   const handleSeeAllPress = (restaurantId: string, restaurantName: string) => {

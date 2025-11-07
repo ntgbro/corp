@@ -218,7 +218,7 @@ const ProductDetailsScreen: React.FC = () => {
             </View>
           )}
           {restaurant && (
-            <TouchableOpacity onPress={() => (navigation as any).navigate('RestaurantDetails', { restaurantId: restaurant.restaurantId })}>
+            <TouchableOpacity onPress={() => (navigation as any).navigate('Product', { screen: 'RestaurantDetails', params: { restaurantId: restaurant.restaurantId } })}>
               <Typography variant="body1" color="primary" style={[styles.restaurant]}>
                 From: {restaurant.name}
               </Typography>

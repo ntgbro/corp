@@ -88,15 +88,52 @@ export const useProductSearch = (searchQuery: string, serviceId: 'fresh' | 'fmcg
     const searchProducts = async () => {
       try {
         setLoading(true);
-        const allProducts = await getAllProductsForService(serviceId, 100);
+        const allProducts = await getAllProductsForService(serviceId, 200); // Increase limit for better search results
 
-        // Simple text search
-        const filtered = allProducts.filter(product =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.category?.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        // Enhanced text search with multiple criteria
+        const filtered = allProducts.filter(product => {
+          const searchTerm = searchQuery.toLowerCase();
+          
+          // Check multiple fields with different weights
+          const nameMatch = product.name.toLowerCase().includes(searchTerm);
+          const categoryMatch = product.category?.toLowerCase().includes(searchTerm);
+          const restaurantMatch = product.restaurantName?.toLowerCase().includes(searchTerm);
+          
+          // Calculate relevance score
+          let score = 0;
+          if (nameMatch) score += 3; // Highest weight for name match
+          if (categoryMatch) score += 2; // Medium weight for category match
+          if (restaurantMatch) score += 1; // Lower weight for restaurant match
+          
+          // Also check for partial matches (split search term)
+          const searchTerms = searchTerm.split(' ');
+          searchTerms.forEach(term => {
+            if (term.length > 1) { // Only consider terms with more than 1 character
+              if (product.name.toLowerCase().includes(term)) score += 1;
+              if (product.category?.toLowerCase().includes(term)) score += 0.5;
+              if (product.restaurantName?.toLowerCase().includes(term)) score += 0.3;
+            }
+          });
+          
+          return score > 0;
+        });
 
-        setProducts(filtered.slice(0, 20));
+        // Sort by relevance score and then by rating
+        const sorted = filtered.sort((a, b) => {
+          // Calculate relevance scores
+          const aScore = calculateRelevanceScore(a, searchQuery);
+          const bScore = calculateRelevanceScore(b, searchQuery);
+          
+          // Sort by relevance score first, then by rating
+          if (bScore !== aScore) {
+            return bScore - aScore; // Higher score first
+          }
+          
+          // If scores are equal, sort by rating
+          return (b.rating || 0) - (a.rating || 0);
+        });
+
+        setProducts(sorted.slice(0, 30)); // Return top 30 results
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -109,4 +146,39 @@ export const useProductSearch = (searchQuery: string, serviceId: 'fresh' | 'fmcg
   }, [searchQuery, serviceId]);
 
   return { products, loading, error };
+};
+
+// Helper function to calculate relevance score
+const calculateRelevanceScore = (product: ProductData, searchQuery: string): number => {
+  const searchTerm = searchQuery.toLowerCase();
+  let score = 0;
+  
+  // Exact match in name (highest weight)
+  if (product.name.toLowerCase() === searchTerm) {
+    score += 10;
+  }
+  // Starts with match in name
+  else if (product.name.toLowerCase().startsWith(searchTerm)) {
+    score += 7;
+  }
+  // Contains match in name
+  else if (product.name.toLowerCase().includes(searchTerm)) {
+    score += 5;
+  }
+  
+  // Category matches
+  if (product.category?.toLowerCase() === searchTerm) {
+    score += 4;
+  } else if (product.category?.toLowerCase().includes(searchTerm)) {
+    score += 2;
+  }
+  
+  // Restaurant name matches
+  if (product.restaurantName?.toLowerCase() === searchTerm) {
+    score += 3;
+  } else if (product.restaurantName?.toLowerCase().includes(searchTerm)) {
+    score += 1;
+  }
+  
+  return score;
 };

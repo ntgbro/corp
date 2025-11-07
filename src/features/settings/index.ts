@@ -12,6 +12,7 @@ export { OrdersScreen } from './orders/screens/OrdersScreen';
 
 // Wishlist exports
 export { WishlistItem } from './wishlist/components/WishlistItem';
+export { WishlistButton } from './wishlist/components/WishlistButton';
 export { useWishlist } from './wishlist/hooks/useWishlist';
 export { WishlistScreen } from './wishlist/screens/WishlistScreen';
 
