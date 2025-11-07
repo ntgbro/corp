@@ -51,6 +51,9 @@ export const WishlistScreen = () => {
               renderItem={renderWishlistItem}
               keyExtractor={(item) => item.id}
               showsVerticalScrollIndicator={false}
+              numColumns={2}
+              columnWrapperStyle={styles.columnWrapper}
+              contentContainerStyle={styles.listContainer}
             />
           )}
         </View>
@@ -65,7 +68,15 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 4,
+    paddingTop: 8,
+  },
+  listContainer: {
+    paddingBottom: 16,
+  },
+  columnWrapper: {
+    justifyContent: 'flex-start',
+    marginBottom: 0,
   },
   loadingContainer: {
     flex: 1,

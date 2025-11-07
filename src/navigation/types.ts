@@ -32,6 +32,7 @@ export type CartStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Categories: undefined;
+  Product: undefined; // Add Product to the type definition
   CartStack: undefined;
   Orders: undefined;
   Profile: undefined;

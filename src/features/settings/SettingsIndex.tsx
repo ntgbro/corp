@@ -7,6 +7,7 @@ import { SettingsStackParamList } from './navigation/SettingsNavigator';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProfile } from './profile/hooks/useProfile';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 type SettingsNavigationProp = StackNavigationProp<SettingsStackParamList, 'SettingsHome'>;
 
@@ -86,6 +87,9 @@ export const SettingsIndex = () => {
   return (
     <SafeAreaWrapper>
       <View style={[styles.headerContainer, { backgroundColor: theme.colors.background }]}>
+        <TouchableOpacity onPress={() => navigation.navigate('Home' as any)}>
+          <Text style={[styles.backButton, { color: theme.colors.text }]}>←</Text>
+        </TouchableOpacity>
         <Text style={[styles.header, { color: theme.colors.text }]}>Profile</Text>
         <TouchableOpacity 
           style={styles.optionsButton}
@@ -97,7 +101,7 @@ export const SettingsIndex = () => {
       
       <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         {/* Profile Section with Circular Photo */}
-        <View style={[styles.profileSection, { backgroundColor: theme.colors.surface }]}>
+        <View style={styles.profileSection}>
           {profileLoading ? (
             <View style={styles.profilePlaceholder}>
               <Text style={{ color: theme.colors.textSecondary }}>Loading...</Text>
@@ -131,7 +135,7 @@ export const SettingsIndex = () => {
                 style={[
                   styles.sectionItem, 
                   { 
-                    borderBottomWidth: index !== settingsSections.length - 1 ? StyleSheet.hairlineWidth : 0,
+                    borderBottomWidth: 0, // Remove the horizontal lines
                     borderBottomColor: theme.colors.border 
                   }
                 ]}
@@ -157,9 +161,10 @@ export const SettingsIndex = () => {
         visible={showOptionsMenu}
         onRequestClose={() => setShowOptionsMenu(false)}
       >
-        <TouchableOpacity 
+        <View 
           style={styles.modalOverlay}
-          onPress={() => setShowOptionsMenu(false)}
+          onStartShouldSetResponder={() => true}
+          onResponderRelease={() => setShowOptionsMenu(false)}
         >
           <View style={[styles.optionsMenu, { backgroundColor: theme.colors.surface }]}>
             <TouchableOpacity 
@@ -181,7 +186,7 @@ export const SettingsIndex = () => {
               <Text style={[styles.optionText, { color: theme.colors.text }]}>Logout</Text>
             </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        </View>
       </Modal>
       
       {/* Logout Confirmation Modal */}
@@ -232,6 +237,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
+  },
+  backButton: {
+    fontSize: 24,
+    fontWeight: 'bold',
   },
   header: {
     fontSize: 24,
@@ -306,10 +315,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   settingsCard: {
-    marginTop: 16,
+    marginTop: 4,
     marginBottom: 0,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
+    marginHorizontal: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
     overflow: 'hidden',
     elevation: 2,
     shadowColor: '#000',

@@ -97,28 +97,6 @@ export const PreferencesForm: React.FC<PreferencesFormProps> = ({
         </View>
       </View>
 
-      <View style={[styles.section, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>App Preferences</Text>
-        <View style={styles.preferenceItem}>
-          <Text style={[styles.preferenceLabel, { color: theme.colors.text }]}>Dark Mode</Text>
-          <Switch
-            value={formData.darkMode}
-            onValueChange={(value) => setFormData({ ...formData, darkMode: value })}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-            thumbColor="white"
-          />
-        </View>
-        <View style={styles.preferenceItem}>
-          <Text style={[styles.preferenceLabel, { color: theme.colors.text }]}>Location Access</Text>
-          <Switch
-            value={formData.locationAccess}
-            onValueChange={(value) => setFormData({ ...formData, locationAccess: value })}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-            thumbColor="white"
-          />
-        </View>
-      </View>
-
       <TouchableOpacity
         style={[styles.saveButton, { backgroundColor: theme.colors.primary }]}
         onPress={handleSave}

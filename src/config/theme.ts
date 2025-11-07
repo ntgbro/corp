@@ -59,7 +59,7 @@ export interface Theme {
 
 const lightTheme: Theme = {
   colors: {
-    primary: '#3b82f6',        // Royal Blue - Header color
+    primary: '#754C29',        // Changed from '#3b82f6' (Royal Blue) to '#754C29'
     secondary: '#10b981',      // Sage Green - Accent color
     background: '#fefefe',     // Warm White - Container background
     surface: '#f8fafc',        // Light Gray - Card backgrounds
