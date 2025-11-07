@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../../config/theme';
 import { OrderList } from '../components/OrderList';
 import { useMainOrders } from '../hooks/useMainOrders';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { MainTabParamList } from '../../../navigation/types';
+import { OrdersStackParamList } from '../../../navigation/OrdersStackNavigator';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-type MainOrdersScreenNavigationProp = StackNavigationProp<MainTabParamList, 'OrderDetails'>;
+type MainOrdersScreenNavigationProp = StackNavigationProp<OrdersStackParamList, 'OrderDetails'>;
 
 export const MainOrdersScreen = () => {
   const navigation = useNavigation<MainOrdersScreenNavigationProp>();
@@ -70,12 +71,8 @@ export const MainOrdersScreen = () => {
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>My Orders</Text>
       </View>
 
-      <ScrollView 
-        style={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={refreshOrders} />
-        }
-      >
+      {/* Replaced ScrollView with View to fix nested VirtualizedLists warning */}
+      <View style={styles.content}>
         {/* Status Filters */}
         <View style={[styles.filterContainer, { backgroundColor: theme.colors.surface }]}>
           <ScrollView 
@@ -128,7 +125,7 @@ export const MainOrdersScreen = () => {
         ) : (
           <OrderList orders={filteredOrders} onOrderPress={handleOrderPress} />
         )}
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };

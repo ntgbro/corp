@@ -11,7 +11,6 @@ import {
 import { useTheme } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from '../../../config/firebase';
-import firestore from '@react-native-firebase/firestore';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useCart } from '../../../contexts/CartContext';
 import { Coupon } from '../../../types/coupon';
@@ -38,10 +37,7 @@ const CouponsScreen = () => {
       setLoading(true);
       const now = new Date();
       
-      const querySnapshot = await firestore()
-        .collection('coupons')
-        .where('isActive', '==', true)
-        .get();
+      const querySnapshot = await db.collection('coupons').where('isActive', '==', true).get();
 
       const validCoupons = querySnapshot.docs
         .map(doc => {
