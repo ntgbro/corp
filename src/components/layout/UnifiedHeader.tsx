@@ -40,38 +40,64 @@ export const ScrollableLocationHeader: React.FC<ScrollableLocationHeaderProps> =
     }
   };
 
-  // Format location address to show specific OSM components only
-  const formatLocationAddress = (address: string): { display: string } => {
-    if (!address) return { display: '' };
+  // Format location address to show specific OSM components in two lines
+  const formatLocationAddress = (address: string): { line1: string, line2: string } => {
+    if (!address) return { line1: 'Set Location', line2: '' };
 
     // If address contains coordinates, return as-is
     if (address.includes('.') && address.includes(',')) {
-      return { display: address };
+      return { line1: address, line2: '' };
     }
 
     const parts = address.split(', ');
 
-    // Extract only the specific components we want: neighbourhood, suburb, postcode
-    const essentialParts = [];
-
-    // Find neighbourhood
-    const neighbourhoodIndex = parts.findIndex(part =>
-      part.toLowerCase().includes('kuvempu') ||
-      part.toLowerCase().includes('nagar') ||
+    // Extract components for line 1 (street/road + house number)
+    let line1 = '';
+    
+    // Find street/road name
+    const roadIndex = parts.findIndex(part =>
+      part.toLowerCase().includes('road') ||
+      part.toLowerCase().includes('street') ||
       part.toLowerCase().includes('layout') ||
-      part.toLowerCase().includes('colony') ||
-      part.toLowerCase().includes('extension') ||
-      part.toLowerCase().includes('block')
+      part.toLowerCase().includes('nagar') ||
+      part.toLowerCase().includes('cross') ||
+      part.toLowerCase().includes('main')
     );
 
-    // Find suburb
+    // Add road name if found
+    if (roadIndex !== -1) {
+      line1 = parts[roadIndex];
+    }
+
+    // Extract components for line 2 (area, city, state, postcode)
+    const essentialParts = [];
+
+    // Find neighbourhood/area
+    const neighbourhoodIndex = parts.findIndex(part =>
+      part.toLowerCase().includes('layout') ||
+      part.toLowerCase().includes('nagar') ||
+      part.toLowerCase().includes('colony') ||
+      part.toLowerCase().includes('block') ||
+      part.toLowerCase().includes('area') ||
+      part.toLowerCase().includes('kuvempu')
+    );
+
+    // Find suburb/area
     const suburbIndex = parts.findIndex(part =>
       part.toLowerCase().includes('btm') ||
-      part.toLowerCase().includes('layout') ||
-      part.toLowerCase().includes('south') ||
-      part.toLowerCase().includes('north') ||
-      part.toLowerCase().includes('east') ||
-      part.toLowerCase().includes('west')
+      part.toLowerCase().includes('stage') ||
+      part.toLowerCase().includes('extension')
+    );
+
+    // Find city
+    const cityIndex = parts.findIndex(part =>
+      part.toLowerCase().includes('bengaluru') ||
+      part.toLowerCase().includes('bangalore')
+    );
+
+    // Find state
+    const stateIndex = parts.findIndex(part =>
+      part.toLowerCase().includes('karnataka')
     );
 
     // Find postal code (6-digit number)
@@ -79,14 +105,24 @@ export const ScrollableLocationHeader: React.FC<ScrollableLocationHeaderProps> =
       /^\d{6}$/.test(part.trim()) // Exactly 6 digits
     );
 
-    // Add neighbourhood if found
-    if (neighbourhoodIndex !== -1) {
+    // Add neighbourhood if found and different from road
+    if (neighbourhoodIndex !== -1 && neighbourhoodIndex !== roadIndex) {
       essentialParts.push(parts[neighbourhoodIndex]);
     }
 
     // Add suburb if found and different from neighbourhood
-    if (suburbIndex !== -1 && suburbIndex !== neighbourhoodIndex) {
+    if (suburbIndex !== -1 && suburbIndex !== neighbourhoodIndex && suburbIndex !== roadIndex) {
       essentialParts.push(parts[suburbIndex]);
+    }
+
+    // Add city if found
+    if (cityIndex !== -1) {
+      essentialParts.push(parts[cityIndex]);
+    }
+
+    // Add state if found
+    if (stateIndex !== -1 && stateIndex !== cityIndex) {
+      essentialParts.push(parts[stateIndex]);
     }
 
     // Add postal code if found
@@ -94,14 +130,27 @@ export const ScrollableLocationHeader: React.FC<ScrollableLocationHeaderProps> =
       essentialParts.push(parts[postalIndex]);
     }
 
-    // If no specific components found, use first part
-    if (essentialParts.length === 0 && parts.length > 0) {
-      essentialParts.push(parts[0]);
+    // If no specific components found, use remaining parts
+    if (essentialParts.length === 0) {
+      // Filter out parts already used in line1
+      const remainingParts = parts.filter((_, index) => index !== roadIndex);
+      essentialParts.push(...remainingParts.slice(0, 3)); // Take up to 3 parts
     }
 
-    return {
-      display: essentialParts.join(', ')
-    };
+    const line2 = essentialParts.join(', ');
+
+    // If line1 is empty, use the first part of line2 for line1
+    if (!line1 && essentialParts.length > 0) {
+      line1 = essentialParts.shift() || '';
+      return { line1, line2: essentialParts.join(', ') };
+    }
+
+    // If both lines are empty, return the original address in line1
+    if (!line1 && !line2) {
+      return { line1: address, line2: '' };
+    }
+
+    return { line1, line2 };
   };
 
   // Reset icon color when location data is fetched
@@ -134,11 +183,16 @@ export const ScrollableLocationHeader: React.FC<ScrollableLocationHeaderProps> =
       {showLocation && (
         <View style={styles.locationSection}>
           <View style={styles.locationInfo}>
-            <View style={styles.addressBox}>
-              {/* Simplified Address Display */}
-              <Text style={styles.addressText}>
-                {currentLocation?.address ? formatLocationAddress(currentLocation.address).display : 'Set Location'}
+            {/* Simplified Address Display in Two Lines */}
+            <View style={styles.addressTextContainer}>
+              <Text style={styles.addressLine1} numberOfLines={1}>
+                {currentLocation?.address ? formatLocationAddress(currentLocation.address).line1 : 'Set Location'}
               </Text>
+              {currentLocation?.address && formatLocationAddress(currentLocation.address).line2 ? (
+                <Text style={styles.addressLine2} numberOfLines={1}>
+                  {formatLocationAddress(currentLocation.address).line2}
+                </Text>
+              ) : null}
             </View>
 
             {/* Change Location Button - Simplified to direct action */}
@@ -368,38 +422,64 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     };
   }, []);
 
-  // Format location address to show specific OSM components only
-  const formatLocationAddress = (address: string): { display: string } => {
-    if (!address) return { display: '' };
+  // Format location address to show specific OSM components in two lines
+  const formatLocationAddress = (address: string): { line1: string, line2: string } => {
+    if (!address) return { line1: 'Set Location', line2: '' };
 
     // If address contains coordinates, return as-is
     if (address.includes('.') && address.includes(',')) {
-      return { display: address };
+      return { line1: address, line2: '' };
     }
 
     const parts = address.split(', ');
 
-    // Extract only the specific components we want: neighbourhood, suburb, postcode
-    const essentialParts = [];
-
-    // Find neighbourhood
-    const neighbourhoodIndex = parts.findIndex(part =>
-      part.toLowerCase().includes('kuvempu') ||
-      part.toLowerCase().includes('nagar') ||
+    // Extract components for line 1 (street/road + house number)
+    let line1 = '';
+    
+    // Find street/road name
+    const roadIndex = parts.findIndex(part =>
+      part.toLowerCase().includes('road') ||
+      part.toLowerCase().includes('street') ||
       part.toLowerCase().includes('layout') ||
-      part.toLowerCase().includes('colony') ||
-      part.toLowerCase().includes('extension') ||
-      part.toLowerCase().includes('block')
+      part.toLowerCase().includes('nagar') ||
+      part.toLowerCase().includes('cross') ||
+      part.toLowerCase().includes('main')
     );
 
-    // Find suburb
+    // Add road name if found
+    if (roadIndex !== -1) {
+      line1 = parts[roadIndex];
+    }
+
+    // Extract components for line 2 (area, city, state, postcode)
+    const essentialParts = [];
+
+    // Find neighbourhood/area
+    const neighbourhoodIndex = parts.findIndex(part =>
+      part.toLowerCase().includes('layout') ||
+      part.toLowerCase().includes('nagar') ||
+      part.toLowerCase().includes('colony') ||
+      part.toLowerCase().includes('block') ||
+      part.toLowerCase().includes('area') ||
+      part.toLowerCase().includes('kuvempu')
+    );
+
+    // Find suburb/area
     const suburbIndex = parts.findIndex(part =>
       part.toLowerCase().includes('btm') ||
-      part.toLowerCase().includes('layout') ||
-      part.toLowerCase().includes('south') ||
-      part.toLowerCase().includes('north') ||
-      part.toLowerCase().includes('east') ||
-      part.toLowerCase().includes('west')
+      part.toLowerCase().includes('stage') ||
+      part.toLowerCase().includes('extension')
+    );
+
+    // Find city
+    const cityIndex = parts.findIndex(part =>
+      part.toLowerCase().includes('bengaluru') ||
+      part.toLowerCase().includes('bangalore')
+    );
+
+    // Find state
+    const stateIndex = parts.findIndex(part =>
+      part.toLowerCase().includes('karnataka')
     );
 
     // Find postal code (6-digit number)
@@ -407,14 +487,24 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       /^\d{6}$/.test(part.trim()) // Exactly 6 digits
     );
 
-    // Add neighbourhood if found
-    if (neighbourhoodIndex !== -1) {
+    // Add neighbourhood if found and different from road
+    if (neighbourhoodIndex !== -1 && neighbourhoodIndex !== roadIndex) {
       essentialParts.push(parts[neighbourhoodIndex]);
     }
 
     // Add suburb if found and different from neighbourhood
-    if (suburbIndex !== -1 && suburbIndex !== neighbourhoodIndex) {
+    if (suburbIndex !== -1 && suburbIndex !== neighbourhoodIndex && suburbIndex !== roadIndex) {
       essentialParts.push(parts[suburbIndex]);
+    }
+
+    // Add city if found
+    if (cityIndex !== -1) {
+      essentialParts.push(parts[cityIndex]);
+    }
+
+    // Add state if found
+    if (stateIndex !== -1 && stateIndex !== cityIndex) {
+      essentialParts.push(parts[stateIndex]);
     }
 
     // Add postal code if found
@@ -422,14 +512,27 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       essentialParts.push(parts[postalIndex]);
     }
 
-    // If no specific components found, use first part
-    if (essentialParts.length === 0 && parts.length > 0) {
-      essentialParts.push(parts[0]);
+    // If no specific components found, use remaining parts
+    if (essentialParts.length === 0) {
+      // Filter out parts already used in line1
+      const remainingParts = parts.filter((_, index) => index !== roadIndex);
+      essentialParts.push(...remainingParts.slice(0, 3)); // Take up to 3 parts
     }
 
-    return {
-      display: essentialParts.join(', ')
-    };
+    const line2 = essentialParts.join(', ');
+
+    // If line1 is empty, use the first part of line2 for line1
+    if (!line1 && essentialParts.length > 0) {
+      line1 = essentialParts.shift() || '';
+      return { line1, line2: essentialParts.join(', ') };
+    }
+
+    // If both lines are empty, return the original address in line1
+    if (!line1 && !line2) {
+      return { line1: address, line2: '' };
+    }
+
+    return { line1, line2 };
   };
 
   // Reset icon color when location data is fetched
@@ -467,10 +570,17 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       {showLocation && (
         <View style={styles.locationSection}>
           <View style={styles.locationInfo}>
-            {/* Simplified Address Display - Removed card styling and changed font color to black */}
-            <Text style={styles.addressTextNoCard}>
-              {currentLocation?.address ? formatLocationAddress(currentLocation.address).display : 'Set Location'}
-            </Text>
+            {/* Simplified Address Display in Two Lines - Removed card styling and changed font color to black */}
+            <View style={styles.addressTextContainerNoCard}>
+              <Text style={styles.addressLine1NoCard} numberOfLines={1}>
+                {currentLocation?.address ? formatLocationAddress(currentLocation.address).line1 : 'Set Location'}
+              </Text>
+              {currentLocation?.address && formatLocationAddress(currentLocation.address).line2 ? (
+                <Text style={styles.addressLine2NoCard} numberOfLines={1}>
+                  {formatLocationAddress(currentLocation.address).line2}
+                </Text>
+              ) : null}
+            </View>
 
             {/* Change Location Button - Simplified to direct action */}
             <TouchableOpacity
@@ -676,6 +786,46 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginLeft: 8,
     marginRight: 8,
+  },
+  addressTextContainer: {
+    flex: 1,
+    marginLeft: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+  },
+  addressLine1: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'white',
+    lineHeight: 18,
+  },
+  addressLine2: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.9)',
+    lineHeight: 16,
+  },
+  addressTextContainerNoCard: {
+    flex: 1,
+    marginLeft: 8,
+    justifyContent: 'center',
+  },
+  addressLine1NoCard: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'black',
+    lineHeight: 18,
+  },
+  addressLine2NoCard: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'rgba(0, 0, 0, 0.8)',
+    lineHeight: 16,
   },
 });
 
