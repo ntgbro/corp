@@ -37,6 +37,9 @@ export const SettingsNavigator = () => {
         },
         headerStyle: {
           backgroundColor: '#F5DEB3',
+          borderBottomLeftRadius: 20,
+          borderBottomRightRadius: 20,
+          overflow: 'hidden',
         },
         headerTintColor: '#000000',
       }}
