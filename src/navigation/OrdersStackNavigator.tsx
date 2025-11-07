@@ -2,9 +2,13 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import MainOrdersScreen from '../features/orders/screens/MainOrdersScreen';
 import { OrderDetailsScreen } from '../features/orders/screens/OrderDetailsScreen';
-import { MainTabParamList } from './types';
 
-const Stack = createStackNavigator<MainTabParamList>();
+export type OrdersStackParamList = {
+  MainOrders: undefined;
+  OrderDetails: { orderId: string };
+};
+
+const Stack = createStackNavigator<OrdersStackParamList>();
 
 export const OrdersStackNavigator: React.FC = () => {
   return (
@@ -14,7 +18,7 @@ export const OrdersStackNavigator: React.FC = () => {
       }}
     >
       <Stack.Screen 
-        name="Orders" 
+        name="MainOrders" 
         component={MainOrdersScreen} 
       />
       <Stack.Screen 

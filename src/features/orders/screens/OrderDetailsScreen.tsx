@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../config/theme';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { useOrderDetails } from '../hooks/useOrderDetails';
