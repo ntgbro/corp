@@ -3,6 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { SettingsIndex } from '../SettingsIndex';
 import { ProfileScreen } from '../profile/screens/ProfileScreen';
 import { OrdersScreen } from '../orders/screens/OrdersScreen';
+import { OrderDetailsScreen } from '../../settings/orders/screens/OrderDetailsScreen';
 import { WishlistScreen } from '../wishlist/screens/WishlistScreen';
 import { AddressesScreen } from '../addresses/screens/AddressesScreen';
 import { PreferencesScreen } from '../preferences/screens/PreferencesScreen';
@@ -13,8 +14,9 @@ import { SocialMediaScreen } from '../socialMedia/screens/SocialMediaScreen';
 
 export type SettingsStackParamList = {
   SettingsHome: undefined;
-  SettingsProfile: undefined; // Changed from 'Profile' to 'SettingsProfile' to avoid naming conflict
-  Orders: undefined;
+  SettingsProfile: undefined;
+  OrderHistory: undefined;
+  OrderDetails: { orderId: string };
   Wishlist: undefined;
   Addresses: undefined;
   Preferences: undefined;
@@ -46,21 +48,28 @@ export const SettingsNavigator = () => {
         component={SettingsIndex}
         options={{ 
           title: 'Settings',
-          headerShown: false, // Keep the custom header for the main settings page
+          headerShown: false,
         }}
       />
       <Stack.Screen 
-        name="SettingsProfile" // Changed from 'Profile' to 'SettingsProfile'
+        name="SettingsProfile"
         component={ProfileScreen}
         options={{ 
           title: 'Profile',
         }}
       />
       <Stack.Screen 
-        name="Orders" 
+        name="OrderHistory" 
         component={OrdersScreen}
         options={{ 
-          title: 'Order history',
+          title: 'Order History',
+        }}
+      />
+      <Stack.Screen 
+        name="OrderDetails" 
+        component={OrderDetailsScreen}
+        options={{ 
+          title: 'Order Details',
         }}
       />
       <Stack.Screen 
@@ -72,10 +81,10 @@ export const SettingsNavigator = () => {
             backgroundColor: '#F5DEB3',
           },
           headerTitleStyle: {
-            color: '#000000', // Black text color
+            color: '#000000',
             fontWeight: '600',
           },
-          headerTintColor: '#000000', // Black color for back button and other header icons
+          headerTintColor: '#000000',
         }}
       />
       <Stack.Screen 

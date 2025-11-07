@@ -20,7 +20,7 @@ export const SettingsIndex = () => {
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
 
   const settingsSections = [
-    { id: 'orders', title: 'Orders', icon: '📦' },
+    { id: 'orderHistory', title: 'Order History', icon: '📦' },
     { id: 'wishlist', title: 'Wishlist', icon: '❤️' },
     { id: 'addresses', title: 'Addresses', icon: '📍' },
     { id: 'preferences', title: 'Preferences', icon: '⚙️' },
@@ -33,8 +33,8 @@ export const SettingsIndex = () => {
   const handleNavigate = (sectionId: string) => {
     // Map section IDs to navigation names
     const navigationMap: Record<string, keyof SettingsStackParamList> = {
-      profile: 'SettingsProfile', // Changed from 'Profile' to 'SettingsProfile'
-      orders: 'Orders',
+      profile: 'SettingsProfile',
+      orderHistory: 'OrderHistory',
       wishlist: 'Wishlist',
       addresses: 'Addresses',
       preferences: 'Preferences',
@@ -46,7 +46,7 @@ export const SettingsIndex = () => {
 
     const target = navigationMap[sectionId];
     if (target) {
-      navigation.navigate(target);
+      navigation.navigate(target as any);
     }
   };
 

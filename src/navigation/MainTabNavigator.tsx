@@ -6,22 +6,13 @@ import { MainTabParamList } from './types';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import { ProductStackNavigator } from './ProductStackNavigator';
 import { CartStackNavigator } from './CartStackNavigator';
-import { OrdersScreen } from '../features/settings/orders/screens/OrdersScreen';
+import { OrdersStackNavigator } from './OrdersStackNavigator';
 import { useCart } from '../contexts/CartContext';
 import { SettingsNavigator } from '../features/settings';
 import { HomeIcon, CategoryIcon, CartIcon, OrderIcon, ProfileIcon } from '../components/common'; // Import the new SVG icons
 import CategoriesScreen from '../features/product/screens/CategoriesScreen';
 
 // Placeholder Screen Components (to avoid inline functions)
-const OrderDetailsScreen: React.FC = () => {
-  const { theme } = useThemeContext();
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <OrderIcon size={48} color={theme.colors.textSecondary} />
-      <Text style={{ fontSize: 18, fontWeight: '600', color: theme.colors.text, marginTop: 16 }}>Order Details</Text>
-    </View>
-  );
-};
 
 // Custom Tab Bar Component
 const CustomTabBar = ({ state, descriptors, navigation }: any) => {
@@ -246,7 +237,7 @@ export const MainTabNavigator: React.FC = () => {
       />
       <Tab.Screen
         name="Orders"
-        component={OrdersScreen}
+        component={OrdersStackNavigator}
         options={{
           tabBarLabel: ({ focused }) => focused ? 'Orders' : '',
         }}
@@ -257,13 +248,6 @@ export const MainTabNavigator: React.FC = () => {
         options={{
           tabBarLabel: ({ focused }) => focused ? 'Profile' : '',
           headerShown: false,
-        }}
-      />
-      <Tab.Screen
-        name="OrderDetails"
-        component={OrderDetailsScreen}
-        options={{
-          tabBarButton: () => null,
         }}
       />
     </Tab.Navigator>

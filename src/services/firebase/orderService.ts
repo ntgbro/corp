@@ -11,7 +11,7 @@ export class OrderService {
 
   static async getOrdersByUser(userId: string): Promise<Order[]> {
     const snapshot = await getDocs(query(collection(db, 'orders'), where('userId', '==', userId)));
-    return snapshot.docs.map(doc => doc.data() as Order);
+    return snapshot.docs.map((doc: any) => doc.data() as Order);
   }
 
   static async createOrder(order: Omit<Order, 'orderId'>): Promise<string> {
@@ -23,6 +23,11 @@ export class OrderService {
   static async addOrderItem(orderId: string, item: Omit<OrderItem, 'itemId'>): Promise<void> {
     const docRef = doc(collection(db, 'orders', orderId, 'order_items'));
     await setDoc(docRef, { ...item, itemId: docRef.id });
+  }
+
+  static async addPayment(orderId: string, payment: Omit<Payment, 'paymentId'>): Promise<void> {
+    const docRef = doc(collection(db, 'orders', orderId, 'payment'));
+    await setDoc(docRef, { ...payment, paymentId: docRef.id });
   }
 
   static async addStatusHistory(orderId: string, history: Omit<StatusHistory, 'statusId'>): Promise<void> {
