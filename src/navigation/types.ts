@@ -27,6 +27,7 @@ export type MainStackParamList = {
 export type CartStackParamList = {
   Cart: undefined;
   Coupons: undefined;
+  OrderConfirmation: { orderId: string }; // Add this route
 };
 
 export type MainTabParamList = {

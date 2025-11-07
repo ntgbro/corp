@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { db } from '../../../../config/firebase';
-import { collection, query, orderBy, getDocs } from '@react-native-firebase/firestore';
+import { collection, query, orderBy, where, getDocs } from '@react-native-firebase/firestore';
 import { QueryDocumentSnapshot } from '../../../../types/firebase';
 
 export interface Order {
@@ -13,60 +13,78 @@ export interface Order {
   items: any[];
 }
 
-export const useOrders = () => {
+export const useOrderHistory = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (user?.userId) {
-        try {
-          setLoading(true);
-          const ordersRef = collection(db, 'users', user.userId, 'orders');
-          const q = query(ordersRef, orderBy('orderDate', 'desc'));
-          const querySnapshot = await getDocs(q);
+  const fetchOrderHistory = useCallback(async () => {
+    if (user?.userId) {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Query the order_history subcollection under the user
+        const orderHistoryRef = collection(db, 'users', user.userId, 'order_history');
+        const q = query(
+          orderHistoryRef, 
+          orderBy('createdAt', 'desc')
+        );
+        const querySnapshot = await getDocs(q);
+        
+        const ordersData: Order[] = [];
+        querySnapshot.forEach((doc: QueryDocumentSnapshot<any>) => {
+          const data = doc.data();
+          // Handle Firestore timestamps properly
+          let orderDate = 'Unknown';
+          if (data.createdAt) {
+            if (data.createdAt.toDate) {
+              orderDate = data.createdAt.toDate().toLocaleDateString();
+            } else {
+              orderDate = new Date(data.createdAt).toLocaleDateString();
+            }
+          }
           
-          const ordersData: Order[] = [];
-          querySnapshot.forEach((doc: QueryDocumentSnapshot<any>) => {
-            const data = doc.data();
+          // Extract orders from the order_history document
+          const historyOrders = data.orders || [];
+          historyOrders.forEach((order: any) => {
             ordersData.push({
-              id: doc.id,
-              orderId: data.orderId || `#${doc.id.substring(0, 8)}`,
-              date: data.orderDate ? new Date(data.orderDate).toLocaleDateString() : 'Unknown',
-              status: data.status || 'Pending',
-              amount: data.totalAmount || 0,
-              items: data.items || [],
+              id: order.id || doc.id,
+              orderId: order.orderId || `#${(order.id || doc.id).substring(0, 8)}`,
+              date: orderDate,
+              status: order.status || 'Pending',
+              amount: order.amount || 0,
+              items: order.items || [],
             });
           });
-          
-          setOrders(ordersData);
-        } catch (error) {
-          console.error('Error fetching orders:', error);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setOrders([]);
+        });
+        
+        setOrders(ordersData);
+      } catch (error: any) {
+        console.error('Error fetching order history:', error);
+        setError('Failed to load order history. Please try again.');
+      } finally {
         setLoading(false);
       }
-    };
-
-    fetchOrders();
+    } else {
+      setOrders([]);
+      setLoading(false);
+    }
   }, [user?.userId]);
 
-  const refreshOrders = () => {
-    // In a real implementation, this would fetch fresh data from Firebase
-    // For now, we'll just simulate a refresh
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-    }, 500);
-  };
+  useEffect(() => {
+    fetchOrderHistory();
+  }, [fetchOrderHistory]);
+
+  const refreshOrderHistory = useCallback(async () => {
+    await fetchOrderHistory();
+  }, [fetchOrderHistory]);
 
   return {
     orders,
     loading,
-    refreshOrders,
+    error,
+    refreshOrderHistory,
   };
 };

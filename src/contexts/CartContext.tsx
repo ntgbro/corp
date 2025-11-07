@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useReducer, ReactNode, useMemo } from 'react';
 import { Coupon, AppliedCoupon } from '../types/coupon';
+import { CartService } from '../services/firebase/cartService';
+import { useAuth } from './AuthContext';
+import { CartItem as FirebaseCartItem } from '../types'; // Import the CartItem type from types
 
+// Define our local CartItem type that matches what we're using in the context
 export interface CartItem {
   id: string;
   productId: string;
@@ -21,13 +25,66 @@ interface CartState {
   appliedCoupon: AppliedCoupon | null;
 }
 
+// Add new interface for order data preparation
+export interface OrderData {
+  // Cart information
+  items: CartItem[];
+  subtotal: number;
+  discount: number;
+  totalAmount: number;
+  appliedCoupons: any[];
+  
+  // Delivery information
+  deliveryAddress: {
+    addressId?: string;
+    contactName?: string;
+    contactPhone?: string;
+    line1: string;
+    line2?: string;
+    city: string;
+    pincode: string;
+    geoPoint?: {
+      latitude: number;
+      longitude: number;
+    };
+    saveForFuture?: boolean;
+  };
+  
+  // Time slot information
+  scheduledFor: Date;
+  estimatedDeliveryTime: string;
+  actualDeliveryTime?: string;
+  
+  // Additional information
+  instructions?: string;
+  deliveryCharges: number;
+  taxes: number;
+  finalAmount: number;
+  
+  // User information
+  customerId: string; // Add this field for Firestore rules
+  userId: string;
+  restaurantId?: string;
+  warehouseId?: string;
+  type: 'restaurant' | 'warehouse';
+  
+  // Metadata
+  status: 'pending';
+  deliveryType: 'delivery' | 'pickup';
+  paymentMethod: string;
+  paymentStatus: 'pending' | 'paid' | 'failed';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 type CartAction =
   | { type: 'ADD_TO_CART'; payload: Omit<CartItem, 'quantity'> }
   | { type: 'REMOVE_FROM_CART'; payload: string }
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
   | { type: 'CLEAR_CART' }
   | { type: 'APPLY_COUPON'; payload: Coupon }
-  | { type: 'REMOVE_COUPON' };
+  | { type: 'REMOVE_COUPON' }
+  | { type: 'SET_CART_ITEMS'; payload: { items: CartItem[]; appliedCoupon: AppliedCoupon | null } }; // Add this new action type
 
 interface CartContextType {
   state: CartState;
@@ -39,23 +96,69 @@ interface CartContextType {
   applyCoupon: (coupon: Coupon) => Promise<{ success: boolean; message: string }>;
   removeCoupon: () => void;
   calculateDiscount: (coupon: Coupon, subtotal: number) => number;
+  syncWithFirebase: () => Promise<void>;
+  loadCartFromFirebase: () => Promise<void>;
+  // Add new method for preparing order data
+  prepareOrderData: (deliveryInfo: {
+    address: any;
+    timeSlot: any;
+    instructions?: string;
+    deliveryCharges?: number;
+    paymentMethod?: string;
+  }) => OrderData | null;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const calculateDiscount = (coupon: Coupon, subtotal: number): number => {
-  if (!coupon) return 0;
+const calculateDiscount = (coupon: Coupon, subtotal: number, items: CartItem[] = []): number => {
+  if (!coupon || !coupon.isActive) return 0;
+  
+  // Check minimum order amount
+  if (subtotal < (coupon.minOrderAmount || 0)) {
+    return 0;
+  }
+  
+  // Check minimum order count (number of items)
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  if (totalItems < (coupon.minOrderCount || 0)) {
+    return 0;
+  }
+  
+  // Check validity period
+  const now = new Date();
+  if (coupon.validFrom && new Date(coupon.validFrom) > now) {
+    return 0;
+  }
+  if ((coupon.validTill || coupon.validUntil) && new Date(coupon.validTill || coupon.validUntil!) < now) {
+    return 0;
+  }
+  
+  // Check usage limits
+  if (coupon.usageLimit?.perUserLimit && coupon.usedCount && coupon.usedCount >= coupon.usageLimit.perUserLimit) {
+    return 0;
+  }
+  
+  // Check max uses
+  if (coupon.maxUses && coupon.usedCount && coupon.usedCount >= coupon.maxUses) {
+    return 0;
+  }
   
   let discount = 0;
   
-  if (coupon.type === 'percentage') {
-    discount = (subtotal * coupon.value) / 100;
+  // Use value field if discountValue is not available
+  const discountValue = coupon.discountValue || coupon.value || 0;
+  
+  // Determine discount type (handle both field names)
+  const discountType = coupon.discountType || coupon.type || 'percentage';
+  
+  if (discountType === 'percentage') {
+    discount = (subtotal * discountValue) / 100;
     if (coupon.maxDiscountAmount && discount > coupon.maxDiscountAmount) {
       discount = coupon.maxDiscountAmount;
     }
   } else {
     // Fixed discount
-    discount = Math.min(coupon.value, subtotal);
+    discount = Math.min(discountValue, subtotal);
   }
   
   return parseFloat(discount.toFixed(2));
@@ -64,7 +167,7 @@ const calculateDiscount = (coupon: Coupon, subtotal: number): number => {
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   const calculateState = (items: CartItem[], coupon: AppliedCoupon | null = state.appliedCoupon) => {
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const discount = coupon ? calculateDiscount(coupon, subtotal) : 0;
+    const discount = coupon ? calculateDiscount(coupon as unknown as Coupon, subtotal, items) : 0;
     
     return {
       items,
@@ -72,7 +175,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       subtotal,
       discount,
       totalAmount: Math.max(0, subtotal - discount),
-      appliedCoupon: coupon
+      appliedCoupon: discount > 0 ? coupon : null // Only keep coupon if discount is applied
     };
   };
 
@@ -103,6 +206,11 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       ).filter(item => item.quantity > 0);
 
       return calculateState(updatedItems);
+    }
+
+    case 'SET_CART_ITEMS': {
+      // Set cart items directly from Firebase
+      return calculateState(action.payload.items, action.payload.appliedCoupon || null);
     }
 
     case 'APPLY_COUPON': {
@@ -149,21 +257,154 @@ interface CartProviderProps {
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const { user } = useAuth();
 
-  const addToCart = (item: Omit<CartItem, 'quantity'>) => {
+  const loadCartFromFirebase = async () => {
+    if (!user?.userId) return;
+    
+    try {
+      // Get user's cart from Firebase
+      const cart = await CartService.getCart(user.userId);
+      if (cart) {
+        // Get cart items from Firebase
+        const firebaseItems = await CartService.getCartItems(user.userId, cart.cartId);
+        
+        // Convert Firebase items to local cart items with product images
+        const localItems: CartItem[] = [];
+        for (const firebaseItem of firebaseItems) {
+          // Get product details to fetch the image URL
+          const productDetails = await CartService.getProductDetails(firebaseItem.productId);
+          
+          localItems.push({
+            id: firebaseItem.productId,
+            productId: firebaseItem.productId,
+            name: firebaseItem.name,
+            price: firebaseItem.price,
+            quantity: firebaseItem.quantity,
+            image: productDetails?.imageURL || '', // Use the product image or empty string
+            chefId: firebaseItem.menuItemId,
+            chefName: '' // We'll need to get this from the product data
+          });
+        }
+        
+        // Dispatch a special action to set the cart items directly
+        dispatch({ 
+          type: 'SET_CART_ITEMS', 
+          payload: { 
+            items: localItems,
+            appliedCoupon: cart.appliedCoupon || null
+          } 
+        });
+      }
+    } catch (error) {
+      console.error('Error loading cart from Firebase:', error);
+    }
+  };
+
+  const syncWithFirebase = async () => {
+    if (!user?.userId) return;
+    
+    try {
+      // Get or create cart in Firebase
+      let cart = await CartService.getCart(user.userId);
+      let cartId: string;
+      
+      if (!cart) {
+        cartId = await CartService.createCart(user.userId);
+      } else {
+        cartId = cart.cartId;
+      }
+      
+      // Sync cart items
+      const firebaseItems = await CartService.getCartItems(user.userId, cartId);
+      
+      // Update local state with Firebase data if needed
+      // This would be implemented based on your specific sync requirements
+    } catch (error) {
+      console.error('Error syncing cart with Firebase:', error);
+    }
+  };
+
+  const addToCart = async (item: Omit<CartItem, 'quantity'>) => {
     dispatch({ type: 'ADD_TO_CART', payload: item });
+    
+    // Sync with Firebase if user is logged in
+    if (user?.userId) {
+      try {
+        let cart = await CartService.getCart(user.userId);
+        let cartId: string;
+        
+        if (!cart) {
+          cartId = await CartService.createCart(user.userId);
+        } else {
+          cartId = cart.cartId;
+        }
+        
+        await CartService.addItemToCart(user.userId, cartId, item);
+      } catch (error) {
+        console.error('Error adding item to Firebase cart:', error);
+      }
+    }
   };
 
-  const removeFromCart = (id: string) => {
+  const removeFromCart = async (id: string) => {
     dispatch({ type: 'REMOVE_FROM_CART', payload: id });
+    
+    // Sync with Firebase if user is logged in
+    if (user?.userId) {
+      try {
+        const cart = await CartService.getCart(user.userId);
+        if (cart) {
+          // Find the Firebase item ID by product ID
+          const firebaseItems = await CartService.getCartItems(user.userId, cart.cartId);
+          const itemToRemove = firebaseItems.find(item => item.productId === id);
+          
+          if (itemToRemove) {
+            await CartService.removeItemFromCart(user.userId, cart.cartId, itemToRemove.itemId);
+          }
+        }
+      } catch (error) {
+        console.error('Error removing item from Firebase cart:', error);
+      }
+    }
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = async (id: string, quantity: number) => {
     dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
+    
+    // Sync with Firebase if user is logged in
+    if (user?.userId) {
+      try {
+        const cart = await CartService.getCart(user.userId);
+        if (cart) {
+          // Find the Firebase item ID by product ID
+          const firebaseItems = await CartService.getCartItems(user.userId, cart.cartId);
+          const itemToUpdate = firebaseItems.find(item => item.productId === id);
+          
+          if (itemToUpdate) {
+            await CartService.updateItemQuantity(user.userId, cart.cartId, itemToUpdate.itemId, quantity);
+          }
+        }
+      } catch (error) {
+        console.error('Error updating item quantity in Firebase cart:', error);
+      }
+    }
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
     dispatch({ type: 'CLEAR_CART' });
+    
+    // Sync with Firebase if user is logged in
+    if (user?.userId) {
+      try {
+        const cart = await CartService.getCart(user.userId);
+        if (cart) {
+          await CartService.clearCart(user.userId, cart.cartId);
+        }
+      } catch (error) {
+        console.error('Error clearing Firebase cart:', error);
+      }
+    }
   };
 
   const getItemQuantity = (id: string) => {
@@ -172,8 +413,20 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
   const applyCoupon = async (coupon: Coupon): Promise<{ success: boolean; message: string }> => {
     try {
-      // Additional validation can be added here
       dispatch({ type: 'APPLY_COUPON', payload: coupon });
+      
+      // Sync with Firebase if user is logged in
+      if (user?.userId) {
+        try {
+          const cart = await CartService.getCart(user.userId);
+          if (cart) {
+            await CartService.applyCoupon(user.userId, cart.cartId, coupon);
+          }
+        } catch (error) {
+          console.error('Error applying coupon in Firebase cart:', error);
+        }
+      }
+      
       return { success: true, message: 'Coupon applied successfully!' };
     } catch (error) {
       console.error('Error applying coupon:', error);
@@ -181,8 +434,133 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
   };
 
-  const removeCoupon = () => {
+  const removeCoupon = async () => {
     dispatch({ type: 'REMOVE_COUPON' });
+    
+    // Sync with Firebase if user is logged in
+    if (user?.userId) {
+      try {
+        const cart = await CartService.getCart(user.userId);
+        if (cart) {
+          await CartService.removeCoupon(user.userId, cart.cartId);
+        }
+      } catch (error) {
+        console.error('Error removing coupon from Firebase cart:', error);
+      }
+    }
+  };
+
+  // Add new method for preparing order data
+  const prepareOrderData = (deliveryInfo: {
+    address: any;
+    timeSlot: any;
+    instructions?: string;
+    deliveryCharges?: number;
+    paymentMethod?: string;
+  }): OrderData | null => {
+    if (!user?.userId || state.items.length === 0) {
+      return null;
+    }
+
+    console.log('Preparing order data for user:', user.userId);
+    
+    // Extract address information
+    const address = deliveryInfo.address;
+    const timeSlot = deliveryInfo.timeSlot;
+    
+    // Parse location data from address
+    let city = '';
+    let pincode = '';
+    let coordinates = { latitude: 0, longitude: 0 };
+    
+    if (address?.coordinates) {
+      coordinates = {
+        latitude: address.coordinates.latitude,
+        longitude: address.coordinates.longitude
+      };
+    }
+    
+    // Try to extract city and pincode from address string
+    if (address?.address) {
+      // Extract pincode (6-digit number)
+      const pincodeMatch = address.address.match(/\b\d{6}\b/);
+      if (pincodeMatch) {
+        pincode = pincodeMatch[0];
+      }
+      
+      // Extract city (this is a simplified approach)
+      const addressParts = address.address.split(', ');
+      if (addressParts.length > 2) {
+        city = addressParts[addressParts.length - 3]; // Usually 3rd from last
+      }
+    }
+
+    // Calculate taxes (simplified - 5% of total amount)
+    const taxes = state.totalAmount * 0.05;
+    
+    // Calculate final amount
+    const deliveryCharges = deliveryInfo.deliveryCharges || 0;
+    const finalAmount = state.totalAmount + deliveryCharges + taxes;
+
+    // Create scheduled date from time slot
+    let scheduledFor = new Date();
+    if (timeSlot?.date) {
+      scheduledFor = new Date(timeSlot.date);
+      // Set to morning time as default if no specific time
+      scheduledFor.setHours(10, 0, 0, 0);
+    }
+
+    const orderData: OrderData = {
+      // Cart information
+      items: [...state.items],
+      subtotal: state.subtotal,
+      discount: state.discount,
+      totalAmount: state.totalAmount,
+      appliedCoupons: state.appliedCoupon ? [state.appliedCoupon] : [],
+      
+      // Delivery information
+      deliveryAddress: {
+        addressId: address?.id,
+        contactName: address?.label || 'Customer',
+        contactPhone: '', // Would come from user profile
+        line1: address?.address || '',
+        line2: '',
+        city: city,
+        pincode: pincode,
+        geoPoint: coordinates,
+        saveForFuture: address?.isDefault || false
+      },
+      
+      // Time slot information
+      scheduledFor: scheduledFor,
+      estimatedDeliveryTime: '30 mins', // Default value
+      actualDeliveryTime: '25 mins', // Default value
+      
+      // Additional information
+      instructions: deliveryInfo.instructions || '',
+      deliveryCharges: deliveryCharges,
+      taxes: taxes,
+      finalAmount: finalAmount,
+      
+      // User information
+      customerId: user.userId, // Add this field for Firestore rules
+      userId: user.userId,
+      restaurantId: '', // Would be determined based on cart items
+      warehouseId: '', // Would be determined based on cart items
+      type: 'restaurant', // Default to restaurant, would be determined based on cart items
+      
+      // Metadata
+      status: 'pending',
+      deliveryType: 'delivery',
+      paymentMethod: deliveryInfo.paymentMethod || 'UPI',
+      paymentStatus: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    console.log('Prepared order data:', JSON.stringify(orderData, null, 2));
+    
+    return orderData;
   };
 
   const value = useMemo(() => ({
@@ -195,7 +573,10 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     applyCoupon,
     removeCoupon,
     calculateDiscount,
-  }), [state]);
+    syncWithFirebase,
+    loadCartFromFirebase,
+    prepareOrderData, // Add the new method
+  }), [state, user]);
 
   return (
     <CartContext.Provider value={value}>

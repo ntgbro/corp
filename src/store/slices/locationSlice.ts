@@ -31,7 +31,7 @@ const initialState: LocationState = {
   permissionStatus: 'unknown',
 };
 
-// Enhanced geocoding service using only OpenStreetMap (free)
+// Enhanced reverse geocoding function using only OpenStreetMap (free)
 const reverseGeocodeWithFallback = async (latitude: number, longitude: number): Promise<string> => {
   try {
     const result = await reverseGeocodeOpenStreetMap(latitude, longitude);
@@ -47,174 +47,16 @@ const reverseGeocodeWithFallback = async (latitude: number, longitude: number): 
   return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 };
 
-// Enhanced reverse geocoding function using OpenStreetMap Nominatim API
+// Optimized reverse geocoding function using OpenStreetMap Nominatim API
+// Only makes one request at zoom level 18 for maximum detail
 const reverseGeocodeOpenStreetMap = async (latitude: number, longitude: number): Promise<string> => {
   try {
     // Use OpenStreetMap Nominatim API with detailed address components
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // Try multiple zoom levels and parameters for better accuracy
-    const zoomLevels = [18, 16, 14]; // Higher zoom = more detail
-    let bestResult = '';
-    let allAvailableComponents: string[] = [];
-
-    for (const zoom of zoomLevels) {
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=${zoom}&addressdetails=1&extratags=1&namedetails=1`,
-          {
-            headers: {
-              'User-Agent': 'Corpease-Delivery-App/1.0',
-            },
-          }
-        );
-
-        if (!response.ok) continue;
-
-        const data = await response.json();
-        console.log(`OpenStreetMap Response (zoom ${zoom}):`, JSON.stringify(data, null, 2));
-
-        if (data && data.address) {
-          const address = data.address;
-          const components = [];
-
-          // Log all available address fields for debugging
-          console.log('All available address fields:', Object.keys(address));
-          console.log('Full address object:', JSON.stringify(address, null, 2));
-
-          // Check for namedetails which might have local names
-          if (data.namedetails) {
-            console.log('Available namedetails:', JSON.stringify(data.namedetails, null, 2));
-          }
-
-          // Check for extratags which might have additional info
-          if (data.extratags) {
-            console.log('Available extratags:', JSON.stringify(data.extratags, null, 2));
-          }
-
-          // Enhanced street name extraction - try multiple field names
-          let streetName = '';
-          let houseNumber = '';
-
-          // Try different variations of street/road names
-          streetName = address.road ||
-                      address.pedestrian ||
-                      address.street ||
-                      address.residential ||
-                      address.highway ||
-                      address.path ||
-                      address.cycleway ||
-                      address.footway ||
-                      address.name || // Generic name field
-                      '';
-
-          // Try different variations of house numbers
-          houseNumber = address.house_number ||
-                       address.housenumber ||
-                       address['addr:housenumber'] || // OSM tag format
-                       '';
-
-          // Try to get detailed location info
-          if (houseNumber && streetName) {
-            components.push(`${houseNumber} ${streetName}`);
-            console.log('Found house number and street:', `${houseNumber} ${streetName}`);
-          } else if (streetName) {
-            components.push(streetName);
-            console.log('Found street name:', streetName);
-          } else if (address.name) {
-            components.push(address.name);
-            console.log('Using generic name field:', address.name);
-          }
-
-          // ADD ALL AVAILABLE AREA INFORMATION - Complete location hierarchy
-          // Most specific to least specific areas
-
-          // Most specific neighborhood/area names
-          if (address.neighbourhood) {
-            components.push(address.neighbourhood);
-          }
-          if (address.suburb) {
-            components.push(address.suburb);
-          }
-          if (address.hamlet) {
-            components.push(address.hamlet);
-          }
-          if (address.village) {
-            components.push(address.village);
-          }
-
-          // Administrative areas
-          if (address.city_district) {
-            components.push(address.city_district);
-          }
-          if (address.district) {
-            components.push(address.district);
-          }
-          if (address.county) {
-            components.push(address.county);
-          }
-
-          // City/Town level
-          if (address.city) {
-            components.push(address.city);
-          }
-          if (address.town) {
-            components.push(address.town);
-          }
-          if (address.municipality) {
-            components.push(address.municipality);
-          }
-
-          // State/Region level
-          if (address.state) {
-            components.push(address.state);
-          }
-          if (address.region) {
-            components.push(address.region);
-          }
-
-          // Country level (usually filtered out, but keeping for completeness)
-          if (address.country) {
-            // Don't add country to avoid redundancy
-          }
-
-          // Postal codes
-          if (address.postcode) {
-            components.push(address.postcode);
-          }
-
-          const currentResult = components.join(', ');
-          console.log(`Components found at zoom ${zoom}:`, components);
-          console.log(`Full address object keys:`, Object.keys(address));
-
-          // Keep track of all available components
-          if (components.length > allAvailableComponents.length) {
-            allAvailableComponents = components;
-            bestResult = currentResult;
-          }
-
-          // If we found any components, use this result
-          if (components.length > 0) {
-            console.log(`Using result from zoom ${zoom}:`, currentResult);
-          }
-        }
-      } catch (error) {
-        console.log(`Zoom level ${zoom} failed:`, error);
-        continue;
-      }
-    }
-
-    // Clean up the address
-    if (bestResult) {
-      bestResult = bestResult.replace(', India', '').replace(', United States', '');
-      console.log('Final formatted address:', bestResult);
-      console.log('All available components:', allAvailableComponents);
-      return bestResult;
-    }
-
-    // Fallback to display_name if no good components found (often more readable)
-    const fallbackResponse = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+    // Only make one request at zoom level 18 for maximum detail (no multiple zoom levels)
+    const zoom = 18;
+    
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=${zoom}&addressdetails=1&extratags=1&namedetails=1`,
       {
         headers: {
           'User-Agent': 'Corpease-Delivery-App/1.0',
@@ -222,13 +64,89 @@ const reverseGeocodeOpenStreetMap = async (latitude: number, longitude: number):
       }
     );
 
-    if (fallbackResponse.ok) {
-      const fallbackData = await fallbackResponse.json();
-      if (fallbackData.display_name) {
-        const cleanDisplayName = fallbackData.display_name.replace(', India', '').replace(', United States', '');
-        console.log('Using display_name fallback:', cleanDisplayName);
-        return cleanDisplayName;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log(`OpenStreetMap Response (zoom ${zoom}):`, JSON.stringify(data, null, 2));
+
+    if (data && data.address) {
+      const address = data.address;
+      
+      // Enhanced street name extraction - try multiple field names
+      let streetName = '';
+      let houseNumber = '';
+
+      // Try different variations of street/road names
+      streetName = address.road ||
+                  address.pedestrian ||
+                  address.street ||
+                  address.residential ||
+                  address.highway ||
+                  address.path ||
+                  address.cycleway ||
+                  address.footway ||
+                  address.name || // Generic name field
+                  '';
+
+      // Try different variations of house numbers
+      houseNumber = address.house_number ||
+                   address.housenumber ||
+                   address['addr:housenumber'] || // OSM tag format
+                   '';
+
+      // Build address components array
+      const components = [];
+
+      // Add house number and street name if available
+      if (houseNumber && streetName) {
+        components.push(`${houseNumber} ${streetName}`);
+      } else if (streetName) {
+        components.push(streetName);
+      } else if (address.name) {
+        components.push(address.name);
       }
+
+      // Add neighborhood/suburb information
+      if (address.neighbourhood) {
+        components.push(address.neighbourhood);
+      } else if (address.suburb) {
+        components.push(address.suburb);
+      }
+
+      // Add city information
+      if (address.city) {
+        components.push(address.city);
+      } else if (address.town) {
+        components.push(address.town);
+      }
+
+      // Add state information
+      if (address.state) {
+        components.push(address.state);
+      }
+
+      // Add postal code
+      if (address.postcode) {
+        components.push(address.postcode);
+      }
+
+      // Create the final address string
+      if (components.length > 0) {
+        const result = components.join(', ');
+        // Clean up the address by removing country names
+        const cleanResult = result.replace(', India', '').replace(', United States', '');
+        console.log('Final formatted address:', cleanResult);
+        return cleanResult;
+      }
+    }
+
+    // Fallback to display_name if no good components found (often more readable)
+    if (data.display_name) {
+      const cleanDisplayName = data.display_name.replace(', India', '').replace(', United States', '');
+      console.log('Using display_name fallback:', cleanDisplayName);
+      return cleanDisplayName;
     }
 
     // Final fallback to coordinates
@@ -238,6 +156,7 @@ const reverseGeocodeOpenStreetMap = async (latitude: number, longitude: number):
     return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
   }
 };
+
 export const requestLocationPermission = createAsyncThunk(
   'location/requestPermission',
   async (_, { rejectWithValue }) => {

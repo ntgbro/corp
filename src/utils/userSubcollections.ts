@@ -120,9 +120,25 @@ export const initializeUserSubcollections = async (userId: string, retryCount = 
       addedAt: new Date(),
     });
     
+    // 8. Create an empty order_history subcollection document
+    const orderHistoryRef = doc(collection(db, 'users', userId, 'order_history'));
+    await setDoc(orderHistoryRef, {
+      historyId: orderHistoryRef.id,
+      userId: userId,
+      orders: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    
     console.log('User subcollections initialized successfully');
   } catch (error: any) {
     console.error('Error initializing user subcollections:', error);
+    
+    // Check if it's a permission error
+    if (error.code === 'firestore/permission-denied') {
+      console.error('Permission denied when initializing subcollections. This might be due to security rules.');
+      console.error('Please ensure Firestore rules are deployed and include permissions for all user subcollections.');
+    }
     
     // Retry up to 3 times with exponential backoff
     if (retryCount < 3) {

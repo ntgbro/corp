@@ -3,10 +3,12 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { useThemeContext } from '../contexts/ThemeContext';
 import CartScreen from '../features/cart/screens/CartScreen';
 import CouponsScreen from '../features/cart/coupons/CouponsScreen';
+import OrderConfirmationScreen from '../features/cart/screens/OrderConfirmationScreen'; // Add this import
 
 export type CartStackParamList = {
-  CartScreen: undefined;
+  Cart: undefined;
   Coupons: undefined;
+  OrderConfirmation: { orderId: string }; // Add this route
 };
 
 const Stack = createStackNavigator<CartStackParamList>();
@@ -30,7 +32,7 @@ export const CartStackNavigator: React.FC = () => {
       }}
     >
       <Stack.Screen 
-        name="CartScreen" 
+        name="Cart" 
         component={CartScreen} 
         options={{ title: 'My Cart' }}
       />
@@ -38,6 +40,11 @@ export const CartStackNavigator: React.FC = () => {
         name="Coupons" 
         component={CouponsScreen} 
         options={{ title: 'Available Coupons' }}
+      />
+      <Stack.Screen 
+        name="OrderConfirmation" 
+        component={OrderConfirmationScreen} 
+        options={{ title: 'Order Confirmed' }}
       />
     </Stack.Navigator>
   );
