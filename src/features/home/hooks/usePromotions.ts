@@ -47,36 +47,45 @@ export const usePromotions = (limitCount: number = 5) => {
       (snapshot) => {
         const now = new Date();
         const promotionsData: Promotion[] = [];
+        const allPromotionsData: Promotion[] = []; // To see all promotions before filtering
         
         snapshot.forEach((doc: any) => {
           const data = doc.data();
           const validFrom = data.validFrom.toDate();
           const validTill = data.validTill.toDate();
           
+          const promotion = {
+            promotionId: data.promotionId || doc.id,
+            title: data.title,
+            description: data.description,
+            bannerImage: data.bannerImage,
+            bannerImageURL: data.bannerImageURL,
+            type: data.type,
+            discountValue: data.discountValue,
+            maxDiscountAmount: data.maxDiscountAmount,
+            minOrderAmount: data.minOrderAmount,
+            validFrom: validFrom,
+            validTill: validTill,
+            isActive: data.isActive,
+            priority: data.priority,
+            targetType: data.targetType || 'all',
+            targetAudience: data.targetAudience || {},
+            createdAt: data.createdAt.toDate(),
+            updatedAt: data.updatedAt.toDate(),
+            createdBy: data.createdBy,
+          };
+          
+          // Store all promotions for debugging
+          allPromotionsData.push(promotion);
+          
           // Filter for currently valid promotions in memory
           if (validFrom <= now && validTill >= now) {
-            promotionsData.push({
-              promotionId: data.promotionId || doc.id,
-              title: data.title,
-              description: data.description,
-              bannerImage: data.bannerImage,
-              bannerImageURL: data.bannerImageURL,
-              type: data.type,
-              discountValue: data.discountValue,
-              maxDiscountAmount: data.maxDiscountAmount,
-              minOrderAmount: data.minOrderAmount,
-              validFrom: validFrom,
-              validTill: validTill,
-              isActive: data.isActive,
-              priority: data.priority,
-              targetType: data.targetType || 'all',
-              targetAudience: data.targetAudience || {},
-              createdAt: data.createdAt.toDate(),
-              updatedAt: data.updatedAt.toDate(),
-              createdBy: data.createdBy,
-            });
+            promotionsData.push(promotion);
           }
         });
+        
+        console.log('All promotions from DB:', allPromotionsData.length, allPromotionsData);
+        console.log('Valid promotions:', promotionsData.length, promotionsData);
         
         // Sort by priority and then by creation date
         promotionsData.sort((a, b) => {
