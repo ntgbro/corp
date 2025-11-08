@@ -645,6 +645,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 8,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   fixedSearchHeaderAbsolute: {
     position: 'absolute',
@@ -665,7 +667,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 3, // Reduced from 6 to 3 to decrease gap with content below
   },
   backButton: {
     padding: 4,
@@ -693,7 +695,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 6,
+    marginBottom: 3, // Reduced from 6 to 3 to decrease gap with content below
     minHeight: 40,
   },
   locationInfo: {

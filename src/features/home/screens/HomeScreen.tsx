@@ -143,7 +143,7 @@ const HomeScreen: React.FC = () => {
           backgroundColor: theme.colors.background,
           paddingBottom: 80, // Space for bottom navigation (60px + extra padding)
           paddingHorizontal: 16, // ✅ Added padding to both side edges
-          paddingTop: 5, // Reduced padding at the top for better spacing
+          paddingTop: 0, // Removed padding at the top to eliminate gap between header and promotions
         }}
         showsVerticalScrollIndicator={true}
         nestedScrollEnabled={true}
@@ -302,15 +302,15 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   promotionCarouselContainer: {
     height: 180, // Decreased height from 200 to 180
-    marginBottom: 16,
+    marginBottom: 4, // Reduced from 8 to 4 to move the promotion section up slightly
   },
   promotionSlide: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   promotionContainer: {
-    marginBottom: 16,
-    marginTop: 10,
+    marginBottom: 4, // Reduced from 8 to 4 to move the promotion section up further
+    marginTop: 4, // Reduced from 10 to 0 to move the promotion section up further
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 3,
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb', // Light border
-    marginBottom: 12,
+    marginBottom: 6, // Reduced from 12 to 6 to move the featured restaurants section up
     backgroundColor: '#fefefe',   // Warm White
   },
   section: {

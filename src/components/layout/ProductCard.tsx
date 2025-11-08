@@ -147,7 +147,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     try {
       // Create cart item matching CartContext interface
       const cartItem = {
-        id: `${product.id}_${Date.now()}`, // Unique cart item ID
+        id: product.id, // Use product ID directly for proper quantity management
         productId: product.id,
         name: product.name,
         price: product.price,

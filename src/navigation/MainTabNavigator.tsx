@@ -44,6 +44,8 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
       shadowRadius: 4,
       flexDirection: 'row',
       alignItems: 'center',
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
     }}>
       {state.routes.map((route: any, index: number) => {
         const { options } = descriptors[route.key];
