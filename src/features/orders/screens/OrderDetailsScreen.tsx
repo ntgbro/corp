@@ -82,13 +82,6 @@ export const OrderDetailsScreen = () => {
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="arrow-back" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Order Details</Text>
-          <View style={{ width: 24 }} />
-        </View>
         <View style={styles.content}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -99,13 +92,6 @@ export const OrderDetailsScreen = () => {
   if (error) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="arrow-back" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Order Details</Text>
-          <View style={{ width: 24 }} />
-        </View>
         <View style={styles.content}>
           <Text style={[styles.errorText, { color: theme.colors.error }]}>
             {error}
@@ -126,13 +112,6 @@ export const OrderDetailsScreen = () => {
   if (!orderDetails) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="arrow-back" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Order Details</Text>
-          <View style={{ width: 24 }} />
-        </View>
         <View style={styles.content}>
           <Text style={[styles.errorText, { color: theme.colors.text }]}>
             Order not found
@@ -152,18 +131,9 @@ export const OrderDetailsScreen = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* Header with back button */}
-      <View style={[styles.header, { backgroundColor: theme.colors.background, borderBottomColor: theme.colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Order Details</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
       <ScrollView style={styles.content}>
         {/* Order Header */}
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+        <View style={styles.section}>
           <View style={styles.orderHeader}>
             <View style={styles.orderInfo}>
               <Text style={[styles.orderId, { color: theme.colors.text }]}>
@@ -187,7 +157,7 @@ export const OrderDetailsScreen = () => {
         </View>
 
         {/* Order Summary */}
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+        <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
             Order Summary
           </Text>
@@ -232,6 +202,7 @@ export const OrderDetailsScreen = () => {
           
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={[styles.totalLabel, { color: theme.colors.text }]}>
+
               Total
             </Text>
             <Text style={[styles.totalValue, { color: theme.colors.text }]}>
@@ -241,7 +212,7 @@ export const OrderDetailsScreen = () => {
         </View>
 
         {/* Items */}
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+        <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
             Items ({orderDetails.items.length})
           </Text>
@@ -283,7 +254,7 @@ export const OrderDetailsScreen = () => {
 
         {/* Payment */}
         {orderDetails.payment.length > 0 && (
-          <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+          <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
               Payment
             </Text>
@@ -319,7 +290,7 @@ export const OrderDetailsScreen = () => {
 
         {/* Delivery */}
         {orderDetails.deliveryAddress && (
-          <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+          <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
               Delivery Address
             </Text>
@@ -343,7 +314,7 @@ export const OrderDetailsScreen = () => {
 
         {/* Special Instructions */}
         {orderDetails.instructions && (
-          <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+          <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
               Special Instructions
             </Text>
@@ -355,7 +326,7 @@ export const OrderDetailsScreen = () => {
 
         {/* Status History */}
         {orderDetails.statusHistory.length > 0 && (
-          <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+          <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
               Status History
             </Text>
@@ -395,25 +366,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
   content: {
     flex: 1,
+    paddingHorizontal: 16,
   },
   section: {
-    margin: 16,
-    padding: 16,
+    margin: 8,
+    padding: 12,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#754C29',
+    backgroundColor: '#FBF5EB',
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -536,7 +499,7 @@ const styles = StyleSheet.create({
   statusHistoryItem: {
     marginBottom: 12,
     padding: 12,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#FBF5EB',
     borderRadius: 8,
   },
   statusHistoryHeader: {
@@ -579,3 +542,5 @@ const styles = StyleSheet.create({
     padding: 20,
   },
 });
+
+export default OrderDetailsScreen;

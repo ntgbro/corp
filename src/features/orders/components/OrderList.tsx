@@ -70,7 +70,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) =>
 
   const renderOrderItem = ({ item }: { item: OrderItem }) => (
     <TouchableOpacity
-      style={[styles.orderItem, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+      style={[styles.orderItem, { backgroundColor: '#FBF5EB', borderColor: '#754C29' }]}
       onPress={() => onOrderPress(item.id)}
     >
       <View style={styles.orderHeader}>

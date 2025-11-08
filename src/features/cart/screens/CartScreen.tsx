@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -179,6 +179,44 @@ type CartScreenNavigationProp = StackNavigationProp<CartStackParamList, 'Cart'>;
 export const CartScreen = () => {
   const { theme } = useThemeContext();
   const navigation = useNavigation<CartScreenNavigationProp>();
+  
+  // Custom header with back button
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      header: () => (
+        <View style={{ 
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 16,
+          paddingVertical: 8, // Decreased height
+          borderBottomWidth: 1,
+          borderBottomColor: '#e0e0e0',
+          backgroundColor: '#F5DEB3', // Match footer color
+          borderBottomLeftRadius: 20, // Border radius at bottom left
+          borderBottomRightRadius: 20, // Border radius at bottom right
+        }}> 
+          <TouchableOpacity 
+            style={{ padding: 8 }}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={{ 
+              fontSize: 24,
+              fontWeight: '600',
+              color: '#000000' // Black color for better contrast
+            }}>←</Text>
+          </TouchableOpacity>
+          <Text style={{ 
+            fontSize: 18,
+            fontWeight: '600',
+            color: '#000000' // Black color for better contrast
+          }}>My Cart</Text>
+          <View style={{ width: 40 }} />
+        </View>
+      ),
+    });
+  }, [navigation, theme]);
   const { 
     state: { items, totalItems, subtotal, discount, totalAmount, appliedCoupon }, 
     updateQuantity, 
@@ -602,11 +640,11 @@ export const CartScreen = () => {
                   styles.modalAddressItem,
                   { 
                     backgroundColor: selectedAddress?.id === address.id 
-                      ? theme.colors.primary + '20' 
-                      : theme.colors.surface,
+                      ? '#754C29' + '20' 
+                      : '#FBF5EB',
                     borderColor: selectedAddress?.id === address.id 
-                      ? theme.colors.primary 
-                      : theme.colors.border
+                      ? '#754C29' 
+                      : '#754C29'
                   }
                 ]}
                 onPress={() => {
@@ -638,13 +676,13 @@ export const CartScreen = () => {
             ))}
             
             <TouchableOpacity
-              style={[styles.addAddressButton, { borderColor: theme.colors.primary }]}
+              style={[styles.addAddressButton, { borderColor: '#754C29', backgroundColor: '#754C29' }]}
               onPress={() => {
                 setShowAddressModal(false);
                 navigation.navigate('Profile' as never);
               }}
             >
-              <Text style={[styles.addAddressText, { color: theme.colors.primary }]}>
+              <Text style={[styles.addAddressText, { color: 'white' }]}>
                 + Add New Address
               </Text>
             </TouchableOpacity>
@@ -730,33 +768,36 @@ export const CartScreen = () => {
               
               {/* Time Slots for Selected Date */}
               <View style={styles.timeSlotsSection}>
-                <Text style={[styles.sectionSubtitle, { color: theme.colors.text }]}>
-                  Select Time Slot
-                </Text>
+                <Text style={[styles.sectionSubtitle, { color: theme.colors.text }]}>Select Time Slot</Text>
                 {filteredTimeSlots.length > 0 ? (
-                  filteredTimeSlots.map((slot: TimeSlot) => (
-                    <TouchableOpacity
-                      key={slot.id}
-                      style={[
-                        styles.calendarTimeSlotItem,
-                        { 
-                          backgroundColor: selectedTimeSlot?.id === slot.id 
-                            ? theme.colors.primary + '20' 
-                            : theme.colors.surface,
-                          borderColor: selectedTimeSlot?.id === slot.id 
-                            ? theme.colors.primary 
-                            : theme.colors.border
-                        }
-                      ]}
-                      onPress={() => {
-                        setSelectedTimeSlot(slot);
-                        setShowTimeSlotModal(false);
-                      }}
-                    >
-                      <Text style={[styles.calendarTimeSlotItemText, { color: theme.colors.text }]}>
-                        {slot.time}
-                      </Text>
-                    </TouchableOpacity>
+                  // Group time slots in rows of 2
+                  [...Array(Math.ceil(filteredTimeSlots.length / 2))].map((_, rowIndex) => (
+                    <View key={rowIndex} style={{ flexDirection: 'row', marginHorizontal: -4 }}>
+                      {filteredTimeSlots.slice(rowIndex * 2, rowIndex * 2 + 2).map((slot: TimeSlot) => (
+                        <TouchableOpacity
+                          key={slot.id}
+                          style={[
+                            styles.calendarTimeSlotItem,
+                            { 
+                              backgroundColor: selectedTimeSlot?.id === slot.id 
+                                ? theme.colors.primary + '20' 
+                                : theme.colors.surface,
+                              borderColor: selectedTimeSlot?.id === slot.id 
+                                ? theme.colors.primary 
+                                : theme.colors.border
+                            }
+                          ]}
+                          onPress={() => {
+                            setSelectedTimeSlot(slot);
+                            setShowTimeSlotModal(false);
+                          }}
+                        >
+                          <Text style={[styles.calendarTimeSlotItemText, { color: theme.colors.text }]}>
+                            {slot.time}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
                   ))
                 ) : (
                   <Text style={[styles.emptyStateText, { color: theme.colors.textSecondary }]}>
@@ -794,7 +835,7 @@ export const CartScreen = () => {
       {items.length > 0 ? (
         items.map((item, index) => (
           <CartItem
-            key={item.id}
+            key={item.productId}
             item={item}
             onUpdateQuantity={handleUpdateQuantity}
             onRemove={handleRemoveItem}
@@ -1070,6 +1111,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    width: '80%', // Decreased width of the input container
   },
   couponInput: {
     flex: 1,
@@ -1366,9 +1408,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
+    flex: 1,
+    minWidth: 120, // Minimum width for each time slot
+    marginHorizontal: 4, // Space between items
   },
   calendarTimeSlotItemText: {
-    fontSize: 16,
+    fontSize: 14, // Decreased font size
     fontWeight: '500',
     textAlign: 'center',
   },
@@ -1400,6 +1445,31 @@ const styles = StyleSheet.create({
   paymentMethodText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+
+  // Custom header styles
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  backButton: {
+    padding: 8,
+  },
+  backButtonText: {
+    fontSize: 24,
+    fontWeight: '600',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  headerSpacer: {
+    width: 40, // Width of back button area for alignment
   },
 
 });

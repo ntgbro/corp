@@ -181,10 +181,11 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 
   switch (action.type) {
     case 'ADD_TO_CART': {
-      const existingItem = state.items.find(item => item.id === action.payload.id);
+      // Check for existing item based on productId instead of id
+      const existingItem = state.items.find(item => item.productId === action.payload.productId);
       const updatedItems = existingItem
         ? state.items.map(item =>
-            item.id === action.payload.id
+            item.productId === action.payload.productId
               ? { ...item, quantity: item.quantity + 1 }
               : item
           )
@@ -194,13 +195,14 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     }
 
     case 'REMOVE_FROM_CART': {
-      const updatedItems = state.items.filter(item => item.id !== action.payload);
+      // Remove item based on productId instead of id
+      const updatedItems = state.items.filter(item => item.productId !== action.payload);
       return calculateState(updatedItems);
     }
 
     case 'UPDATE_QUANTITY': {
       const updatedItems = state.items.map(item =>
-        item.id === action.payload.id
+        item.productId === action.payload.id
           ? { ...item, quantity: Math.max(0, action.payload.quantity) }
           : item
       ).filter(item => item.quantity > 0);
@@ -325,90 +327,102 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
   };
 
-  const addToCart = async (item: Omit<CartItem, 'quantity'>) => {
+  const addToCart = (item: Omit<CartItem, 'quantity'>) => {
     dispatch({ type: 'ADD_TO_CART', payload: item });
     
-    // Sync with Firebase if user is logged in
+    // Sync with Firebase if user is logged in (non-blocking)
     if (user?.userId) {
-      try {
-        let cart = await CartService.getCart(user.userId);
-        let cartId: string;
-        
-        if (!cart) {
-          cartId = await CartService.createCart(user.userId);
-        } else {
-          cartId = cart.cartId;
+      // Use setTimeout to make Firebase sync non-blocking
+      setTimeout(async () => {
+        try {
+          let cart = await CartService.getCart(user.userId);
+          let cartId: string;
+          
+          if (!cart) {
+            cartId = await CartService.createCart(user.userId);
+          } else {
+            cartId = cart.cartId;
+          }
+          
+          await CartService.addItemToCart(user.userId, cartId, item);
+        } catch (error) {
+          console.error('Error adding item to Firebase cart:', error);
         }
-        
-        await CartService.addItemToCart(user.userId, cartId, item);
-      } catch (error) {
-        console.error('Error adding item to Firebase cart:', error);
-      }
+      }, 0);
     }
   };
 
-  const removeFromCart = async (id: string) => {
+  const removeFromCart = (id: string) => {
     dispatch({ type: 'REMOVE_FROM_CART', payload: id });
     
-    // Sync with Firebase if user is logged in
+    // Sync with Firebase if user is logged in (non-blocking)
     if (user?.userId) {
-      try {
-        const cart = await CartService.getCart(user.userId);
-        if (cart) {
-          // Find the Firebase item ID by product ID
-          const firebaseItems = await CartService.getCartItems(user.userId, cart.cartId);
-          const itemToRemove = firebaseItems.find(item => item.productId === id);
-          
-          if (itemToRemove) {
-            await CartService.removeItemFromCart(user.userId, cart.cartId, itemToRemove.itemId);
+      // Use setTimeout to make Firebase sync non-blocking
+      setTimeout(async () => {
+        try {
+          const cart = await CartService.getCart(user.userId);
+          if (cart) {
+            // Find the Firebase item ID by product ID
+            const firebaseItems = await CartService.getCartItems(user.userId, cart.cartId);
+            const itemToRemove = firebaseItems.find(item => item.productId === id);
+            
+            if (itemToRemove) {
+              await CartService.removeItemFromCart(user.userId, cart.cartId, itemToRemove.itemId);
+            }
           }
+        } catch (error) {
+          console.error('Error removing item from Firebase cart:', error);
         }
-      } catch (error) {
-        console.error('Error removing item from Firebase cart:', error);
-      }
+      }, 0);
     }
   };
 
-  const updateQuantity = async (id: string, quantity: number) => {
+  const updateQuantity = (id: string, quantity: number) => {
     dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
     
-    // Sync with Firebase if user is logged in
+    // Sync with Firebase if user is logged in (non-blocking)
     if (user?.userId) {
-      try {
-        const cart = await CartService.getCart(user.userId);
-        if (cart) {
-          // Find the Firebase item ID by product ID
-          const firebaseItems = await CartService.getCartItems(user.userId, cart.cartId);
-          const itemToUpdate = firebaseItems.find(item => item.productId === id);
-          
-          if (itemToUpdate) {
-            await CartService.updateItemQuantity(user.userId, cart.cartId, itemToUpdate.itemId, quantity);
+      // Use setTimeout to make Firebase sync non-blocking
+      setTimeout(async () => {
+        try {
+          const cart = await CartService.getCart(user.userId);
+          if (cart) {
+            // Find the Firebase item ID by product ID
+            const firebaseItems = await CartService.getCartItems(user.userId, cart.cartId);
+            const itemToUpdate = firebaseItems.find(item => item.productId === id);
+            
+            if (itemToUpdate) {
+              await CartService.updateItemQuantity(user.userId, cart.cartId, itemToUpdate.itemId, quantity);
+            }
           }
+        } catch (error) {
+          console.error('Error updating item quantity in Firebase cart:', error);
         }
-      } catch (error) {
-        console.error('Error updating item quantity in Firebase cart:', error);
-      }
+      }, 0);
     }
   };
 
-  const clearCart = async () => {
+  const clearCart = () => {
     dispatch({ type: 'CLEAR_CART' });
     
-    // Sync with Firebase if user is logged in
+    // Sync with Firebase if user is logged in (non-blocking)
     if (user?.userId) {
-      try {
-        const cart = await CartService.getCart(user.userId);
-        if (cart) {
-          await CartService.clearCart(user.userId, cart.cartId);
+      // Use setTimeout to make Firebase sync non-blocking
+      setTimeout(async () => {
+        try {
+          const cart = await CartService.getCart(user.userId);
+          if (cart) {
+            await CartService.clearCart(user.userId, cart.cartId);
+          }
+        } catch (error) {
+          console.error('Error clearing Firebase cart:', error);
         }
-      } catch (error) {
-        console.error('Error clearing Firebase cart:', error);
-      }
+      }, 0);
     }
   };
 
   const getItemQuantity = (id: string) => {
-    return state.items.find(item => item.id === id)?.quantity || 0;
+    return state.items.find(item => item.productId === id)?.quantity || 0;
   };
 
   const applyCoupon = async (coupon: Coupon): Promise<{ success: boolean; message: string }> => {

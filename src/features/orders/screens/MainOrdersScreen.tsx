@@ -41,8 +41,12 @@ export const MainOrdersScreen = () => {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         {/* Header */}
-        <View style={[styles.header, { backgroundColor: theme.colors.background, borderBottomColor: theme.colors.border }]}>
+        <View style={[styles.header, { backgroundColor: '#F5DEB3', borderBottomColor: theme.colors.border }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.colors.text }]}>My Orders</Text>
+          <View style={{ width: 24 }} />
         </View>
         
         <View style={styles.content}>
@@ -66,15 +70,19 @@ export const MainOrdersScreen = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* Header with title */}
-      <View style={[styles.header, { backgroundColor: theme.colors.background, borderBottomColor: theme.colors.border }]}>
+      {/* Header with back button */}
+      <View style={[styles.header, { backgroundColor: '#F5DEB3', borderBottomColor: theme.colors.border }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={{ fontSize: 24, color: theme.colors.text }}>←</Text>
+        </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>My Orders</Text>
+        <View style={{ width: 24 }} />
       </View>
 
       {/* Replaced ScrollView with View to fix nested VirtualizedLists warning */}
       <View style={styles.content}>
         {/* Status Filters */}
-        <View style={[styles.filterContainer, { backgroundColor: theme.colors.surface }]}>
+        <View style={[styles.filterContainer, { backgroundColor: '#FBF5EB' }]}>
           <ScrollView 
             horizontal 
             showsHorizontalScrollIndicator={false}
@@ -87,7 +95,7 @@ export const MainOrdersScreen = () => {
                   styles.filterButton,
                   { 
                     backgroundColor: filter === status.key ? theme.colors.primary : 'transparent',
-                    borderColor: theme.colors.border,
+                    borderColor: '#754C29',
                   }
                 ]}
                 onPress={() => setFilter(status.key)}
@@ -136,11 +144,14 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 20,
     borderBottomWidth: 1,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    overflow: 'hidden',
   },
   headerTitle: {
     fontSize: 18,
@@ -148,11 +159,13 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    paddingHorizontal: 16,
   },
   filterContainer: {
     borderRadius: 12,
     padding: 8,
-    margin: 16,
+    marginHorizontal: 0,
+    marginVertical: 16,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
