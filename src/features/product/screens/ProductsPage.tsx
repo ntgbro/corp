@@ -158,7 +158,7 @@ const ProductsPage: React.FC = () => {
           </Typography>
         </View>
         <TouchableOpacity
-          style={[styles.seeAllButton, { backgroundColor: theme.colors.surface }]}
+          style={[styles.seeAllButton, { backgroundColor: '#f1ede9' }]}
           onPress={() => handleSeeAllPress(item.restaurantId, item.restaurantName)}
         >
           <Typography variant="body2" color="primary">
@@ -243,7 +243,10 @@ const ProductsPage: React.FC = () => {
                 >
                   ₹{product.price}
                 </Typography>
-                <TouchableOpacity style={styles.addButton}>
+                <TouchableOpacity 
+                  style={styles.addButton}
+                  onPress={() => handleAddToCart(product)} // Add onPress handler
+                >
                   <Typography style={styles.addButtonText}>+</Typography>
                 </TouchableOpacity>
               </View>
@@ -253,6 +256,19 @@ const ProductsPage: React.FC = () => {
       />
     </View>
   );
+
+  const handleAddToCart = (product: any) => {
+    // Add item to cart using cart context
+    addToCart({
+      id: product.id,
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.imageURL || 'https://via.placeholder.com/150',
+      chefId: product.restaurantId || '',
+      chefName: 'Restaurant',
+    });
+  };
 
   return (
     <SafeAreaWrapper style={{ backgroundColor: theme.colors.background }}>
@@ -359,6 +375,8 @@ const styles = StyleSheet.create({
     padding: PRODUCT_CARD_DIMENSIONS.HORIZONTAL.padding,
     alignItems: 'flex-start',
     width: '100%',
+    flex: 1,
+    justifyContent: 'space-between',
   },
   productName: {
     fontSize: 13,
@@ -381,19 +399,19 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   addButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 24, // Increased significantly for a more rounded, pill-like appearance
-    paddingHorizontal: SPACING.content.large,
-    paddingVertical: SPACING.content.small,
-    minWidth: 40,
-    minHeight: 36,
+    backgroundColor: '#f1ede9',
+    borderRadius: 22, // Half of 44px for circular shape
+    width: 44, // Fixed width
+    height: 44, // Fixed height (same as width for square shape)
     alignItems: 'center',
     justifyContent: 'center',
   },
   addButtonText: {
-    fontSize: 14,
+    fontSize: 20, // Increased from 16 to 20 for better visibility
     fontWeight: '600',
-    color: '#fff',
+    color: '#754C29',
+    textAlign: 'center',
+    lineHeight: 24, // Adjusted to match new font size for perfect vertical centering
   },
   emptyContainer: {
     flex: 1,

@@ -99,10 +99,15 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ menuItem, onPress, onAddToC
         </Text>
 
         <View style={styles.priceRow}>
-          <Text style={[{ color: theme.colors.primary, fontSize: 16, fontWeight: 'bold' }]}>
+          <Text style={[styles.price, { color: '#3b82f6' }]}>
             ₹{menuItem.price}
           </Text>
-          <AddToCartButton onPress={handleAddToCart} />
+          <TouchableOpacity
+            style={styles.customAddButton}
+            onPress={handleAddToCart}
+          >
+            <Text style={styles.customAddButtonText}>+</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -143,8 +148,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   infoContainer: {
-    // Removed flex-based layout to prevent height variation
-    height: 74, // Fixed height: cardHeight(200) - imageHeight(110) - padding(16)
+    // Using flex: 1 to fill available space and push content to edges
+    flex: 1,
     padding: CARD_DIMENSIONS.menuItem.padding,
     justifyContent: 'space-between',
   },
@@ -152,16 +157,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'left',
-    // Removed marginBottom to fit within fixed height container
   },
   priceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    // Removed any margins to fit within fixed height container
+    marginTop: 'auto', // This pushes the row to the bottom
   },
   price: {
-    fontSize: 15,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  customAddButton: {
+    backgroundColor: '#f1ede9',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customAddButtonText: {
+    color: '#754C29',
+    fontSize: 22,
     fontWeight: 'bold',
   },
 });
