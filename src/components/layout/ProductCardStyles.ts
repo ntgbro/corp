@@ -58,21 +58,22 @@ export const ProductCardStyles = StyleSheet.create({
 
   // Add to cart button
   addToCartButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 12, // Reset to specification value
-    paddingHorizontal: SPACING.content.medium,
-    paddingVertical: SPACING.content.small,
+    backgroundColor: '#f1ede9', // Updated to match specification
+    borderRadius: 24, // Increased border radius for more rounded appearance
+    paddingHorizontal: SPACING.content.large, // Increased horizontal padding
+    paddingVertical: SPACING.content.medium, // Increased vertical padding
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 0,
-    minHeight: 28, // Decreased from 30 to 28 to reduce height
+    minHeight: 40, // Maintaining minimum height at 40px
+    minWidth: 48, // Increased minimum width from 44px to 48px
     alignSelf: 'flex-end',
   },
 
   addToCartText: {
-    fontSize: 14, // Updated to match project specification
+    fontSize: 18, // Reduced font size for better fit in circular button
     fontWeight: '600',
-    color: '#fff',
+    color: '#754C29', // Updated to match specification
   },
 });
 

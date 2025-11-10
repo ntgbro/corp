@@ -11,7 +11,7 @@ export type AuthStackParamList = {
 
 export type MainStackParamList = {
   HomeTabs: undefined;
-  Home: undefined;
+  HomeMain: undefined;  // Changed from Home to HomeMain
   Categories: undefined;
   Product: undefined;
   Products: undefined;
