@@ -92,7 +92,7 @@ const RestaurantDetailsScreen: React.FC = () => {
       <View style={styles.categoryHeader}>
         <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{category}</Text>
         <TouchableOpacity
-          style={[styles.seeAllButton, { backgroundColor: theme.colors.surface }]}
+          style={[styles.seeAllButton, { backgroundColor: '#f1ede9' }]}
           onPress={() => handleSeeAllPress(category)}
         >
           <Text style={[styles.seeAllText, { color: theme.colors.primary }]}>See All</Text>
@@ -194,35 +194,13 @@ const RestaurantDetailsScreen: React.FC = () => {
             {/* Setup Status */}
             {restaurant.needsSetup !== undefined && (
               <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
-                <Typography variant="caption" color="secondary" style={styles.detailLabel}>⚙️ Status</Typography>
+                <Typography variant="caption" color="secondary" style={styles.detailLabel}>⚙ Status</Typography>
                 <Typography variant="body2" color={restaurant.needsSetup ? "error" : "success"} style={styles.detailValue}>
                   {restaurant.needsSetup ? 'Setup Required' : 'Ready'}
                 </Typography>
               </View>
             )}
           </View>
-
-          {/* Delivery Locations */}
-          {restaurant.deliveryLocations && restaurant.deliveryLocations.length > 0 && (
-            <View style={styles.deliverySection}>
-              <Typography variant="h6" color="text" style={styles.sectionTitle}>Delivery Areas</Typography>
-              <View style={styles.deliveryGrid}>
-                {restaurant.deliveryLocations.map((location, index) => (
-                  <View key={index} style={[styles.deliveryItem, { backgroundColor: '#FBF5EB' }]}>
-                    <Typography variant="body2" color="text" style={styles.deliveryCity}>
-                      {location.cityName}
-                    </Typography>
-                    <Typography variant="caption" color="secondary" style={styles.deliveryPincode}>
-                      {location.pincodeName} ({location.pincodeCode})
-                    </Typography>
-                    <Typography variant="caption" color={location.isDeliverable ? "success" : "error"} style={styles.deliveryStatus}>
-                      {location.isDeliverable ? '✓ Available' : '✗ Not Available'}
-                    </Typography>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
         </View>
 
         {/* Menu Section */}
@@ -419,19 +397,6 @@ const styles = StyleSheet.create({
     padding: SPACING.content.medium,
     borderRadius: BORDERS.radius.medium,
     marginBottom: SPACING.content.small,
-  },
-  deliveryCity: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: SPACING.content.small,
-  },
-  deliveryPincode: {
-    fontSize: 12,
-    marginBottom: SPACING.content.small,
-  },
-  deliveryStatus: {
-    fontSize: 11,
-    fontWeight: '600',
   },
 });
 

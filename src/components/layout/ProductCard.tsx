@@ -250,15 +250,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {product.name}
         </Text>
 
-        {/* Price and Rating Row with Add to Cart Button */}
+        {/* Price and Rating Row with Add to Cart Button - Positioned at the bottom */}
         <View style={styles.bottomRow}>
           <View style={styles.priceRatingContainer}>
-            {/* Price */}
+            {/* Price - Blue color */}
             <Text
               style={[
                 styles.price,
                 {
-                  color: theme.colors.primary,
+                  color: '#3b82f6', // Blue color as requested
                   fontSize: fontSizes.price,
                 }
               ]}
@@ -281,19 +281,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             )}
           </View>
 
-          {/* Add to Cart Button - Aligned on the same line */}
+          {/* Add to Cart Button - Custom colors */}
           <TouchableOpacity
             style={[
               ProductCardStyles.addToCartButton,
               {
-                backgroundColor: product.isAvailable ? theme.colors.primary : theme.colors.border,
+                backgroundColor: '#f1ede9', // Background color as requested
                 opacity: isAddingToCart ? 0.7 : 1,
               },
             ]}
             onPress={handleAddToCart}
             disabled={isAddingToCart || !product.isAvailable}
           >
-            <Text style={[ProductCardStyles.addToCartText, { color: theme.colors.white }]}>
+            <Text style={[ProductCardStyles.addToCartText, { color: '#754C29' }]}>
               {isAddingToCart ? 'Adding...' : product.isAvailable ? '+' : 'Out'}
             </Text>
           </TouchableOpacity>
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#3b82f6', // Blue color as requested
     // Removed marginBottom to fit within fixed height container
   },
   rating: {

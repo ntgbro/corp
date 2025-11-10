@@ -10,7 +10,7 @@ import { PreferencesScreen } from '../preferences/screens/PreferencesScreen';
 import { NotificationsScreen } from '../notifications/screens/NotificationsScreen';
 import { GeneralInfoScreen } from '../generalInfo/screens/GeneralInfoScreen';
 import { HelpSupportScreen } from '../helpSupport/screens/HelpSupportScreen';
-import { SocialMediaScreen } from '../socialMedia/screens/SocialMediaScreen';
+import { SocialMediaScreen } from '../socialMedia/screens/SocialMediaScreen'; // Added back the import
 
 export type SettingsStackParamList = {
   SettingsHome: undefined;
@@ -23,7 +23,7 @@ export type SettingsStackParamList = {
   Notifications: undefined;
   GeneralInfo: undefined;
   HelpSupport: undefined;
-  SocialMedia: undefined;
+  SocialMedia: undefined; // Added back SocialMedia to the type definition
 };
 
 const Stack = createStackNavigator<SettingsStackParamList>();
