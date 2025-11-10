@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { db } from '../../../../config/firebase';
 import { collection, query, where, getDocs, deleteDoc, doc } from '@react-native-firebase/firestore';
@@ -22,46 +22,46 @@ export const useWishlist = () => {
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchWishlist = async () => {
-      if (user?.userId) {
-        try {
-          setLoading(true);
-          const wishlistRef = collection(db, 'users', user.userId, 'wishlist');
-          const q = query(wishlistRef);
-          const querySnapshot = await getDocs(q);
-          
-          const wishlistData: WishlistItem[] = [];
-          querySnapshot.forEach((doc: QueryDocumentSnapshot<any>) => {
-            const data = doc.data();
-            wishlistData.push({
-              id: doc.id,
-              name: data.name || `Item ${data.itemId || doc.id}`,
-              price: data.price || 0,
-              image: data.image || 'https://via.placeholder.com/150',
-              itemId: data.itemId || '',
-              restaurantId: data.restaurantId || '',
-              serviceId: data.serviceId || '',
-              warehouseId: data.warehouseId || '',
-              type: data.type || '',
-              addedAt: data.addedAt || new Date(),
-            });
+  const fetchWishlist = useCallback(async () => {
+    if (user?.userId) {
+      try {
+        setLoading(true);
+        const wishlistRef = collection(db, 'users', user.userId, 'wishlist');
+        const q = query(wishlistRef);
+        const querySnapshot = await getDocs(q);
+        
+        const wishlistData: WishlistItem[] = [];
+        querySnapshot.forEach((doc: QueryDocumentSnapshot<any>) => {
+          const data = doc.data();
+          wishlistData.push({
+            id: doc.id,
+            name: data.name || `Item ${data.itemId || doc.id}`,
+            price: data.price || 0,
+            image: data.image || 'https://via.placeholder.com/150',
+            itemId: data.itemId || '',
+            restaurantId: data.restaurantId || '',
+            serviceId: data.serviceId || '',
+            warehouseId: data.warehouseId || '',
+            type: data.type || '',
+            addedAt: data.addedAt || new Date(),
           });
-          
-          setWishlist(wishlistData);
-        } catch (error) {
-          console.error('Error fetching wishlist:', error);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setWishlist([]);
+        });
+        
+        setWishlist(wishlistData);
+      } catch (error) {
+        console.error('Error fetching wishlist:', error);
+      } finally {
         setLoading(false);
       }
-    };
-
-    fetchWishlist();
+    } else {
+      setWishlist([]);
+      setLoading(false);
+    }
   }, [user?.userId]);
+
+  useEffect(() => {
+    fetchWishlist();
+  }, [fetchWishlist]);
 
   const removeFromWishlist = async (id: string) => {
     try {
@@ -89,5 +89,6 @@ export const useWishlist = () => {
     loading,
     removeFromWishlist,
     addToCart,
+    fetchWishlist, // Expose fetchWishlist function
   };
 };

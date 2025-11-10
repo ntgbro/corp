@@ -47,7 +47,6 @@ export const usePromotions = (limitCount: number = 5) => {
       (snapshot) => {
         const now = new Date();
         const promotionsData: Promotion[] = [];
-        const allPromotionsData: Promotion[] = []; // To see all promotions before filtering
         
         snapshot.forEach((doc: any) => {
           const data = doc.data();
@@ -75,17 +74,11 @@ export const usePromotions = (limitCount: number = 5) => {
             createdBy: data.createdBy,
           };
           
-          // Store all promotions for debugging
-          allPromotionsData.push(promotion);
-          
           // Filter for currently valid promotions in memory
           if (validFrom <= now && validTill >= now) {
             promotionsData.push(promotion);
           }
         });
-        
-        console.log('All promotions from DB:', allPromotionsData.length, allPromotionsData);
-        console.log('Valid promotions:', promotionsData.length, promotionsData);
         
         // Sort by priority and then by creation date
         promotionsData.sort((a, b) => {

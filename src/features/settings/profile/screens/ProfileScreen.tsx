@@ -20,7 +20,9 @@ export const ProfileScreen = () => {
       }
       
       await updateProfile(data);
-      Alert.alert('Success', 'Profile updated successfully');
+      Alert.alert('Success', 'Profile updated successfully', [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
     } catch (error) {
       console.error('Error updating profile:', error);
       Alert.alert('Error', 'Failed to update profile');

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaWrapper } from '../../../../components/layout';
 import { useThemeContext } from '../../../../contexts/ThemeContext';
 import { WishlistItem } from '../components/WishlistItem';
@@ -7,7 +8,14 @@ import { useWishlist } from '../hooks/useWishlist';
 
 export const WishlistScreen = () => {
   const { theme } = useThemeContext();
-  const { wishlist, loading, removeFromWishlist, addToCart } = useWishlist();
+  const { wishlist, loading, removeFromWishlist, addToCart, fetchWishlist } = useWishlist();
+
+  // Refresh wishlist data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchWishlist();
+    }, [fetchWishlist])
+  );
 
   const handleRemove = (id: string) => {
     removeFromWishlist(id);

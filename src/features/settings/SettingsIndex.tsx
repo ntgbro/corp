@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, ToastAndroid, Platform, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { SafeAreaWrapper } from '../../components/layout';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import { SettingsStackParamList } from './navigation/SettingsNavigator';
@@ -15,9 +15,16 @@ export const SettingsIndex = () => {
   const { theme } = useThemeContext();
   const navigation = useNavigation<SettingsNavigationProp>();
   const { signOut, loading } = useAuth();
-  const { profile, loading: profileLoading } = useProfile();
+  const { profile, loading: profileLoading, fetchProfile } = useProfile();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+
+  // Refresh profile data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfile();
+    }, [fetchProfile])
+  );
 
   const settingsSections = [
     { id: 'orderHistory', title: 'Order History', icon: '📦' },

@@ -67,8 +67,6 @@ const HomeScreen: React.FC = () => {
 
   // Automatically scroll through promotions
   useEffect(() => {
-    console.log('Promotions fetched:', promotions.length);
-    console.log('Promotion data:', promotions);
     if (promotions.length <= 1) return;
 
     const interval = setInterval(() => {
@@ -167,11 +165,6 @@ const HomeScreen: React.FC = () => {
                 }
               }}
               renderItem={({ item: promotion, index }) => {
-                console.log('Rendering promotion item:', {
-                  title: promotion.title,
-                  index: index,
-                  promotionId: promotion.promotionId
-                });
                 return (
                 <View style={styles.promotionSlide}>
                   <View style={[styles.promotionContainer, { width: screenWidth - 32 }]}>
@@ -287,7 +280,7 @@ const HomeScreen: React.FC = () => {
                   <RestaurantCard
                     restaurant={restaurant}
                     width={cardWidth}
-                    onPress={() => (navigation as any).navigate('Product', { screen: 'RestaurantDetails', params: { restaurantId: restaurant.restaurantId } })}
+                    onPress={() => (navigation as any).navigate('RestaurantDetails', { restaurantId: restaurant.restaurantId })}
                   />
                 </View>
               )}

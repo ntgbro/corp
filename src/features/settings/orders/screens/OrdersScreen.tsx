@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { SafeAreaWrapper } from '../../../../components/layout';
 import { useThemeContext } from '../../../../contexts/ThemeContext';
 import { OrderList } from '../components/OrderList';
@@ -15,6 +15,13 @@ export const OrdersScreen = () => {
   const { theme } = useThemeContext();
   const { orders, loading, error, refreshOrderHistory } = useOrderHistory();
   const [filter, setFilter] = useState<string>('all');
+
+  // Refresh order history when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      refreshOrderHistory();
+    }, [refreshOrderHistory])
+  );
 
   const handleOrderPress = (orderId: string) => {
     // Navigate to order details screen
@@ -198,3 +205,5 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+
+export default OrdersScreen;

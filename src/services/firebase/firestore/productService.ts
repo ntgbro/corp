@@ -74,7 +74,7 @@ export async function getCategoriesByService(serviceId: 'fresh' | 'fmcg' | 'supp
           const data = doc.data();
           if (data.category) {
             // Use the first item's image as the category image
-            const imageURL = data.imageURL;
+            const imageURL = data.mainImageURL || data.imageURL;
             if (categoryMap[data.category]) {
               categoryMap[data.category].count += 1;
             } else {
@@ -167,7 +167,7 @@ export async function getProductsByServiceAndCategory(
           id: doc.id,
           name: data.name,
           price: data.price,
-          imageURL: data.mainImageURL,
+          imageURL: data.mainImageURL || data.imageURL,
           rating: data.rating,
           isAvailable: data.isAvailable,
           category: data.category,
@@ -190,7 +190,7 @@ export async function getProductsByServiceAndCategory(
           id: doc.id,
           name: data.name,
           price: data.price,
-          imageURL: data.imageURL,
+          imageURL: data.mainImageURL || data.imageURL,
           isAvailable: data.isAvailable,
           category: data.category,
           warehouseId: entity.id,
@@ -221,7 +221,7 @@ export async function getAllProductsForService(serviceId: 'fresh' | 'fmcg' | 'su
           id: doc.id,
           name: data.name,
           price: data.price,
-          imageURL: data.mainImageURL,
+          imageURL: data.mainImageURL || data.imageURL,
           rating: data.rating,
           isAvailable: data.isAvailable,
           category: data.category,
@@ -238,7 +238,7 @@ export async function getAllProductsForService(serviceId: 'fresh' | 'fmcg' | 'su
           id: doc.id,
           name: data.name,
           price: data.price,
-          imageURL: data.imageURL,
+          imageURL: data.mainImageURL || data.imageURL,
           isAvailable: data.isAvailable,
           category: data.category,
           warehouseId: entity.id,
