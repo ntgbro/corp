@@ -28,8 +28,8 @@ const ProductDetailsScreen: React.FC = () => {
   const { addToCart } = useCart();
   const { menuItemId } = route.params as RouteParams;
 
-  const [menuItem, setMenuItem] = React.useState<MenuItem | null>(null);
-  const [restaurant, setRestaurant] = React.useState<Restaurant | null>(null);
+  const [product, setProduct] = React.useState<any | null>(null);
+  const [entity, setEntity] = React.useState<any | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -37,16 +37,30 @@ const ProductDetailsScreen: React.FC = () => {
     const fetchProductDetails = async () => {
       try {
         setLoading(true);
+        
+        // Try to fetch as restaurant menu item first
         const menuItemData = await HomeService.getMenuItemById(menuItemId);
         if (menuItemData) {
-          setMenuItem(menuItemData);
+          setProduct(menuItemData);
           if (menuItemData.restaurantId) {
             const restaurantData = await HomeService.getRestaurantById(menuItemData.restaurantId);
-            setRestaurant(restaurantData);
+            setEntity(restaurantData);
           }
-        } else {
-          setError('Menu item not found');
+          return;
         }
+        
+        // If not found as menu item, try as warehouse product
+        const productData = await HomeService.getProductById(menuItemId);
+        if (productData) {
+          setProduct(productData);
+          if (productData.warehouseId) {
+            const warehouseData = await HomeService.getWarehouseById(productData.warehouseId);
+            setEntity(warehouseData);
+          }
+          return;
+        }
+        
+        setError('Product not found');
       } catch (err: any) {
         console.error('Error fetching product details:', err);
         setError(err.message);
@@ -61,15 +75,15 @@ const ProductDetailsScreen: React.FC = () => {
   }, [menuItemId]);
 
   const handleAddToCart = () => {
-    if (menuItem) {
+    if (product) {
       addToCart({
-        id: menuItem.menuItemId,
-        productId: menuItem.menuItemId,
-        name: menuItem.name,
-        price: menuItem.price,
-        image: menuItem.mainImageURL || menuItem.imageURL || 'https://via.placeholder.com/150',
-        chefId: menuItem.restaurantId || '',
-        chefName: restaurant?.name || 'Restaurant',
+        id: product.menuItemId || product.productId || product.id,
+        productId: product.menuItemId || product.productId || product.id,
+        name: product.name,
+        price: product.price,
+        image: product.mainImageURL || product.imageURL || 'https://via.placeholder.com/150',
+        chefId: product.restaurantId || product.warehouseId || '',
+        chefName: entity?.name || (product.restaurantId ? 'Restaurant' : 'Warehouse'),
       });
     }
   };
@@ -82,7 +96,7 @@ const ProductDetailsScreen: React.FC = () => {
     );
   }
 
-  if (error || !menuItem) {
+  if (error || !product) {
     return (
       <SafeAreaWrapper style={{ backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }}>
         <Typography variant="body1" color="error">
@@ -95,120 +109,153 @@ const ProductDetailsScreen: React.FC = () => {
   return (
     <SafeAreaWrapper style={{ backgroundColor: theme.colors.background }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Image source={{ uri: menuItem.mainImageURL || menuItem.imageURL }} style={styles.image} />
+        <Image source={{ uri: product.mainImageURL || product.imageURL }} style={styles.image} />
         <View style={styles.details}>
           <Typography variant="h2" color="text" style={{ textAlign: 'center', marginBottom: 10 }}>
-            {menuItem.name}
+            {product.name}
           </Typography>
           <Typography variant="body1" color="secondary" style={{ textAlign: 'center', marginBottom: 10 }}>
-            {menuItem.description}
+            {product.description}
           </Typography>
           <View style={styles.priceContainer}>
             <Typography variant="h3" color="primary" style={{ marginBottom: 20 }}>
-              ₹{menuItem.price}
+              ₹{product.price}
             </Typography>
             <AddToCartButton onPress={handleAddToCart} size={50} />
           </View>
           <View style={styles.table}>
-            {menuItem.isVeg !== undefined && (
+            {/* Show entity-specific information */}
+            {entity && (
+              <View style={styles.tableRow}>
+                <Typography variant="body1" color="text" style={[styles.tableLabel]}>
+                  From
+                </Typography>
+                <Typography variant="body1" color="text" style={[styles.tableValue]}>
+                  {entity.name}
+                </Typography>
+              </View>
+            )}
+            
+            {/* Show product-specific information */}
+            {product.isVeg !== undefined && (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Type
                 </Typography>
                 <Typography
                   variant="body1"
-                  color={menuItem.isVeg ? 'success' : 'error'}
+                  color={product.isVeg ? 'success' : 'error'}
                   style={[styles.tableValue]}
                 >
-                  {menuItem.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
+                  {product.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
                 </Typography>
               </View>
             )}
-            {menuItem.cuisine && (
+            {product.cuisine && (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Cuisine
                 </Typography>
                 <Typography variant="body1" color="text" style={[styles.tableValue]}>
-                  {menuItem.cuisine}
+                  {product.cuisine}
                 </Typography>
               </View>
             )}
-            {menuItem.prepTime && (
+            {product.prepTime && (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Prep Time
                 </Typography>
                 <Typography variant="body1" color="secondary" style={[styles.tableValue]}>
-                  {menuItem.prepTime}
+                  {product.prepTime}
                 </Typography>
               </View>
             )}
-            {menuItem.portionSize && (
+            {product.portionSize && (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Portion Size
                 </Typography>
                 <Typography variant="body1" color="secondary" style={[styles.tableValue]}>
-                  {menuItem.portionSize}
+                  {product.portionSize}
                 </Typography>
               </View>
             )}
-            {menuItem.spiceLevel && (
+            {product.spiceLevel && (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Spice Level
                 </Typography>
                 <Typography variant="body1" color="secondary" style={[styles.tableValue]}>
-                  {menuItem.spiceLevel}
+                  {product.spiceLevel}
                 </Typography>
               </View>
             )}
-            {menuItem.rating && (
+            {product.rating && (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Rating
                 </Typography>
                 <Typography variant="body1" color="secondary" style={[styles.tableValue]}>
-                  {menuItem.rating}
+                  {product.rating}
                 </Typography>
               </View>
             )}
-            {menuItem.ingredients && menuItem.ingredients.length > 0 && (
+            {product.ingredients && product.ingredients.length > 0 && (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Ingredients
                 </Typography>
                 <Typography variant="body1" color="secondary" style={[styles.tableValue]}>
-                  {menuItem.ingredients.join(', ')}
+                  {product.ingredients.join(', ')}
                 </Typography>
               </View>
             )}
-            {menuItem.allergens && menuItem.allergens.length > 0 && (
+            {product.allergens && product.allergens.length > 0 && (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Allergens
                 </Typography>
                 <Typography variant="body1" color="secondary" style={[styles.tableValue]}>
-                  {menuItem.allergens.join(', ')}
+                  {product.allergens.join(', ')}
                 </Typography>
               </View>
             )}
-            {menuItem.tags && menuItem.tags.length > 0 && (
+            {product.tags && product.tags.length > 0 && (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Tags
                 </Typography>
                 <Typography variant="body1" color="secondary" style={[styles.tableValue]}>
-                  {menuItem.tags.join(', ')}
+                  {product.tags.join(', ')}
+                </Typography>
+              </View>
+            )}
+            {product.gst !== undefined && (
+              <View style={styles.tableRow}>
+                <Typography variant="body1" color="text" style={[styles.tableLabel]}>
+                  GST
+                </Typography>
+                <Typography variant="body1" color="secondary" style={[styles.tableValue]}>
+                  {product.gst}%
+                </Typography>
+              </View>
+            )}
+            {product.status && (
+              <View style={styles.tableRow}>
+                <Typography variant="body1" color="text" style={[styles.tableLabel]}>
+                  Status
+                </Typography>
+                <Typography variant="body1" color="secondary" style={[styles.tableValue]}>
+                  {product.status}
                 </Typography>
               </View>
             )}
           </View>
-          {menuItem.galleryURLs && menuItem.galleryURLs.length > 0 && (
+          {product.galleryURLs && product.galleryURLs.length > 0 && (
             <View style={styles.section}>
               <FlatList
-                data={menuItem.galleryURLs.filter(url => typeof url === 'string' && url.trim() !== '' && url !== menuItem.mainImageURL && url !== menuItem.imageURL)}
+                data={product.galleryURLs.filter((url: string) => typeof url === 'string' && url.trim() !== '' && url !== product.mainImageURL && url !== product.imageURL)}
                 keyExtractor={(url, index) => index.toString()}
                 horizontal
                 renderItem={({ item }) => (
@@ -217,10 +264,16 @@ const ProductDetailsScreen: React.FC = () => {
               />
             </View>
           )}
-          {restaurant && (
-            <TouchableOpacity onPress={() => (navigation as any).navigate('Product', { screen: 'RestaurantDetails', params: { restaurantId: restaurant.restaurantId } })}>
+          {entity && (
+            <TouchableOpacity onPress={() => {
+              if (product.restaurantId) {
+                // Navigate directly to RestaurantDetails through the Home stack
+                (navigation as any).navigate('RestaurantDetails', { restaurantId: product.restaurantId });
+              }
+              // For warehouses, we might want to navigate to a warehouse details screen if one exists
+            }}>
               <Typography variant="body1" color="primary" style={[styles.restaurant]}>
-                From: {restaurant.name}
+                From: {entity.name}
               </Typography>
             </TouchableOpacity>
           )}

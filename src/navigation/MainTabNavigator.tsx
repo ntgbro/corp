@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View, TouchableOpacity } from 'react-native';
 import { useThemeContext } from '../contexts/ThemeContext';
 import { MainTabParamList } from './types';
-import HomeScreen from '../features/home/screens/HomeScreen';
+import { HomeStackNavigator } from './HomeStackNavigator'; // Changed from HomeScreen import
 import { ProductStackNavigator } from './ProductStackNavigator';
 import { CartStackNavigator } from './CartStackNavigator';
 import { OrdersStackNavigator } from './OrdersStackNavigator';
@@ -54,6 +54,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
         if (route.name === 'OrderDetails' || route.name === 'Product') return null;
 
         const onPress = () => {
+          console.log('[NAVIGATION] Tab pressed:', route.name);
           const event = navigation.emit({
             type: 'tabPress',
             target: route.key,
@@ -174,6 +175,8 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export const MainTabNavigator: React.FC = () => {
+  console.log('[NAVIGATION] MainTabNavigator rendered');
+  
   return (
     <Tab.Navigator
       screenOptions={{
@@ -183,7 +186,7 @@ export const MainTabNavigator: React.FC = () => {
     >
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
+        component={HomeStackNavigator} // Changed from HomeScreen to HomeStackNavigator
         options={{
           tabBarLabel: ({ focused }) => focused ? 'Home' : '',
         }}

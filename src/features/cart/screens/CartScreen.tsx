@@ -607,7 +607,7 @@ export const CartScreen = () => {
       </Text>
       <Button
         title="Continue Shopping"
-        onPress={() => navigation.navigate('Home' as never)}
+        onPress={() => (navigation as any).navigate('Main', { screen: 'Home' })}
         style={{ ...styles.continueButton, backgroundColor: '#754C29' } as any}
       />
     </View>

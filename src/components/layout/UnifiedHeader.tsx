@@ -372,6 +372,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
         onSearch(searchQuery.trim());
       } else {
         // Fallback to local implementation - navigate to SearchResults in Product stack
+        console.log('[NAVIGATION] UnifiedHeader search submitted:', searchQuery);
         (navigation as any).navigate('Product', {
           screen: 'SearchResults',
           params: { searchQuery: searchQuery.trim() }
@@ -381,6 +382,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   };
 
   const handleLocationChangePress = () => {
+    console.log('[NAVIGATION] UnifiedHeader location change pressed');
     setIsLocationIconActive(true);
     // Directly call location change without showing dialog
     if (onLocationChange) {
@@ -389,6 +391,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   };
 
   const handleNotificationPress = () => {
+    console.log('[NAVIGATION] UnifiedHeader notification pressed');
     // Clear any existing timeout
     if (notificationTimeoutRef.current) {
       clearTimeout(notificationTimeoutRef.current);
@@ -542,12 +545,28 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     }
   }, [currentLocation, locationLoading]);
 
+  console.log('[NAVIGATION] UnifiedHeader rendered with props:', {
+    title,
+    showBackButton,
+    showLocation,
+    showSearch,
+    showNotificationBell
+  });
+
   return (
     <View style={[styles.header, { backgroundColor: '#F5DEB3' }]}>
       <View style={styles.headerContent}>
         {/* Back Button */}
         {showBackButton && (
-          <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
+          <TouchableOpacity 
+            onPress={() => {
+              console.log('[NAVIGATION] UnifiedHeader back button pressed');
+              if (onBackPress) {
+                onBackPress();
+              }
+            }} 
+            style={styles.backButton}
+          >
             <Text style={{ fontSize: 18, color: theme.colors.text }}>←</Text>
           </TouchableOpacity>
         )}
@@ -566,7 +585,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
         </View>
       </View>
 
-      {/* Location Section */}
+      {/* Location Section - Only render if showLocation is true */}
       {showLocation && (
         <View style={styles.locationSection}>
           <View style={styles.locationInfo}>
@@ -604,7 +623,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
         </View>
       )}
 
-      {/* Search Section with Notification Bell */}
+      {/* Search Section with Notification Bell - Only render if showSearch is true */}
       {showSearch && (
         <View style={styles.searchSection}>
           <View style={styles.searchRow}>

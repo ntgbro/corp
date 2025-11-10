@@ -16,17 +16,61 @@ import Typography from '../../../components/common/Typography';
 const CategoriesScreen: React.FC = () => {
   const navigation = useNavigation();
   const { theme } = useThemeContext();
-  const { categories, loading, error } = useCategories('fresh');
+  
+  console.log('[NAVIGATION] CategoriesScreen rendered');
+  
+  // Get categories for fresh and fmcg services only
+  const { categories: freshCategories, loading: freshLoading, error: freshError } = useCategories('fresh');
+  const { categories: fmcgCategories, loading: fmcgLoading, error: fmcgError } = useCategories('fmcg');
 
-  const handleCategoryPress = (category: { id: string; name: string }) => {
-    // Navigate to the Product tab and then to ProductsPage screen
-    (navigation as any).navigate('Product', {
-      screen: 'ProductsPage',
-      params: { category: category.id }
-    });
+  const handleCategoryPress = (category: { id: string; name: string }, service: 'fresh' | 'fmcg') => {
+    console.log('[NAVIGATION] Category pressed:', { category, service });
+    
+    // For FMCG categories, navigate directly to ProductScreen (Products route)
+    // For Fresh categories, navigate to ProductsPage as before
+    if (service === 'fmcg') {
+      console.log('[NAVIGATION] Navigating to Product/Products for FMCG category');
+      (navigation as any).navigate('Product', {
+        screen: 'Products',
+        params: { category: category.id, service }
+      });
+    } else {
+      console.log('[NAVIGATION] Navigating to Product/ProductsPage for Fresh category');
+      (navigation as any).navigate('Product', {
+        screen: 'ProductsPage',
+        params: { category: category.id, service }
+      });
+    }
   };
 
+  // Function to get service title
+  const getServiceTitle = (service: 'fresh' | 'fmcg') => {
+    switch (service) {
+      case 'fmcg':
+        return 'FMCG Categories';
+      case 'fresh':
+      default:
+        return 'Fresh Food Categories';
+    }
+  };
+
+  // Function to get service icon
+  const getServiceIcon = (serviceType: string) => {
+    switch (serviceType) {
+      case 'fresh':
+        return '🥗';
+      case 'fmcg':
+        return '🛒';
+      default:
+        return '📱';
+    }
+  };
+
+  const loading = freshLoading || fmcgLoading;
+  const error = freshError || fmcgError;
+
   if (loading) {
+    console.log('[NAVIGATION] CategoriesScreen loading');
     return (
       <SafeAreaWrapper style={{ backgroundColor: theme.colors.background, flex: 1 }}>
         <View style={styles.loadingContainer}>
@@ -40,6 +84,7 @@ const CategoriesScreen: React.FC = () => {
   }
 
   if (error) {
+    console.log('[NAVIGATION] CategoriesScreen error:', error);
     return (
       <SafeAreaWrapper style={{ backgroundColor: theme.colors.background, flex: 1 }}>
         <View style={styles.errorContainer}>
@@ -51,33 +96,60 @@ const CategoriesScreen: React.FC = () => {
     );
   }
 
+  // Function to render a service section
+  const renderServiceSection = (service: 'fresh' | 'fmcg', categories: any[]) => {
+    if (categories.length === 0) return null;
+    
+    return (
+      <View style={styles.serviceSection}>
+        <View style={styles.serviceHeader}>
+          <Text style={[styles.serviceIcon, { color: theme.colors.text }]}>
+            {getServiceIcon(service)}
+          </Text>
+          <Typography variant="h5" color="text" style={styles.serviceTitle}>
+            {getServiceTitle(service)}
+          </Typography>
+        </View>
+        <CategorySections
+          categories={categories}
+          onCategoryPress={(category) => handleCategoryPress(category, service)}
+          variant="grid3"
+          showIcons={false}
+        />
+      </View>
+    );
+  };
+
+  console.log('[NAVIGATION] CategoriesScreen rendering content');
+  
   return (
     <SafeAreaWrapper style={{ backgroundColor: theme.colors.background, flex: 1 }}>
       <View style={styles.header}>
         <Typography variant="h4" color="text">
-          Categories
+          All Categories
         </Typography>
         <Typography variant="body2" color="secondary" style={{ marginTop: 4 }}>
-          Browse products by category
+          Browse products by category across all services
         </Typography>
       </View>
       
-      <View style={styles.content}>
-        {categories.length > 0 ? (
-          <CategorySections
-            categories={categories}
-            onCategoryPress={handleCategoryPress}
-            variant="grid3"
-            showIcons={false}
-          />
-        ) : (
+      <FlatList
+        data={[{ key: 'sections' }]}
+        renderItem={() => (
+          <View style={styles.content}>
+            {renderServiceSection('fresh', freshCategories)}
+            {renderServiceSection('fmcg', fmcgCategories)}
+          </View>
+        )}
+        contentContainerStyle={{ paddingBottom: 20 }}
+        ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Typography variant="body1" color="secondary">
               No categories available
             </Typography>
           </View>
-        )}
-      </View>
+        }
+      />
     </SafeAreaWrapper>
   );
 };
@@ -90,8 +162,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#fefefe',
   },
   content: {
-    flex: 1,
     padding: 16,
+  },
+  serviceSection: {
+    marginBottom: 24,
+  },
+  serviceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  serviceIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  serviceTitle: {
+    fontWeight: '600',
   },
   loadingContainer: {
     flex: 1,

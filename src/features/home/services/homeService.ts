@@ -59,6 +59,55 @@ export class HomeService {
     }
   }
 
+  // Add method to fetch warehouse by ID
+  static async getWarehouseById(warehouseId: string): Promise<any | null> {
+    try {
+      const warehouseRef = doc(db, 'warehouses', warehouseId);
+      const warehouseSnap = await getDoc(warehouseRef);
+
+      if (warehouseSnap.exists()) {
+        const data = warehouseSnap.data();
+        console.log('Fetched warehouse data:', data);
+        return data;
+      } else {
+        console.log('Warehouse not found with ID:', warehouseId);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching warehouse by ID:', error);
+      throw error;
+    }
+  }
+
+  // Add method to fetch product by ID from warehouses
+  static async getProductById(productId: string): Promise<any | null> {
+    try {
+      const warehousesSnapshot = await getDocs(collection(db, 'warehouses'));
+      
+      for (const warehouseDoc of warehousesSnapshot.docs) {
+        const productRef = doc(db, 'warehouses', warehouseDoc.id, 'products', productId);
+        const productSnap = await getDoc(productRef);
+        
+        if (productSnap.exists()) {
+          const data = productSnap.data();
+          const warehouseData = warehouseDoc.data();
+          console.log('Fetched product data:', data);
+          return {
+            ...data,
+            warehouseId: warehouseDoc.id,
+            warehouseName: warehouseData?.name || 'Warehouse'
+          };
+        }
+      }
+      
+      console.log('Product not found with ID:', productId);
+      return null;
+    } catch (error) {
+      console.error('Error fetching product by ID:', error);
+      throw error;
+    }
+  }
+
   static async getServices(): Promise<Service[]> {
     const servicesRef = collection(db, 'services');
     const snapshot = await getDocs(servicesRef);

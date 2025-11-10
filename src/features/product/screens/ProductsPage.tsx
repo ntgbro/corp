@@ -24,6 +24,7 @@ import { useWishlist } from '../../home/hooks/useWishlist';
 
 interface RouteParams {
   category: string;
+  service?: 'fresh' | 'fmcg' | 'supplies';
   restaurantId?: string;
   restaurantName?: string;
 }
@@ -36,226 +37,283 @@ interface RestaurantGroup {
   restaurant?: any; // Enhanced restaurant data
 }
 
+// For warehouse products
+interface WarehouseGroup {
+  warehouseId: string;
+  warehouseName: string;
+  logoURL?: string;
+  products: ProductData[];
+  warehouse?: any; // Enhanced warehouse data
+}
+
 const ProductsPage: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { addToCart } = useCart();
-  const { category } = route.params as RouteParams;
+  const { category, service = 'fresh' } = route.params as RouteParams;
   const { theme } = useThemeContext();
   const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  
+  console.log('[NAVIGATION] ProductsPage rendered with params:', route.params);
 
-  // Get all products for this category from all restaurants
-  const { products, loading, error } = useProductsByCategory('fresh', category, 100);
+  // Get all products for this category from all restaurants/warehouses
+  const { products, loading, error } = useProductsByCategory(service, category, 100);
 
   const handleProductPress = (product: any) => {
+    console.log('[NAVIGATION] Product pressed:', product);
     (navigation as any).navigate('Product', { screen: 'ProductDetails', params: { menuItemId: product.id } });
   };
 
-  const handleSeeAllPress = (restaurantId: string, restaurantName: string) => {
+  const handleSeeAllPress = (entityId: string, entityName: string) => {
+    console.log('[NAVIGATION] See all pressed for entity:', { entityId, entityName, service });
     (navigation as any).navigate('Product', {
       screen: 'Products',
-      params: { restaurantId, category }
+      params: { 
+        [service === 'fresh' ? 'restaurantId' : 'warehouseId']: entityId, 
+        category,
+        service
+      }
     });
   };
 
-  // Group products by restaurant and fetch restaurant data
-  const [restaurantGroups, setRestaurantGroups] = React.useState<RestaurantGroup[]>([]);
+  // Group products by restaurant/warehouse and fetch entity data
+  const [entityGroups, setEntityGroups] = React.useState<(RestaurantGroup | WarehouseGroup)[]>([]);
 
   React.useEffect(() => {
-    const fetchRestaurantGroups = async () => {
+    const fetchEntityGroups = async () => {
       if (products.length === 0) return;
 
-      const restaurantMap = new Map<string, ProductData[]>();
+      const entityMap = new Map<string, ProductData[]>();
 
       products.forEach(product => {
-        const restaurantId = product.restaurantId || 'unknown';
-        if (!restaurantMap.has(restaurantId)) {
-          restaurantMap.set(restaurantId, []);
+        // For fresh service, group by restaurant; for fmcg/supplies, group by warehouse
+        const entityId = service === 'fresh' 
+          ? (product.restaurantId || 'unknown')
+          : (product.warehouseId || 'unknown');
+          
+        if (!entityMap.has(entityId)) {
+          entityMap.set(entityId, []);
         }
-        restaurantMap.get(restaurantId)!.push(product);
+        entityMap.get(entityId)!.push(product);
       });
 
-      // Fetch restaurant data for each restaurant
-      const groups: RestaurantGroup[] = [];
+      // Fetch entity data for each entity
+      const groups: (RestaurantGroup | WarehouseGroup)[] = [];
 
-      for (const [restaurantId, products] of restaurantMap) {
+      for (const [entityId, products] of entityMap) {
         const sortedProducts = products
           .sort((a, b) => (b.rating || 0) - (a.rating || 0))
           .slice(0, 5);
 
         if (sortedProducts.length > 0) {
           try {
-            const restaurantData = await HomeService.getRestaurantById(restaurantId);
-            const restaurantName = restaurantData?.name || `Restaurant ${restaurantId.slice(0, 8)}`;
-
-            groups.push({
-              restaurantId,
-              restaurantName,
-              logoURL: restaurantData?.logoURL,
-              restaurant: restaurantData,
-              products: sortedProducts,
-            });
+            let entityData, entityName;
+            
+            if (service === 'fresh') {
+              // For fresh service, fetch restaurant data
+              entityData = await HomeService.getRestaurantById(entityId);
+              entityName = entityData?.name || `Restaurant ${entityId.slice(0, 8)}`;
+              
+              groups.push({
+                restaurantId: entityId,
+                restaurantName: entityName,
+                logoURL: entityData?.logoURL,
+                restaurant: entityData,
+                products: sortedProducts,
+              } as RestaurantGroup);
+            } else {
+              // For fmcg/supplies, we would fetch warehouse data
+              // For now, we'll use a placeholder since we don't have a warehouse service
+              entityName = `Warehouse ${entityId.slice(0, 8)}`;
+              
+              groups.push({
+                warehouseId: entityId,
+                warehouseName: entityName,
+                products: sortedProducts,
+              } as WarehouseGroup);
+            }
           } catch (error) {
-            console.error('Error fetching restaurant data:', error);
-            // Fallback without restaurant data
-            groups.push({
-              restaurantId,
-              restaurantName: `Restaurant ${restaurantId.slice(0, 8)}`,
-              products: sortedProducts,
-            });
+            console.error('Error fetching entity data:', error);
+            // Fallback without entity data
+            if (service === 'fresh') {
+              groups.push({
+                restaurantId: entityId,
+                restaurantName: `Restaurant ${entityId.slice(0, 8)}`,
+                products: sortedProducts,
+              } as RestaurantGroup);
+            } else {
+              groups.push({
+                warehouseId: entityId,
+                warehouseName: `Warehouse ${entityId.slice(0, 8)}`,
+                products: sortedProducts,
+              } as WarehouseGroup);
+            }
           }
         }
       }
 
-      setRestaurantGroups(groups);
+      setEntityGroups(groups);
     };
 
-    fetchRestaurantGroups();
-  }, [products, category]);
+    fetchEntityGroups();
+  }, [products, category, service]);
 
   if (loading) {
+    console.log('[NAVIGATION] ProductsPage loading');
     return (
       <SafeAreaWrapper style={{ backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
         <Typography variant="body2" color="secondary" style={{ marginTop: 10 }}>
-          Loading {category} restaurants...
+          Loading {category} {service === 'fresh' ? 'restaurants' : 'warehouses'}...
         </Typography>
       </SafeAreaWrapper>
     );
   }
 
   if (error) {
+    console.log('[NAVIGATION] ProductsPage error:', error);
     return (
       <SafeAreaWrapper style={{ backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }}>
         <Typography variant="body1" color="error">
-          Error loading restaurants: {error}
+          Error loading {service === 'fresh' ? 'restaurants' : 'warehouses'}: {error}
         </Typography>
       </SafeAreaWrapper>
     );
   }
 
-  const renderRestaurantGroup = ({ item }: { item: RestaurantGroup }) => (
-    <View style={styles.restaurantSection}>
-      {/* Restaurant Header */}
-      <View style={styles.restaurantHeader}>
-        <View style={styles.restaurantInfo}>
-          <View style={styles.logoContainer}>
-            {item.logoURL ? (
-              <Image
-                source={{ uri: item.logoURL }}
-                style={styles.logoImage}
-                resizeMode="cover"
-              />
-            ) : (
-              <Typography variant="body1" color="primary">
-                🏪
-              </Typography>
-            )}
-          </View>
-          <Typography variant="h6" color="text" style={{ flex: 1 }}>
-            {item.restaurantName}
-          </Typography>
-        </View>
-        <TouchableOpacity
-          style={[styles.seeAllButton, { backgroundColor: '#f1ede9' }]}
-          onPress={() => handleSeeAllPress(item.restaurantId, item.restaurantName)}
-        >
-          <Typography variant="body2" color="primary">
-            See All
-          </Typography>
-        </TouchableOpacity>
-      </View>
+  // Unified render function for both restaurants and warehouses
+  const renderEntityGroup = ({ item }: { item: RestaurantGroup | WarehouseGroup }) => {
+    const isRestaurant = 'restaurantId' in item;
+    const entityId = isRestaurant ? item.restaurantId : (item as WarehouseGroup).warehouseId;
+    const entityName = isRestaurant ? item.restaurantName : (item as WarehouseGroup).warehouseName;
+    const entityData = isRestaurant ? item.restaurant : (item as WarehouseGroup).warehouse;
+    const logoURL = isRestaurant ? item.logoURL : undefined;
 
-      {/* Restaurant Info Row */}
-      <View style={styles.restaurantInfoRow}>
-        <Typography variant="caption" color="secondary">
-          ⭐ {item.restaurant?.avgRating || 'N/A'} • {item.restaurant?.totalRatings || 0} reviews
-        </Typography>
-        {item.restaurant?.avgDeliveryTime && (
-          <Typography variant="caption" color="secondary">
-            🚚 {item.restaurant.avgDeliveryTime}
-          </Typography>
-        )}
-        {item.restaurant?.deliveryCharges !== undefined && (
-          <Typography variant="caption" color="secondary">
-            💰 ₹{item.restaurant.deliveryCharges} delivery
-          </Typography>
-        )}
-      </View>
-
-      {/* Products Horizontal List */}
-      <FlatList
-        data={item.products}
-        keyExtractor={(product) => product.id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.productsContainer}
-        renderItem={({ item: product }) => (
-          <TouchableOpacity
-            style={styles.productCardContainer}
-            onPress={() => handleProductPress(product)}
-          >
-            <View style={styles.productImageContainer}>
-              {product.imageURL ? (
+    return (
+      <View style={styles.restaurantSection}>
+        {/* Entity Header */}
+        <View style={styles.restaurantHeader}>
+          <View style={styles.restaurantInfo}>
+            <View style={styles.logoContainer}>
+              {logoURL ? (
                 <Image
-                  source={{ uri: product.imageURL }}
-                  style={styles.productImage}
+                  source={{ uri: logoURL }}
+                  style={styles.logoImage}
                   resizeMode="cover"
                 />
               ) : (
-                <Typography style={styles.productImageEmoji}>🍽️</Typography>
+                <Typography variant="body1" color="primary">
+                  {isRestaurant ? '🏪' : '📦'}
+                </Typography>
               )}
-              <FavoriteButton 
-                isFavorited={isInWishlist(product.id)}
-                onPress={async () => {
-                  try {
-                    if (isInWishlist(product.id)) {
-                      await removeFromWishlist(product.id);
-                    } else {
-                      await addToWishlist(product.id, {
-                        name: product.name,
-                        price: product.price,
-                        imageURL: product.imageURL || '',
-                      });
-                    }
-                  } catch (error) {
-                    console.error('Error toggling wishlist item:', error);
-                  }
-                }}
-                size={20}
-                style={styles.favoriteButton}
-              />
             </View>
-            <View style={styles.productInfo}>
-              <Typography
-                variant="body2"
-                color="text"
-                style={styles.productName}
-              >
-                {product.name}
+            <Typography variant="h6" color="text" style={{ flex: 1 }}>
+              {entityName}
+            </Typography>
+          </View>
+          <TouchableOpacity
+            style={[styles.seeAllButton, { backgroundColor: '#f1ede9' }]}
+            onPress={() => handleSeeAllPress(entityId, entityName)}
+          >
+            <Typography variant="body2" color="primary">
+              See All
+            </Typography>
+          </TouchableOpacity>
+        </View>
+
+        {/* Entity Info Row */}
+        {isRestaurant && entityData && (
+          <View style={styles.restaurantInfoRow}>
+            <Typography variant="caption" color="secondary">
+              ⭐ {entityData?.avgRating || 'N/A'} • {entityData?.totalRatings || 0} reviews
+            </Typography>
+            {entityData?.avgDeliveryTime && (
+              <Typography variant="caption" color="secondary">
+                🚚 {entityData.avgDeliveryTime}
               </Typography>
-              <View style={styles.priceAndButtonContainer}>
+            )}
+            {entityData?.deliveryCharges !== undefined && (
+              <Typography variant="caption" color="secondary">
+                💰 ₹{entityData.deliveryCharges} delivery
+              </Typography>
+            )}
+          </View>
+        )}
+
+        {/* Products Horizontal List */}
+        <FlatList
+          data={item.products}
+          keyExtractor={(product) => product.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.productsContainer}
+          renderItem={({ item: product }) => (
+            <TouchableOpacity
+              style={styles.productCardContainer}
+              onPress={() => handleProductPress(product)}
+            >
+              <View style={styles.productImageContainer}>
+                {product.imageURL ? (
+                  <Image
+                    source={{ uri: product.imageURL }}
+                    style={styles.productImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Typography style={styles.productImageEmoji}>🍽️</Typography>
+                )}
+                <FavoriteButton 
+                  isFavorited={isInWishlist(product.id)}
+                  onPress={async () => {
+                    try {
+                      if (isInWishlist(product.id)) {
+                        await removeFromWishlist(product.id);
+                      } else {
+                        await addToWishlist(product.id, {
+                          name: product.name,
+                          price: product.price,
+                          imageURL: product.imageURL || '',
+                        });
+                      }
+                    } catch (error) {
+                      console.error('Error toggling wishlist item:', error);
+                    }
+                  }}
+                  size={20}
+                  style={styles.favoriteButton}
+                />
+              </View>
+              <View style={styles.productInfo}>
                 <Typography
                   variant="body2"
-                  color="primary"
-                  style={styles.productPrice}
+                  color="text"
+                  style={styles.productName}
                 >
-                  ₹{product.price}
+                  {product.name}
                 </Typography>
-                <TouchableOpacity 
-                  style={styles.addButton}
-                  onPress={() => handleAddToCart(product)} // Add onPress handler
-                >
-                  <Typography style={styles.addButtonText}>+</Typography>
-                </TouchableOpacity>
+                <View style={styles.priceAndButtonContainer}>
+                  <Typography
+                    variant="body2"
+                    color="primary"
+                    style={styles.productPrice}
+                  >
+                    ₹{product.price}
+                  </Typography>
+                  <TouchableOpacity 
+                    style={styles.addButton}
+                    onPress={() => handleAddToCart(product)} // Add onPress handler
+                  >
+                    <Typography style={styles.addButtonText}>+</Typography>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
-    </View>
-  );
+            </TouchableOpacity>
+          )}
+        />
+      </View>
+    );
+  };
 
   const handleAddToCart = (product: any) => {
     // Add item to cart using cart context
@@ -273,14 +331,14 @@ const ProductsPage: React.FC = () => {
   return (
     <SafeAreaWrapper style={{ backgroundColor: theme.colors.background }}>
       <FlatList
-        data={restaurantGroups}
-        keyExtractor={(group) => group.restaurantId}
-        renderItem={renderRestaurantGroup}
+        data={entityGroups}
+        keyExtractor={(group) => 'restaurantId' in group ? group.restaurantId : group.warehouseId}
+        renderItem={renderEntityGroup}
         contentContainerStyle={{ paddingBottom: 20, paddingHorizontal: SPACING.screen }} // ✅ Proper screen edge padding
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Typography variant="body1" color="secondary">
-              No restaurants found for {category}
+              No {service === 'fresh' ? 'restaurants' : 'warehouses'} found for {category}
             </Typography>
           </View>
         }

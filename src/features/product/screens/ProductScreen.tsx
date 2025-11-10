@@ -20,6 +20,8 @@ import { HomeService } from '../../home/services/homeService';
 interface RouteParams {
   category?: string;
   restaurantId?: string;
+  warehouseId?: string;
+  service?: 'fresh' | 'fmcg' | 'supplies';
   searchQuery?: string;
 }
 
@@ -28,33 +30,42 @@ const ProductScreen: React.FC = () => {
   const navigation = useNavigation();
   const category = (route.params as RouteParams)?.category || 'salads';
   const restaurantId = (route.params as RouteParams)?.restaurantId;
+  const warehouseId = (route.params as RouteParams)?.warehouseId;
+  const service = (route.params as RouteParams)?.service || 'fresh';
   const searchQuery = (route.params as RouteParams)?.searchQuery;
   const { theme } = useThemeContext();
   const { addToCart } = useCart();
+  
+  console.log('[NAVIGATION] ProductScreen rendered with params:', route.params);
 
   // Use appropriate hook based on whether we have a search query
-  const { products: searchProducts, loading: searchLoading, error: searchError } = useProductSearch(searchQuery || '', 'fresh');
-  const { products: categoryProducts, loading: categoryLoading, error: categoryError } = useProductsByCategory('fresh', category, restaurantId ? 100 : 50);
+  const { products: searchProducts, loading: searchLoading, error: searchError } = useProductSearch(searchQuery || '', service);
+  const { products: categoryProducts, loading: categoryLoading, error: categoryError } = useProductsByCategory(service, category, restaurantId || warehouseId ? 100 : 50);
 
-  // Determine which products to display based on searchQuery
+  // Determine which products to display based on searchQuery and entityId
   const products = searchQuery 
     ? searchProducts 
-    : restaurantId
-      ? categoryProducts.filter(product => product.restaurantId === restaurantId)
+    : (restaurantId || warehouseId)
+      ? categoryProducts.filter(product => 
+          (restaurantId && product.restaurantId === restaurantId) || 
+          (warehouseId && product.warehouseId === warehouseId)
+        )
       : categoryProducts;
 
   const loading = searchQuery ? searchLoading : categoryLoading;
   const error = searchQuery ? searchError : categoryError;
 
-  const [restaurant, setRestaurant] = React.useState<any>(null);
+  const [entity, setEntity] = React.useState<any>(null);
 
   React.useEffect(() => {
     if (restaurantId) {
-      HomeService.getRestaurantById(restaurantId).then(setRestaurant).catch(console.error);
+      HomeService.getRestaurantById(restaurantId).then(setEntity).catch(console.error);
     }
-  }, [restaurantId]);
+    // For warehouseId, we would need a similar service call
+  }, [restaurantId, warehouseId]);
 
   const handleProductPress = (product: any) => {
+    console.log('[NAVIGATION] Product pressed in ProductScreen:', product);
     (navigation as any).navigate('Product', { screen: 'ProductDetails', params: { menuItemId: product.id } });
   };
 
@@ -65,25 +76,33 @@ const ProductScreen: React.FC = () => {
       name: product.name,
       price: product.price,
       image: product.image || 'https://via.placeholder.com/150',
-      chefId: product.restaurantId || '',
-      chefName: 'Restaurant',
+      chefId: product.restaurantId || product.warehouseId || '',
+      chefName: restaurantId ? 'Restaurant' : (warehouseId ? 'Warehouse' : 'Provider'),
     });
   };
 
   const handleRefresh = () => {
     // Refresh will be handled by the hooks
-    console.log('Refreshing products...');
+    console.log('[NAVIGATION] Refreshing products in ProductScreen');
   };
 
   // Determine the header title based on parameters
   const getHeaderTitle = () => {
-    if (restaurantId) {
-      return `${category} - ${restaurant?.name || 'Restaurant Items'}`;
+    if (restaurantId || warehouseId) {
+      const entityName = entity?.name || (restaurantId ? 'Restaurant' : 'Warehouse') + ' Items';
+      return `${category} - ${entityName}`;
     }
     return category ? `${category.charAt(0).toUpperCase() + category.slice(1)}` : 'Products';
   };
 
+  // Get entity type for display
+  const getEntityType = () => {
+    if (service === 'fresh') return 'Restaurant';
+    return 'Warehouse';
+  };
+
   if (loading) {
+    console.log('[NAVIGATION] ProductScreen loading');
     return (
       <SafeAreaWrapper style={{ backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -95,6 +114,7 @@ const ProductScreen: React.FC = () => {
   }
 
   if (error) {
+    console.log('[NAVIGATION] ProductScreen error:', error);
     return (
       <SafeAreaWrapper style={{ backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }}>
         <Typography variant="body1" color="error">
@@ -104,40 +124,46 @@ const ProductScreen: React.FC = () => {
     );
   }
 
+  console.log('[NAVIGATION] ProductScreen rendering content with products:', products.length);
+  
   return (
     <SafeAreaWrapper style={{ backgroundColor: theme.colors.background }}>
-      {restaurantId && restaurant && (
+      {(restaurantId || warehouseId) && entity && (
         <View style={styles.restaurantHeader}>
           <View style={styles.restaurantInfo}>
             <View style={styles.logoContainer}>
-              {restaurant.logoURL ? (
+              {entity.logoURL ? (
                 <Image
-                  source={{ uri: restaurant.logoURL }}
+                  source={{ uri: entity.logoURL }}
                   style={styles.logoImage}
                   resizeMode="cover"
                 />
               ) : (
                 <Typography variant="body1" color="primary">
-                  🏪
+                  {restaurantId ? '🏪' : '📦'}
                 </Typography>
               )}
             </View>
             <View>
               <Typography variant="h6" color="text">
-                {restaurant.name}
+                {entity.name}
               </Typography>
-              <Typography variant="body2" color="secondary">
-                ⭐ {restaurant.avgRating || 'N/A'} • {restaurant.totalRatings || 0} reviews
-              </Typography>
-              {restaurant.avgDeliveryTime && (
-                <Typography variant="caption" color="secondary">
-                  🚚 {restaurant.avgDeliveryTime}
-                </Typography>
-              )}
-              {restaurant.deliveryCharges !== undefined && (
-                <Typography variant="caption" color="secondary">
-                  • 💰 ₹{restaurant.deliveryCharges} delivery
-                </Typography>
+              {restaurantId && (
+                <>
+                  <Typography variant="body2" color="secondary">
+                    ⭐ {entity.avgRating || 'N/A'} • {entity.totalRatings || 0} reviews
+                  </Typography>
+                  {entity.avgDeliveryTime && (
+                    <Typography variant="caption" color="secondary">
+                      🚚 {entity.avgDeliveryTime}
+                    </Typography>
+                  )}
+                  {entity.deliveryCharges !== undefined && (
+                    <Typography variant="caption" color="secondary">
+                      • 💰 ₹{entity.deliveryCharges} delivery
+                    </Typography>
+                  )}
+                </>
               )}
             </View>
           </View>
@@ -151,8 +177,8 @@ const ProductScreen: React.FC = () => {
         numColumns={2}
         showRating={true}
         showCategory={false}
-        emptyMessage={restaurantId
-          ? `No ${category} items found for this restaurant`
+        emptyMessage={(restaurantId || warehouseId)
+          ? `No ${category} items found for this ${getEntityType().toLowerCase()}`
           : `No ${category} products found`
         }
       />

@@ -307,7 +307,7 @@ export class CartService {
           const data = productDoc.data();
           if (data) {
             return {
-              imageURL: data.imageURL,
+              imageURL: data.mainImageURL || data.imageURL,
               name: data.name,
               ...data
             };

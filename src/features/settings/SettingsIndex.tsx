@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, ToastAndroid, Platform, Image, Linking } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { SafeAreaWrapper } from '../../components/layout';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import { SettingsStackParamList } from './navigation/SettingsNavigator';
@@ -55,9 +55,16 @@ export const SettingsIndex = () => {
   const { theme } = useThemeContext();
   const navigation = useNavigation<SettingsNavigationProp>();
   const { signOut, loading } = useAuth();
-  const { profile, loading: profileLoading } = useProfile();
+  const { profile, loading: profileLoading, fetchProfile } = useProfile();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+
+  // Refresh profile data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfile();
+    }, [fetchProfile])
+  );
 
   const settingsSections = [
     { id: 'orderHistory', title: 'Order History', icon: '📦' },
@@ -132,7 +139,7 @@ export const SettingsIndex = () => {
   return (
     <SafeAreaWrapper>
       <View style={[styles.headerContainer, { backgroundColor: theme.colors.background }]}>
-        <TouchableOpacity onPress={() => navigation.navigate('Home' as any)}>
+        <TouchableOpacity onPress={() => (navigation as any).navigate('Main', { screen: 'Home' })}>
           <Text style={[styles.backButton, { color: theme.colors.text }]}>←</Text>
         </TouchableOpacity>
         <Text style={[styles.header, { color: theme.colors.text }]}>Profile</Text>

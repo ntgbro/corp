@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "371942129309-i13hc522ntbt3vch44nq7d46q8iqooto.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.corpease",
+            "certificate_hash": "6c66f3070e89de37ae09d98c8d0731fc139fad20"
+          }
+        },
+        {
           "client_id": "371942129309-66v94c22rh7j5uo4f3k6qnpkebocat8u.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -11,9 +11,12 @@ export type AuthStackParamList = {
 
 export type MainStackParamList = {
   HomeTabs: undefined;
+  HomeMain: undefined;  // Changed from Home to HomeMain
+  Categories: undefined;
+  Product: undefined;
   Products: undefined;
-  RestaurantItems: { restaurantId?: string; category?: string };
-  ProductsPage: { category: string }; // Shows restaurants for a category
+  RestaurantItems: { restaurantId?: string; category?: string; service?: 'fresh' | 'fmcg' | 'supplies' };
+  ProductsPage: { category: string; service?: 'fresh' | 'fmcg' | 'supplies' }; // Shows restaurants/warehouses for a category
   SearchResults: { searchQuery: string }; // Make searchQuery required for SearchResults
   ChefProfile: { chefId: string };
   RestaurantDetails: { restaurantId: string };
@@ -38,4 +41,16 @@ export type MainTabParamList = {
   Orders: undefined;
   Profile: undefined;
   OrderDetails: { orderId: string };
+};
+
+// Add the Products screen parameters
+export type ProductStackParamList = {
+  Products: {
+    category: string;
+    service?: 'fresh' | 'fmcg' | 'supplies';
+    restaurantId?: string;
+    warehouseId?: string;
+  };
+  ProductDetails: { menuItemId: string };
+  ProductsPage: { category: string; service?: 'fresh' | 'fmcg' | 'supplies' };
 };
