@@ -67,7 +67,6 @@ export const SettingsIndex = () => {
   );
 
   const settingsSections = [
-    { id: 'orderHistory', title: 'Order History', icon: '📦' },
     { id: 'wishlist', title: 'Wishlist', icon: '❤️' },
     { id: 'addresses', title: 'Addresses', icon: '📍' },
     { id: 'preferences', title: 'Preferences', icon: '⚙️' },
@@ -81,7 +80,6 @@ export const SettingsIndex = () => {
     // Map section IDs to navigation names
     const navigationMap: Record<string, keyof SettingsStackParamList> = {
       profile: 'SettingsProfile',
-      orderHistory: 'OrderHistory',
       wishlist: 'Wishlist',
       addresses: 'Addresses',
       preferences: 'Preferences',
@@ -139,7 +137,7 @@ export const SettingsIndex = () => {
   return (
     <SafeAreaWrapper>
       <View style={[styles.headerContainer, { backgroundColor: theme.colors.background }]}>
-        <TouchableOpacity onPress={() => (navigation as any).navigate('Main', { screen: 'Home' })}>
+        <TouchableOpacity onPress={() => (navigation as any).navigate('Home')}>
           <Text style={[styles.backButton, { color: theme.colors.text }]}>←</Text>
         </TouchableOpacity>
         <Text style={[styles.header, { color: theme.colors.text }]}>Profile</Text>

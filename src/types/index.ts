@@ -179,6 +179,9 @@ export interface CartItem {
   chefId: string;
   chefName: string;
   specialInstructions?: string;
+  serviceId: string;
+  restaurantId: string;
+  warehouseId: string;
 }
 
 // Navigation types
@@ -387,7 +390,7 @@ export interface UseCartReturn {
   items: CartItem[];
   totalItems: number;
   totalAmount: number;
-  addToCart: (item: Omit<CartItem, 'quantity'>) => void;
+  addToCart: (item: Omit<CartItem, 'quantity'>) => Promise<void>;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;

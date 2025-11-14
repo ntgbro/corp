@@ -2,8 +2,6 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { SettingsIndex } from '../SettingsIndex';
 import { ProfileScreen } from '../profile/screens/ProfileScreen';
-import { OrdersScreen } from '../orders/screens/OrdersScreen';
-import { OrderDetailsScreen } from '../../settings/orders/screens/OrderDetailsScreen';
 import { WishlistScreen } from '../wishlist/screens/WishlistScreen';
 import { AddressesScreen } from '../addresses/screens/AddressesScreen';
 import { PreferencesScreen } from '../preferences/screens/PreferencesScreen';
@@ -15,8 +13,6 @@ import { SocialMediaScreen } from '../socialMedia/screens/SocialMediaScreen'; //
 export type SettingsStackParamList = {
   SettingsHome: undefined;
   SettingsProfile: undefined;
-  OrderHistory: undefined;
-  OrderDetails: { orderId: string };
   Wishlist: undefined;
   Addresses: undefined;
   Preferences: undefined;
@@ -59,20 +55,6 @@ export const SettingsNavigator = () => {
         component={ProfileScreen}
         options={{ 
           title: 'Profile',
-        }}
-      />
-      <Stack.Screen 
-        name="OrderHistory" 
-        component={OrdersScreen}
-        options={{ 
-          title: 'Order History',
-        }}
-      />
-      <Stack.Screen 
-        name="OrderDetails" 
-        component={OrderDetailsScreen}
-        options={{ 
-          title: 'Order Details',
         }}
       />
       <Stack.Screen 

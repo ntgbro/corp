@@ -372,7 +372,10 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
         onSearch(searchQuery.trim());
       } else {
         // Fallback to local implementation - navigate to SearchResults in Product stack
-        console.log('[NAVIGATION] UnifiedHeader search submitted:', searchQuery);
+        // Only log in development mode
+        if (__DEV__) {
+          console.log('[NAVIGATION] UnifiedHeader search submitted:', searchQuery);
+        }
         (navigation as any).navigate('Product', {
           screen: 'SearchResults',
           params: { searchQuery: searchQuery.trim() }
@@ -382,7 +385,10 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   };
 
   const handleLocationChangePress = () => {
-    console.log('[NAVIGATION] UnifiedHeader location change pressed');
+    // Only log in development mode
+    if (__DEV__) {
+      console.log('[NAVIGATION] UnifiedHeader location change pressed');
+    }
     setIsLocationIconActive(true);
     // Directly call location change without showing dialog
     if (onLocationChange) {
@@ -391,7 +397,10 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   };
 
   const handleNotificationPress = () => {
-    console.log('[NAVIGATION] UnifiedHeader notification pressed');
+    // Only log in development mode
+    if (__DEV__) {
+      console.log('[NAVIGATION] UnifiedHeader notification pressed');
+    }
     // Clear any existing timeout
     if (notificationTimeoutRef.current) {
       clearTimeout(notificationTimeoutRef.current);
@@ -545,13 +554,16 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     }
   }, [currentLocation, locationLoading]);
 
-  console.log('[NAVIGATION] UnifiedHeader rendered with props:', {
-    title,
-    showBackButton,
-    showLocation,
-    showSearch,
-    showNotificationBell
-  });
+  // Use useEffect to control debug logging - only log when relevant props change
+  useEffect(() => {
+    console.log('[NAVIGATION] UnifiedHeader rendered with props:', {
+      title,
+      showBackButton,
+      showLocation,
+      showSearch,
+      showNotificationBell
+    });
+  }, [title, showBackButton, showLocation, showSearch, showNotificationBell]);
 
   return (
     <View style={[styles.header, { backgroundColor: '#F5DEB3' }]}>
@@ -560,7 +572,10 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
         {showBackButton && (
           <TouchableOpacity 
             onPress={() => {
-              console.log('[NAVIGATION] UnifiedHeader back button pressed');
+              // Only log in development mode
+              if (__DEV__) {
+                console.log('[NAVIGATION] UnifiedHeader back button pressed');
+              }
               if (onBackPress) {
                 onBackPress();
               }

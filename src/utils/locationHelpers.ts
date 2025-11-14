@@ -208,247 +208,156 @@ export function calculateDeliveryTime(
  */
 export function calculateDeliveryCost(
   distance: number,
-  baseCost: number = 40,
-  perKmCost: number = 10
+  baseCost: number = 20,
+  costPerKm: number = 5
 ): number {
-  if (distance <= 2) return baseCost; // Free delivery within 2km
-  return baseCost + (distance - 2) * perKmCost;
+  return Math.ceil(baseCost + (distance * costPerKm));
 }
 
 /**
- * Get direction between two points
+ * Enhanced reverse geocoding function using OpenStreetMap Nominatim API
+ * Only makes one request at zoom level 18 for maximum detail
  */
-export function getDirection(from: Coordinates, to: Coordinates): string {
-  const bearing = calculateBearing(from, to);
+export async function reverseGeocodeWithFallback(latitude: number, longitude: number): Promise<string> {
+  try {
+    const result = await reverseGeocodeOpenStreetMap(latitude, longitude);
+    if (result && result.length > 10) {
+      console.log('Successfully geocoded with OpenStreetMap:', result);
+      return result;
+    }
+  } catch (error) {
+    console.log('OpenStreetMap geocoding failed:', error);
+  }
 
-  if (bearing >= 337.5 || bearing < 22.5) return 'North';
-  if (bearing >= 22.5 && bearing < 67.5) return 'Northeast';
-  if (bearing >= 67.5 && bearing < 112.5) return 'East';
-  if (bearing >= 112.5 && bearing < 157.5) return 'Southeast';
-  if (bearing >= 157.5 && bearing < 202.5) return 'South';
-  if (bearing >= 202.5 && bearing < 247.5) return 'Southwest';
-  if (bearing >= 247.5 && bearing < 292.5) return 'West';
-  return 'Northwest';
+  // Final fallback to coordinates
+  return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 }
 
 /**
- * Calculate bearing between two coordinates
+ * Optimized reverse geocoding function using OpenStreetMap Nominatim API
+ * Only makes one request at zoom level 18 for maximum detail
  */
-function calculateBearing(from: Coordinates, to: Coordinates): number {
-  const lat1 = toRadians(from.latitude);
-  const lat2 = toRadians(to.latitude);
-  const deltaLon = toRadians(to.longitude - from.longitude);
+async function reverseGeocodeOpenStreetMap(latitude: number, longitude: number): Promise<string> {
+  try {
+    // Use OpenStreetMap Nominatim API with detailed address components
+    // Only make one request at zoom level 18 for maximum detail (no multiple zoom levels)
+    const zoom = 18;
+    
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=${zoom}&addressdetails=1&extratags=1&namedetails=1`,
+      {
+        headers: {
+          'User-Agent': 'Corpease-Delivery-App/1.0',
+        },
+      }
+    );
 
-  const y = Math.sin(deltaLon) * Math.cos(lat2);
-  const x = Math.cos(lat1) * Math.sin(lat2) -
-    Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLon);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-  const bearing = Math.atan2(y, x);
-  return (toDegrees(bearing) + 360) % 360;
+    const data = await response.json();
+    console.log(`OpenStreetMap Response (zoom ${zoom}):`, JSON.stringify(data, null, 2));
+
+    if (data && data.address) {
+      const address = data.address;
+      
+      // Enhanced street name extraction - try multiple field names
+      let streetName = '';
+      let houseNumber = '';
+
+      // Try different variations of street/road names
+      streetName = address.road ||
+                  address.pedestrian ||
+                  address.street ||
+                  address.residential ||
+                  address.highway ||
+                  address.path ||
+                  address.cycleway ||
+                  address.footway ||
+                  address.name || // Generic name field
+                  '';
+
+      // Try different variations of house numbers
+      houseNumber = address.house_number ||
+                   address.housenumber ||
+                   address['addr:housenumber'] || // OSM tag format
+                   '';
+
+      // Build address components array
+      const components = [];
+
+      // Add house number and street name if available
+      if (houseNumber && streetName) {
+        components.push(`${houseNumber} ${streetName}`);
+      } else if (streetName) {
+        components.push(streetName);
+      } else if (address.name) {
+        components.push(address.name);
+      }
+
+      // Add neighborhood/suburb information
+      if (address.neighbourhood) {
+        components.push(address.neighbourhood);
+      } else if (address.suburb) {
+        components.push(address.suburb);
+      }
+
+      // Add city information
+      if (address.city) {
+        components.push(address.city);
+      } else if (address.town) {
+        components.push(address.town);
+      }
+
+      // Add state information
+      if (address.state) {
+        components.push(address.state);
+      }
+
+      // Add postal code
+      if (address.postcode) {
+        components.push(address.postcode);
+      }
+
+      // Create the final address string
+      if (components.length > 0) {
+        const result = components.join(', ');
+        // Clean up the address by removing country names
+        const cleanResult = result.replace(', India', '').replace(', United States', '');
+        console.log('Final formatted address:', cleanResult);
+        return cleanResult;
+      }
+    }
+
+    // Fallback to display_name if no good components found (often more readable)
+    if (data.display_name) {
+      const cleanDisplayName = data.display_name.replace(', India', '').replace(', United States', '');
+      console.log('Using display_name fallback:', cleanDisplayName);
+      return cleanDisplayName;
+    }
+
+    // Final fallback to coordinates
+    return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+  } catch (error) {
+    console.error('Reverse geocoding failed:', error);
+    return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+  }
 }
 
 /**
- * Convert radians to degrees
- */
-function toDegrees(radians: number): number {
-  return radians * (180 / Math.PI);
-}
-
-/**
- * Get nearby places categories
- */
-export const PLACE_CATEGORIES = {
-  restaurant: 'restaurant',
-  cafe: 'cafe',
-  grocery: 'grocery_or_supermarket',
-  pharmacy: 'pharmacy',
-  hospital: 'hospital',
-  bank: 'bank',
-  atm: 'atm',
-  gas_station: 'gas_station',
-  parking: 'parking',
-  shopping_mall: 'shopping_mall',
-  store: 'store',
-  home_goods_store: 'home_goods_store',
-  electronics_store: 'electronics_store',
-  clothing_store: 'clothing_store',
-  bookstore: 'bookstore',
-  jewelry_store: 'jewelry_store',
-  department_store: 'department_store',
-  convenience_store: 'convenience_store',
-} as const;
-
-export type PlaceCategory = keyof typeof PLACE_CATEGORIES;
-
-/**
- * Validate pincode
+ * Validate pincode format (6 digits)
  */
 export function isValidPincode(pincode: string): boolean {
-  const pincodeRegex = /^[1-9][0-9]{5}$/;
-  return pincodeRegex.test(pincode);
+  return /^\d{6}$/.test(pincode);
 }
 
 /**
- * Format pincode with space
- */
-export function formatPincode(pincode: string): string {
-  if (pincode.length !== 6) return pincode;
-  return `${pincode.slice(0, 3)} ${pincode.slice(3)}`;
-}
-
-/**
- * Get area name from coordinates (reverse geocoding)
- */
-export async function reverseGeocode(coordinates: Coordinates): Promise<Address | null> {
-  // This would typically use Google Maps Geocoding API
-  console.log('Reverse geocoding:', coordinates);
-
-  // For now, return null
-  // In a real implementation, this would make an API call
-  return null;
-}
-
-/**
- * Geocode address to coordinates
- */
-export async function geocodeAddress(address: Address): Promise<Coordinates | null> {
-  // This would typically use Google Maps Geocoding API
-  console.log('Geocoding address:', address);
-
-  // For now, return null
-  // In a real implementation, this would make an API call
-  return null;
-}
-
-/**
- * Get current location (mock implementation)
- */
-export async function getCurrentLocation(): Promise<LocationInfo | null> {
-  // This would typically use react-native-geolocation-service
-  console.log('Getting current location');
-
-  // For now, return null
-  // In a real implementation, this would get the actual location
-  return null;
-}
-
-/**
- * Check if location is within delivery area
- */
-export function isWithinDeliveryArea(
-  location: Coordinates,
-  deliveryAreas: Array<{
-    center: Coordinates;
-    radius: number;
-    enabled: boolean;
-  }>
-): boolean {
-  return deliveryAreas.some(area =>
-    area.enabled && isWithinRadius(area.center, location, area.radius)
-  );
-}
-
-/**
- * Calculate optimal delivery route
- */
-export function calculateOptimalRoute(
-  start: Coordinates,
-  stops: Coordinates[],
-  end: Coordinates
-): {
-  totalDistance: number;
-  estimatedTime: number;
-  route: Coordinates[];
-} {
-  // This is a simplified implementation
-  // In reality, you'd use Google Maps Directions API or similar
-
-  const allPoints = [start, ...stops, end];
-  let totalDistance = 0;
-
-  for (let i = 0; i < allPoints.length - 1; i++) {
-    totalDistance += calculateDistance(allPoints[i], allPoints[i + 1]);
-  }
-
-  const estimatedTime = calculateDeliveryTime(totalDistance);
-
-  return {
-    totalDistance,
-    estimatedTime,
-    route: allPoints,
-  };
-}
-
-/**
- * Get address suggestions based on query
- */
-export async function getAddressSuggestions(
-  query: string,
-  currentLocation?: Coordinates
-): Promise<Array<{
-  description: string;
-  placeId: string;
-  coordinates: Coordinates;
-}>> {
-  // This would typically use Google Places Autocomplete API
-  console.log('Getting address suggestions:', { query, currentLocation });
-
-  // For now, return empty array
-  // In a real implementation, this would make an API call
-  return [];
-}
-
-/**
- * Format distance for display
- */
-export function formatDistance(distance: number): string {
-  if (distance < 1) {
-    return `${Math.round(distance * 1000)} m`;
-  }
-  return `${distance.toFixed(1)} km`;
-}
-
-/**
- * Get location accuracy description
- */
-export function getLocationAccuracyDescription(accuracy: number): string {
-  if (accuracy < 10) return 'Very High';
-  if (accuracy < 50) return 'High';
-  if (accuracy < 100) return 'Medium';
-  if (accuracy < 500) return 'Low';
-  return 'Very Low';
-}
-
-/**
- * Check if two coordinates are approximately equal
- */
-export function areCoordinatesEqual(
-  coord1: Coordinates,
-  coord2: Coordinates,
-  tolerance: number = 0.001
-): boolean {
-  return Math.abs(coord1.latitude - coord2.latitude) < tolerance &&
-    Math.abs(coord1.longitude - coord2.longitude) < tolerance;
-}
-
-/**
- * Convert coordinates to GeoJSON format
- */
-export function coordinatesToGeoJSON(coordinates: Coordinates): {
-  type: 'Point';
-  coordinates: [number, number];
-} {
-  return {
-    type: 'Point',
-    coordinates: [coordinates.longitude, coordinates.latitude],
-  };
-}
-
-/**
- * Calculate area of a polygon
+ * Calculate area of polygon using Shoelace formula
  */
 export function calculatePolygonArea(coordinates: Coordinates[]): number {
-  // Using the shoelace formula
+  if (coordinates.length < 3) return 0;
+
   let area = 0;
   const n = coordinates.length;
 
@@ -511,4 +420,67 @@ export function isValidDeliveryAddress(address: Address): {
     isValid: errors.length === 0,
     errors,
   };
+}
+
+/**
+ * Check if delivery is possible to coordinates
+ */
+export function isWithinDeliveryArea(
+  location: Coordinates,
+  deliveryAreas: Array<{
+    center: Coordinates;
+    radius: number;
+    enabled: boolean;
+  }>
+): boolean {
+  return deliveryAreas.some(area =>
+    area.enabled && isWithinRadius(area.center, location, area.radius)
+  );
+}
+
+/**
+ * Calculate optimal delivery route
+ */
+export function calculateOptimalRoute(
+  start: Coordinates,
+  stops: Coordinates[],
+  end: Coordinates
+): {
+  totalDistance: number;
+  estimatedTime: number;
+  route: Coordinates[];
+} {
+  // This is a simplified implementation
+  // In reality, you'd use Google Maps Directions API or similar
+
+  const allPoints = [start, ...stops, end];
+  let totalDistance = 0;
+
+  for (let i = 0; i < allPoints.length - 1; i++) {
+    totalDistance += calculateDistance(allPoints[i], allPoints[i + 1]);
+  }
+
+  const estimatedTime = calculateDeliveryTime(totalDistance);
+
+  return {
+    totalDistance,
+    estimatedTime,
+    route: allPoints,
+  };
+}
+
+/**
+ * Get address suggestions based on query
+ */
+export async function getAddressSuggestions(
+  query: string,
+  currentLocation?: Coordinates
+): Promise<Array<{
+  description: string;
+  placeId: string;
+  coordinates: Coordinates;
+}>> {
+  // This would typically use Google Places Autocomplete API
+  // For now, return empty array
+  return [];
 }

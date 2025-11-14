@@ -3,6 +3,8 @@ import { Coupon, AppliedCoupon } from '../types/coupon';
 import { CartService } from '../services/firebase/cartService';
 import { useAuth } from './AuthContext';
 import { CartItem as FirebaseCartItem } from '../types'; // Import the CartItem type from types
+import { doc, getDoc } from '@react-native-firebase/firestore';
+import { db } from '../config/firebase';
 
 // Define our local CartItem type that matches what we're using in the context
 export interface CartItem {
@@ -14,6 +16,9 @@ export interface CartItem {
   image: string;
   chefId: string;
   chefName: string;
+  serviceId: string; // Made this required
+  restaurantId: string; // Made this required
+  warehouseId: string; // Made this required
 }
 
 interface CartState {
@@ -88,7 +93,7 @@ type CartAction =
 
 interface CartContextType {
   state: CartState;
-  addToCart: (item: Omit<CartItem, 'quantity'>) => void;
+  addToCart: (item: Omit<CartItem, 'quantity'>) => Promise<void>;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -105,7 +110,7 @@ interface CartContextType {
     instructions?: string;
     deliveryCharges?: number;
     paymentMethod?: string;
-  }) => OrderData | null;
+  }) => Promise<OrderData | null>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -275,17 +280,69 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         const localItems: CartItem[] = [];
         for (const firebaseItem of firebaseItems) {
           // Get product details to fetch the image URL
-          const productDetails = await CartService.getProductDetails(firebaseItem.productId);
+          // Use either productId or menuItemId depending on which one is populated
+          const productIdToUse = firebaseItem.productId || firebaseItem.menuItemId;
+          const productDetails = await CartService.getProductDetails(productIdToUse);
+          
+          // Determine chefId and related IDs based on available fields
+          let chefId = '';
+          let serviceId = '';
+          let restaurantId = '';
+          let warehouseId = '';
+          
+          // First, use the IDs from the firebase item if they exist
+          serviceId = firebaseItem.serviceId || '';
+          restaurantId = firebaseItem.restaurantId || '';
+          warehouseId = firebaseItem.warehouseId || '';
+          
+          // Determine chefId based on available fields
+          if (firebaseItem.restaurantId) {
+            chefId = firebaseItem.restaurantId;
+          } else if (firebaseItem.warehouseId) {
+            chefId = firebaseItem.warehouseId;
+          } else if (firebaseItem.menuItemId) {
+            chefId = firebaseItem.menuItemId; // For restaurant items, this will be the restaurant ID
+          }
+          
+          // If we don't have serviceId but have chefId, try to fetch it
+          if ((!serviceId || serviceId === '') && chefId) {
+            try {
+              // Check if this is a restaurant item
+              if (restaurantId || (chefId && chefId !== '')) {
+                const restaurantRef = doc(db, 'restaurants', restaurantId || chefId);
+                const restaurantSnap = await getDoc(restaurantRef);
+                if (restaurantSnap.exists()) {
+                  const restaurantData: any = restaurantSnap.data();
+                  serviceId = restaurantData.serviceId || restaurantData.serviceIds?.[0] || '';
+                  restaurantId = restaurantId || chefId;
+                }
+              } else if (warehouseId || chefId) {
+                // This is a warehouse item
+                const warehouseRef = doc(db, 'warehouses', warehouseId || chefId);
+                const warehouseSnap = await getDoc(warehouseRef);
+                if (warehouseSnap.exists()) {
+                  const warehouseData: any = warehouseSnap.data();
+                  serviceId = 'fmcg'; // Default serviceId for warehouses
+                  warehouseId = warehouseId || chefId;
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching entity data:', error);
+            }
+          }
           
           localItems.push({
-            id: firebaseItem.productId,
-            productId: firebaseItem.productId,
+            id: productIdToUse,
+            productId: productIdToUse,
             name: firebaseItem.name,
             price: firebaseItem.price,
             quantity: firebaseItem.quantity,
             image: productDetails?.imageURL || '', // Use the product image or empty string
-            chefId: firebaseItem.menuItemId,
-            chefName: '' // We'll need to get this from the product data
+            chefId: chefId,
+            chefName: '', // We'll need to get this from the product data
+            serviceId: serviceId,
+            restaurantId: restaurantId,
+            warehouseId: warehouseId
           });
         }
         
@@ -327,8 +384,47 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
   };
 
-  const addToCart = (item: Omit<CartItem, 'quantity'>) => {
-    dispatch({ type: 'ADD_TO_CART', payload: item });
+  const addToCart = async (item: Omit<CartItem, 'quantity'>) => {
+    // Fetch serviceId, restaurantId, and warehouseId if not already present
+    let serviceId = item.serviceId || '';
+    let restaurantId = item.restaurantId || '';
+    let warehouseId = item.warehouseId || '';
+    
+    // If we don't have these fields, try to fetch them based on chefId
+    if ((!serviceId || serviceId === '') && (!restaurantId || restaurantId === '') && (!warehouseId || warehouseId === '') && item.chefId) {
+      // Check if this is a restaurant item by checking if chefId is not empty
+      if (item.chefId !== '') {
+        // Restaurant item
+        restaurantId = item.chefId;
+        // Fetch restaurant data to get serviceId
+        try {
+          const restaurantRef = doc(db, 'restaurants', item.chefId);
+          const restaurantSnap = await getDoc(restaurantRef);
+          if (restaurantSnap.exists()) {
+            const restaurantData: any = restaurantSnap.data();
+            serviceId = restaurantData.serviceId || restaurantData.serviceIds?.[0] || '';
+          }
+        } catch (error) {
+          console.error('Error fetching restaurant data:', error);
+        }
+      } else {
+        // Warehouse item
+        warehouseId = item.chefId;
+        // For warehouses, serviceId would be determined based on the service type
+        serviceId = 'fmcg'; // Default serviceId for warehouses
+      }
+    }
+    
+    // Create a complete cart item with all fields
+    const completeItem: CartItem = {
+      ...item,
+      quantity: 1,
+      serviceId,
+      restaurantId,
+      warehouseId
+    };
+    
+    dispatch({ type: 'ADD_TO_CART', payload: completeItem });
     
     // Sync with Firebase if user is logged in (non-blocking)
     if (user?.userId) {
@@ -344,7 +440,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
             cartId = cart.cartId;
           }
           
-          await CartService.addItemToCart(user.userId, cartId, item);
+          await CartService.addItemToCart(user.userId, cartId, completeItem);
         } catch (error) {
           console.error('Error adding item to Firebase cart:', error);
         }
@@ -465,13 +561,13 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   };
 
   // Add new method for preparing order data
-  const prepareOrderData = (deliveryInfo: {
+  const prepareOrderData = async (deliveryInfo: {
     address: any;
     timeSlot: any;
     instructions?: string;
     deliveryCharges?: number;
     paymentMethod?: string;
-  }): OrderData | null => {
+  }): Promise<OrderData | null> => {
     if (!user?.userId || state.items.length === 0) {
       return null;
     }
@@ -487,22 +583,34 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     let pincode = '';
     let coordinates = { latitude: 0, longitude: 0 };
     
-    if (address?.coordinates) {
+    // Handle geoPoint from saved addresses or coordinates from current location
+    if (address?.geoPoint) {
+      coordinates = {
+        latitude: address.geoPoint.latitude || 0,
+        longitude: address.geoPoint.longitude || 0
+      };
+    } else if (address?.coordinates) {
       coordinates = {
         latitude: address.coordinates.latitude,
         longitude: address.coordinates.longitude
       };
     }
     
-    // Try to extract city and pincode from address string
-    if (address?.address) {
-      // Extract pincode (6-digit number)
+    // Try to extract city and pincode from address fields
+    if (address?.pincode) {
+      pincode = address.pincode;
+    } else if (address?.address) {
+      // Extract pincode (6-digit number) from address string as fallback
       const pincodeMatch = address.address.match(/\b\d{6}\b/);
       if (pincodeMatch) {
         pincode = pincodeMatch[0];
       }
-      
-      // Extract city (this is a simplified approach)
+    }
+    
+    if (address?.city) {
+      city = address.city;
+    } else if (address?.address) {
+      // Extract city (this is a simplified approach) as fallback
       const addressParts = address.address.split(', ');
       if (addressParts.length > 2) {
         city = addressParts[addressParts.length - 3]; // Usually 3rd from last
@@ -524,6 +632,28 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       scheduledFor.setHours(10, 0, 0, 0);
     }
 
+    // Determine order type and related IDs based on cart items
+    // We'll use the first item to determine the order type
+    let serviceId = '';
+    let restaurantId = '';
+    let warehouseId = '';
+    let type: 'restaurant' | 'warehouse' = 'restaurant'; // Default to restaurant
+    
+    // Get order data from the first cart item
+    if (state.items.length > 0) {
+      const firstItem = state.items[0];
+      serviceId = firstItem.serviceId || '';
+      restaurantId = firstItem.restaurantId || '';
+      warehouseId = firstItem.warehouseId || '';
+      
+      // Determine type based on which ID is present
+      if (restaurantId) {
+        type = 'restaurant';
+      } else if (warehouseId) {
+        type = 'warehouse';
+      }
+    }
+    
     const orderData: OrderData = {
       // Cart information
       items: [...state.items],
@@ -534,15 +664,15 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       
       // Delivery information
       deliveryAddress: {
-        addressId: address?.id,
-        contactName: address?.label || 'Customer',
-        contactPhone: '', // Would come from user profile
-        line1: address?.address || '',
-        line2: '',
-        city: city,
-        pincode: pincode,
+        addressId: address?.id || address?.addressId || '',
+        contactName: address?.contactName || address?.name || address?.label || 'Customer',
+        contactPhone: address?.contactPhone || '',
+        line1: address?.line1 || address?.address || '',
+        line2: address?.line2 || '',
+        city: address?.city || city,
+        pincode: address?.pincode || pincode,
         geoPoint: coordinates,
-        saveForFuture: address?.isDefault || false
+        saveForFuture: address?.saveForFuture || address?.isDefault || false
       },
       
       // Time slot information
@@ -559,9 +689,9 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       // User information
       customerId: user.userId, // Add this field for Firestore rules
       userId: user.userId,
-      restaurantId: '', // Would be determined based on cart items
-      warehouseId: '', // Would be determined based on cart items
-      type: 'restaurant', // Default to restaurant, would be determined based on cart items
+      restaurantId: restaurantId,
+      warehouseId: warehouseId,
+      type: type,
       
       // Metadata
       status: 'pending',

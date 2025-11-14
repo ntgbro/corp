@@ -74,9 +74,9 @@ const ProductDetailsScreen: React.FC = () => {
     }
   }, [menuItemId]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (product) {
-      addToCart({
+      await addToCart({
         id: product.menuItemId || product.productId || product.id,
         productId: product.menuItemId || product.productId || product.id,
         name: product.name,
@@ -84,6 +84,12 @@ const ProductDetailsScreen: React.FC = () => {
         image: product.mainImageURL || product.imageURL || 'https://via.placeholder.com/150',
         chefId: product.restaurantId || product.warehouseId || '',
         chefName: entity?.name || (product.restaurantId ? 'Restaurant' : 'Warehouse'),
+        // Set serviceId based on product type
+        serviceId: product.restaurantId ? 'fresh' : 'fmcg', // Default service IDs
+        // Set warehouseId specifically for warehouse products
+        warehouseId: product.warehouseId || '',
+        // Set restaurantId specifically for restaurant products
+        restaurantId: product.restaurantId || '',
       });
     }
   };

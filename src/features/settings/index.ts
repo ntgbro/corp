@@ -5,11 +5,6 @@ export { EditProfileForm } from './profile/components/EditProfileForm';
 export { useProfile } from './profile/hooks/useProfile';
 export { ProfileScreen } from './profile/screens/ProfileScreen';
 
-// Orders exports
-export { OrderList } from './orders/components/OrderList';
-export { useOrders } from './orders/hooks/useOrders';
-export { OrdersScreen } from './orders/screens/OrdersScreen';
-
 // Wishlist exports
 export { WishlistItem } from './wishlist/components/WishlistItem';
 export { WishlistButton } from './wishlist/components/WishlistButton';

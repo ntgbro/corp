@@ -21,6 +21,12 @@ export interface Address {
   addressId: string;
 }
 
+// Define a type for the geoPoint coordinates
+interface GeoPointCoordinates {
+  latitude: number;
+  longitude: number;
+}
+
 export const useAddresses = () => {
   const { user } = useAuth();
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -77,8 +83,21 @@ export const useAddresses = () => {
     try {
       if (user?.userId) {
         const addressesRef = collection(db, 'users', user.userId, 'addresses');
+        
+        // Handle geoPoint conversion
+        let geoPoint: GeoPoint;
+        if (address.geoPoint instanceof GeoPoint) {
+          geoPoint = address.geoPoint;
+        } else if (address.geoPoint) {
+          const coords = address.geoPoint as unknown as GeoPointCoordinates;
+          geoPoint = new GeoPoint(coords.latitude || 0, coords.longitude || 0);
+        } else {
+          geoPoint = new GeoPoint(0, 0);
+        }
+        
         const newAddress = {
           ...address,
+          geoPoint,
           isDefault: addresses.length === 0,
           addressId: '', // Will be set by Firebase
           isActive: true,
@@ -110,6 +129,16 @@ export const useAddresses = () => {
     try {
       if (user?.userId) {
         const addressDocRef = doc(db, 'users', user.userId, 'addresses', id);
+        
+        // Handle geoPoint conversion if provided
+        if (address.geoPoint && !(address.geoPoint instanceof GeoPoint)) {
+          const coords = address.geoPoint as unknown as GeoPointCoordinates;
+          address = {
+            ...address,
+            geoPoint: new GeoPoint(coords.latitude || 0, coords.longitude || 0)
+          };
+        }
+        
         await updateDoc(addressDocRef, address);
         
         setAddresses(prev => 

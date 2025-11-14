@@ -38,7 +38,7 @@ export interface MenuItem {
     carbs: number;
     fat: number;
   };
-  restaurantId?: string;
+  restaurantId: string; // Made this required since we're ensuring it's always populated
   // New fields
   allergens?: string[];
   cuisine?: string;

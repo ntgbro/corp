@@ -2,6 +2,7 @@
 import { collection, doc, setDoc, updateDoc, query, where, getDocs } from '@react-native-firebase/firestore';
 import { db } from '../../config/firebase';
 import { CartItem } from '../../types';
+import { GeoPoint } from '@react-native-firebase/firestore';
 
 export interface OrderItemCustomization {
   name: string;
@@ -15,6 +16,7 @@ export interface OrderItemLinks {
   productId: string;
   restaurantId: string;
   warehouseId: string;
+  serviceId: string;
 }
 
 export interface OrderItemData {
@@ -55,7 +57,7 @@ export interface StatusHistoryData {
 
 export class OrderSplitService {
   /**
-   * Split order data and store in appropriate collections and subcollections
+   * Split order data and store in multiple collections/subcollections
    */
   static async splitAndStoreOrder(orderData: any): Promise<string> {
     try {
@@ -63,10 +65,6 @@ export class OrderSplitService {
       
       // Create main order document
       const orderId = await this.createMainOrder(orderData);
-      
-      // Add a delay to ensure the main document is created before subcollections
-      // Increased delay to ensure Firestore has time to propagate the document creation
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Create order items in subcollection
       await this.createOrderItems(orderId, orderData);
@@ -77,8 +75,8 @@ export class OrderSplitService {
       // Create status history record in subcollection
       await this.createStatusHistory(orderId, orderData);
       
-      // Add order to user's order history
-      await this.addToUserOrderHistory(orderData.customerId, orderData, orderId);
+      // Add to user's order history
+      await this.addToUserOrderHistory(orderData.userId || orderData.customerId, orderData, orderId);
       
       // Deactivate user's cart
       await this.deactivateUserCart(orderData.customerId);
@@ -98,14 +96,28 @@ export class OrderSplitService {
     const orderRef = doc(collection(db, 'orders'));
     const orderId = orderRef.id;
     
-    // Process the delivery address to ensure proper GeoPoint format
+    // Process the delivery address to ensure proper format
     let deliveryAddress = orderData.deliveryAddress;
-    if (deliveryAddress && deliveryAddress.geoPoint) {
-      // If geoPoint is already in the correct format, use it as is
-      // Otherwise, we might need to convert it
+    if (deliveryAddress) {
+      // Ensure all required fields are present with proper defaults
       deliveryAddress = {
-        ...deliveryAddress,
-        // We'll keep the geoPoint as is for now
+        addressId: deliveryAddress.addressId || '',
+        contactName: deliveryAddress.contactName || 'Customer',
+        contactPhone: deliveryAddress.contactPhone || '',
+        line1: deliveryAddress.line1 || '',
+        line2: deliveryAddress.line2 || '',
+        city: deliveryAddress.city || '',
+        pincode: deliveryAddress.pincode || '',
+        // Handle geoPoint properly - preserve existing geoPoint or create new one
+        geoPoint: deliveryAddress.geoPoint instanceof GeoPoint 
+          ? deliveryAddress.geoPoint 
+          : deliveryAddress.geoPoint 
+            ? new GeoPoint(
+                deliveryAddress.geoPoint.latitude || 0, 
+                deliveryAddress.geoPoint.longitude || 0
+              )
+            : new GeoPoint(0, 0),
+        saveForFuture: deliveryAddress.saveForFuture || false
       };
     }
     
@@ -137,6 +149,7 @@ export class OrderSplitService {
       updatedAt: new Date(orderData.updatedAt),
       userId: orderData.userId || orderData.customerId,
       warehouseId: orderData.warehouseId || "",
+      serviceId: orderData.serviceId || "",
       customerId: orderData.customerId, // Include customerId for security rules
       orderDate: new Date(orderData.createdAt), // Add orderDate field for compatibility
     };
@@ -159,30 +172,35 @@ export class OrderSplitService {
         const chefId = item.chefId || '';
         const restaurantId = orderData.restaurantId || '';
         const warehouseId = orderData.warehouseId || '';
+        const serviceId = orderData.serviceId || '';
         
-        // Create customizations array with the exact structure you provided
-        const customizations: OrderItemCustomization[] = [
-          {
-            name: "Extra Cheese",
-            price: 2,
-            foodType: "Veg",
-            itemId: "item456"
-          }
-        ];
+        // Use actual item data instead of hardcoded values
+        // Determine the correct IDs based on item type
+        let menuItemId = '';
+        let productId = '';
+        
+        // For restaurant orders, use the productId as menuItemId
+        // For warehouse orders, use the productId as productId
+        if (itemType === 'menu_item') {
+          menuItemId = item.productId || '';
+        } else {
+          productId = item.productId || '';
+        }
         
         const orderItemData: OrderItemData = {
-          category: "Main",
+          category: item.category || "Main",
           chefId: chefId,
-          cuisine: "Italian",
-          customizations: customizations,
+          cuisine: item.cuisine || "Indian",
+          customizations: item.customizations || [],
           links: {
-            menuItemId: itemType === 'menu_item' ? item.id : '',
-            productId: item.productId,
+            menuItemId: menuItemId,
+            productId: productId,
             restaurantId: restaurantId,
             warehouseId: warehouseId,
+            serviceId: serviceId,
           },
           name: item.name,
-          prepTime: "15 mins",
+          prepTime: item.prepTime || "15 mins",
           quantity: item.quantity,
           status: "pending",
           totalPrice: item.price * item.quantity,
@@ -205,12 +223,20 @@ export class OrderSplitService {
   static async createPaymentRecord(orderId: string, orderData: any): Promise<void> {
     const paymentRef = doc(collection(db, 'orders', orderId, 'payment'));
     
+    // Determine payment provider based on payment method
+    let provider = "UPI";
+    if (orderData.paymentMethod === "Cash on Delivery") {
+      provider = "Cash";
+    } else if (orderData.paymentMethod === "Credit Card" || orderData.paymentMethod === "Debit Card") {
+      provider = "Card";
+    }
+    
     const paymentData: PaymentData = {
       amount: orderData.finalAmount || 0,
       failureReason: "",
       gatewayTransactionId: "",
       method: orderData.paymentMethod || "UPI",
-      provider: orderData.paymentMethod === "Cash on Delivery" ? "Cash" : (orderData.paymentMethod || "UPI"),
+      provider: provider,
       refundTransactionId: "",
       status: orderData.paymentStatus || "pending",
       timestamp: new Date(),
@@ -232,11 +258,11 @@ export class OrderSplitService {
     const statusHistoryData: StatusHistoryData = {
       status: orderData.status || "pending",
       timestamp: new Date(orderData.createdAt),
-      notes: "Order created",
+      notes: `Order created with status: ${orderData.status || "pending"}`,
       // Include customerId for security rules
       customerId: orderData.customerId,
     };
-    
+
     await setDoc(statusHistoryRef, statusHistoryData);
     console.log('Status history record created successfully for order ID:', orderId);
   }
@@ -289,7 +315,7 @@ export class OrderSplitService {
         };
       }
       
-      // Add the new order to the orders array
+      // Add the new order to the orders array with more detailed information
       const updatedOrders = [
         ...(orderHistoryData.orders || []),
         {
@@ -298,7 +324,10 @@ export class OrderSplitService {
           status: orderData.status || 'pending',
           amount: orderData.finalAmount || 0,
           items: orderData.items || [],
+          itemCount: orderData.items ? orderData.items.reduce((total: number, item: any) => total + item.quantity, 0) : 0,
+          deliveryAddress: orderData.deliveryAddress || {},
           createdAt: new Date(orderData.createdAt),
+          estimatedDeliveryTime: orderData.estimatedDeliveryTime || "30 mins",
         }
       ];
       
@@ -311,7 +340,7 @@ export class OrderSplitService {
       
       console.log('Order added to user order history successfully');
     } catch (error) {
-      console.error('Error adding order to user order history:', error);
+      console.error('Error adding order to user history:', error);
       throw error;
     }
   }
