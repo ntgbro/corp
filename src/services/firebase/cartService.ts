@@ -11,9 +11,6 @@ export interface FirebaseCart {
   status: string;
   deliveryType: string;
   appliedCoupon: any;
-  restaurantId: string;
-  serviceId: string;
-  warehouseId: string;
   addedAt: Date;
   updatedAt: Date;
 }
@@ -30,6 +27,9 @@ export interface FirebaseCartItem {
   customizations: any[];
   notes: string;
   addedAt: Date;
+  serviceId: string;
+  restaurantId: string;
+  warehouseId: string;
 }
 
 export class CartService {
@@ -66,9 +66,6 @@ export class CartService {
         status: 'active',
         deliveryType: 'delivery',
         appliedCoupon: {},
-        restaurantId: '',
-        serviceId: '',
-        warehouseId: '',
         addedAt: new Date(),
         updatedAt: new Date(),
       };
@@ -103,9 +100,10 @@ export class CartService {
   static async addItemToCart(userId: string, cartId: string, item: Omit<CartItem, 'quantity'>): Promise<void> {
     try {
       // Check if item already exists in cart
+      // For restaurant items, check menuItemId; for warehouse items, check productId
       const itemsQuery = query(
         collection(db, 'users', userId, 'cart', cartId, 'cart_items'),
-        where('productId', '==', item.productId)
+        where(item.chefId && item.chefId !== '' ? 'menuItemId' : 'productId', '==', item.productId)
       );
       
       const itemsSnapshot = await getDocs(itemsQuery);
@@ -116,7 +114,7 @@ export class CartService {
         const existingData = existingItem.data() as FirebaseCartItem;
         const newQuantity = existingData.quantity + 1;
         const newTotalPrice = newQuantity * existingData.price;
-        
+      
         await updateDoc(doc(db, 'users', userId, 'cart', cartId, 'cart_items', existingItem.id), {
           quantity: newQuantity,
           totalPrice: newTotalPrice,
@@ -125,20 +123,26 @@ export class CartService {
       } else {
         // Add new item
         const newItemRef = doc(collection(db, 'users', userId, 'cart', cartId, 'cart_items'));
+      
         const newItem: FirebaseCartItem = {
           itemId: newItemRef.id,
           userId,
-          productId: item.productId,
-          menuItemId: item.chefId || '',
+          // For restaurant menu items, use menuItemId; for warehouse products, use productId
+          // We'll determine this based on the chefId - if it's a restaurant ID, it's a menu item
+          productId: item.chefId && item.chefId !== '' ? '' : item.productId,
+          menuItemId: item.chefId && item.chefId !== '' ? item.productId : '',
           name: item.name,
           price: item.price,
           quantity: 1,
           totalPrice: item.price,
           customizations: [],
           notes: '',
-          addedAt: new Date()
+          addedAt: new Date(),
+          serviceId: item.serviceId || '', // These will now be required in the CartItem interface
+          restaurantId: item.restaurantId || '', // but we still provide fallbacks for safety
+          warehouseId: item.warehouseId || ''
         };
-        
+      
         await setDoc(newItemRef, newItem);
       }
       
@@ -320,6 +324,72 @@ export class CartService {
       console.error('Error getting product details:', error);
       return null;
     }
+  }
+
+  /**
+   * Get order-related data for a cart item
+   * This method extracts serviceId, restaurantId, and warehouseId from a cart item
+   */
+  static async getOrderDataForCartItem(firebaseItem: FirebaseCartItem): Promise<{
+    serviceId: string;
+    restaurantId: string;
+    warehouseId: string;
+    type: 'restaurant' | 'warehouse';
+  }> {
+    // Since we've made these fields required, we can use them directly
+    // but we still provide fallback logic for safety
+    let serviceId = firebaseItem.serviceId || '';
+    let restaurantId = firebaseItem.restaurantId || '';
+    let warehouseId = firebaseItem.warehouseId || '';
+    let type: 'restaurant' | 'warehouse' = 'restaurant'; // Default to restaurant
+    
+    // If the IDs weren't stored in the cart item, fetch them from the source
+    // This is fallback logic for backward compatibility
+    if ((!serviceId || serviceId === '') || (!restaurantId || restaurantId === '') || (!warehouseId || warehouseId === '')) {
+      if (firebaseItem.restaurantId && firebaseItem.restaurantId !== '') {
+        restaurantId = firebaseItem.restaurantId;
+        type = 'restaurant';
+        // Fetch restaurant data to get serviceId if not already present
+        if (!serviceId || serviceId === '') {
+          try {
+            const restaurantRef = doc(db, 'restaurants', firebaseItem.restaurantId);
+            const restaurantSnap = await getDoc(restaurantRef);
+            if (restaurantSnap.exists()) {
+              const restaurantData: any = restaurantSnap.data();
+              serviceId = restaurantData.serviceId || restaurantData.serviceIds?.[0] || '';
+            }
+          } catch (error) {
+            console.error('Error fetching restaurant data:', error);
+          }
+        }
+      } else if (firebaseItem.warehouseId && firebaseItem.warehouseId !== '') {
+        warehouseId = firebaseItem.warehouseId;
+        type = 'warehouse';
+        // For warehouses, serviceId would be determined based on the service type
+        if (!serviceId || serviceId === '') {
+          serviceId = 'fmcg'; // Default serviceId for warehouses
+        }
+      } else if (firebaseItem.menuItemId && firebaseItem.menuItemId !== '') {
+        // For restaurant items, the menuItemId might contain the restaurant ID
+        restaurantId = firebaseItem.menuItemId;
+        type = 'restaurant';
+        // Fetch restaurant data to get serviceId if not already present
+        if (!serviceId || serviceId === '') {
+          try {
+            const restaurantRef = doc(db, 'restaurants', firebaseItem.menuItemId);
+            const restaurantSnap = await getDoc(restaurantRef);
+            if (restaurantSnap.exists()) {
+              const restaurantData: any = restaurantSnap.data();
+              serviceId = restaurantData.serviceId || restaurantData.serviceIds?.[0] || '';
+            }
+          } catch (error) {
+            console.error('Error fetching restaurant data:', error);
+          }
+        }
+      }
+    }
+    
+    return { serviceId, restaurantId, warehouseId, type };
   }
 
   /**

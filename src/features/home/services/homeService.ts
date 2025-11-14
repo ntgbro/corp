@@ -14,7 +14,10 @@ export class HomeService {
     const menuItemsRef = collection(db, 'restaurants', restaurantId, 'menu_items');
     const snapshot = await getDocs(menuItemsRef);
     // @ts-ignore
-    return snapshot.docs.map((doc: any) => doc.data() as MenuItem).slice(0, limitCount);
+    return snapshot.docs.map((doc: any) => {
+      const item = doc.data() as MenuItem;
+      return { ...item, restaurantId };
+    }).slice(0, limitCount);
   }
 
   static async getProducts(limitCount: number = 10): Promise<Product[]> {

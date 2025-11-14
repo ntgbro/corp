@@ -17,6 +17,7 @@ import Typography from '../../../components/common/Typography';
 import { useRestaurantDetails } from '../hooks/useHomeData';
 import MenuItemCard from '../components/MenuItemCard';
 import { SPACING, BORDERS, SHADOWS } from '../../../constants/ui';
+import { useCart } from '../../../contexts/CartContext';
 
 interface RouteParams {
   restaurantId: string;
@@ -30,6 +31,7 @@ const RestaurantDetailsScreen: React.FC = () => {
   const { restaurantId } = route.params as RouteParams;
   const { theme } = useThemeContext();
   const { restaurant, menuItems, loading, error } = useRestaurantDetails(restaurantId);
+  const { addToCart } = useCart();
 
   const handleMenuItemPress = (menuItemId: string) => {
     console.log('Navigator state:', navigation.getState());
@@ -45,6 +47,26 @@ const RestaurantDetailsScreen: React.FC = () => {
         category,
         restaurantId: restaurantId
       }
+    });
+  };
+
+  const handleAddToCart = async (menuItem: any) => {
+    // Ensure we have valid values for required fields
+    const restaurantId = menuItem.restaurantId || '';
+    const serviceId = restaurant?.serviceId || restaurant?.serviceIds?.[0] || 'fresh';
+    
+    await addToCart({
+      id: menuItem.menuItemId,
+      productId: menuItem.menuItemId,
+      name: menuItem.name,
+      price: menuItem.price,
+      image: menuItem.mainImageURL || menuItem.imageURL || 'https://via.placeholder.com/150',
+      chefId: restaurantId,
+      chefName: restaurant?.name || 'Restaurant',
+      // Set restaurantId specifically for restaurant products
+      restaurantId: restaurantId,
+      // Set serviceId from restaurant data
+      serviceId: serviceId,
     });
   };
 
@@ -82,8 +104,9 @@ const RestaurantDetailsScreen: React.FC = () => {
   const renderMenuItem = ({ item }: { item: any }) => (
     <MenuItemCard
       menuItem={item}
+      restaurant={restaurant}
       onPress={() => handleMenuItemPress(item.menuItemId)}
-      onAddToCart={() => console.log('Add to cart', item.menuItemId)}
+      onAddToCart={() => handleAddToCart(item)}
     />
   );
 

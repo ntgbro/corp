@@ -269,12 +269,47 @@ export const CartScreen = () => {
   // Set default address from current location
   useEffect(() => {
     if (currentLocation && !selectedAddress) {
+      // Extract city and pincode from address string
+      let city = '';
+      let pincode = '';
+      let line1 = currentLocation.address || '';
+      
+      // If address is empty or just coordinates, create a readable address from coordinates
+      if (!line1 || (line1.includes(',') && line1.includes('.'))) {
+        line1 = `${currentLocation.coordinates?.latitude?.toFixed(6) || 0}, ${currentLocation.coordinates?.longitude?.toFixed(6) || 0}`;
+      }
+      
+      if (currentLocation.address) {
+        // Extract pincode (6-digit number)
+        const pincodeMatch = currentLocation.address.match(/\b\d{6}\b/);
+        if (pincodeMatch) {
+          pincode = pincodeMatch[0];
+        }
+        
+        // Simple extraction - in a real app, you might want to use a more sophisticated approach
+        const addressParts = currentLocation.address.split(', ');
+        if (addressParts.length > 1) {
+          city = addressParts[addressParts.length - 2]; // Usually 2nd from last
+        }
+      }
+      
+      // If we still don't have city info, try to extract from coordinates
+      if (!city && currentLocation.coordinates) {
+        city = `${currentLocation.coordinates.latitude?.toFixed(2) || 0}° N, ${currentLocation.coordinates.longitude?.toFixed(2) || 0}° E`;
+      }
+      
       setSelectedAddress({
         id: currentLocation.id,
         name: currentLocation.label,
-        line1: currentLocation.address,
+        line1: line1,
+        line2: '',
+        city: city,
+        pincode: pincode,
+        contactName: currentLocation.label || 'Customer',
+        contactPhone: '',
         coordinates: currentLocation.coordinates,
-        isDefault: true
+        isDefault: true,
+        saveForFuture: false
       });
     }
   }, [currentLocation, selectedAddress]);
@@ -360,22 +395,22 @@ export const CartScreen = () => {
     }
     
     // Prepare order data
-    const orderData = prepareOrderData({
+    const orderData = await prepareOrderData({
       address: selectedAddress,
       timeSlot: selectedTimeSlot,
       instructions: deliveryInstructions,
       deliveryCharges: 20, // Fixed delivery charge
       paymentMethod: paymentMethod
     });
-    
+
     if (!orderData) {
       Alert.alert('Error', 'Unable to prepare order data. Please try again.');
       return;
     }
-    
+
     // Log the prepared order data for debugging
     console.log('Prepared Order Data:', JSON.stringify(orderData, null, 2));
-    
+
     // Verify that customerId is present
     if (!orderData.customerId) {
       console.error('customerId is missing from order data');
@@ -607,7 +642,7 @@ export const CartScreen = () => {
       </Text>
       <Button
         title="Continue Shopping"
-        onPress={() => (navigation as any).navigate('Main', { screen: 'Home' })}
+        onPress={() => (navigation as any).navigate('Home')}
         style={{ ...styles.continueButton, backgroundColor: '#754C29' } as any}
       />
     </View>

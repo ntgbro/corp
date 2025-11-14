@@ -76,7 +76,10 @@ export const ProductStackNavigator: React.FC = () => {
         component={ProductScreen}
         options={({ route, navigation }) => ({
           header: () => {
-            console.log('[NAVIGATION] Rendering Products screen header', route.params);
+            // Only log in development mode
+            if (__DEV__) {
+              console.log('[NAVIGATION] Rendering Products screen header', route.params);
+            }
             return (
               <UnifiedHeader
                 title={getHeaderTitleForProducts(route)}
@@ -95,7 +98,10 @@ export const ProductStackNavigator: React.FC = () => {
         component={ProductsPage}
         options={({ route, navigation }) => ({
           header: () => {
-            console.log('[NAVIGATION] Rendering ProductsPage screen header', route.params);
+            // Only log in development mode
+            if (__DEV__) {
+              console.log('[NAVIGATION] Rendering ProductsPage screen header', route.params);
+            }
             return (
               <UnifiedHeader
                 title={`${(route.params as any)?.category || 'Category'} Items`}
@@ -114,7 +120,10 @@ export const ProductStackNavigator: React.FC = () => {
         component={ProductDetailsScreen}
         options={{
           header: ({ navigation }) => {
-            console.log('[NAVIGATION] Rendering ProductDetails screen header');
+            // Only log in development mode
+            if (__DEV__) {
+              console.log('[NAVIGATION] Rendering ProductDetails screen header');
+            }
             return (
               <UnifiedHeader
                 title="Product Details"
@@ -133,7 +142,10 @@ export const ProductStackNavigator: React.FC = () => {
         component={SearchResultsScreen}
         options={({ route, navigation }) => ({
           header: () => {
-            console.log('[NAVIGATION] Rendering SearchResults screen header', route.params);
+            // Only log in development mode
+            if (__DEV__) {
+              console.log('[NAVIGATION] Rendering SearchResults screen header', route.params);
+            }
             return (
               <UnifiedHeader
                 title={`Search: "${(route.params as any)?.searchQuery}"`}

@@ -69,8 +69,8 @@ const ProductScreen: React.FC = () => {
     (navigation as any).navigate('Product', { screen: 'ProductDetails', params: { menuItemId: product.id } });
   };
 
-  const handleAddToCart = (product: any) => {
-    addToCart({
+  const handleAddToCart = async (product: any) => {
+    await addToCart({
       id: product.id,
       productId: product.id,
       name: product.name,
@@ -78,6 +78,12 @@ const ProductScreen: React.FC = () => {
       image: product.image || 'https://via.placeholder.com/150',
       chefId: product.restaurantId || product.warehouseId || '',
       chefName: restaurantId ? 'Restaurant' : (warehouseId ? 'Warehouse' : 'Provider'),
+      // Set serviceId based on product type
+      serviceId: service || (restaurantId ? 'fresh' : 'fmcg'), // Use provided service or default based on entity type
+      // Set warehouseId specifically for warehouse products
+      warehouseId: product.warehouseId || '',
+      // Set restaurantId specifically for restaurant products
+      restaurantId: product.restaurantId || '',
     });
   };
 

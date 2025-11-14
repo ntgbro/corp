@@ -2,19 +2,23 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { useThemeContext } from '../../../contexts/ThemeContext';
 import { MenuItem } from '../../../types/firestore';
-import AddToCartButton from '../../../components/common/AddToCartButton';
-import { useCart } from '../../../contexts/CartContext';
 import { CARD_DIMENSIONS, SPACING, BORDERS, SHADOWS } from '../../../constants/ui';
 import FavoriteButton from '../../../components/common/FavoriteButton';
 import { useWishlist } from '../hooks/useWishlist';
+import { useCart } from '../../../contexts/CartContext';
 
 interface MenuItemCardProps {
   menuItem: MenuItem;
+  restaurant?: {
+    name: string;
+    serviceId?: string;
+    serviceIds?: string[];
+  };
   onPress: () => void;
   onAddToCart?: () => void;
 }
 
-const MenuItemCard: React.FC<MenuItemCardProps> = ({ menuItem, onPress, onAddToCart }) => {
+const MenuItemCard: React.FC<MenuItemCardProps> = ({ menuItem, restaurant, onPress, onAddToCart }) => {
   const { theme } = useThemeContext();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
@@ -38,16 +42,24 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ menuItem, onPress, onAddToC
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    // Ensure we have valid values for required fields
+    const restaurantId = menuItem.restaurantId || '';
+    const serviceId = restaurant?.serviceId || restaurant?.serviceIds?.[0] || 'fresh';
+    
     // Add item to cart using cart context
-    addToCart({
+    await addToCart({
       id: menuItem.menuItemId,
       productId: menuItem.menuItemId,
       name: menuItem.name,
       price: menuItem.price,
       image: menuItem.mainImageURL || menuItem.imageURL || 'https://via.placeholder.com/150',
-      chefId: menuItem.restaurantId || '',
-      chefName: 'Restaurant',
+      chefId: restaurantId,
+      chefName: restaurant?.name || 'Restaurant',
+      // Set restaurantId specifically for restaurant products
+      restaurantId: restaurantId,
+      // Set serviceId from restaurant data
+      serviceId: serviceId,
     });
 
     if (onAddToCart) {

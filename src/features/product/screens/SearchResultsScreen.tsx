@@ -31,15 +31,24 @@ const SearchResultsScreen: React.FC = () => {
     (navigation as any).navigate('Product', { screen: 'ProductDetails', params: { menuItemId: product.id } });
   };
 
-  const handleAddToCart = (product: any) => {
-    addToCart({
+  const handleAddToCart = async (product: any) => {
+    // Determine if this is a warehouse product or restaurant product
+    const isWarehouseProduct = product.warehouseId && !product.restaurantId;
+    
+    await addToCart({
       id: product.id,
       productId: product.id,
       name: product.name,
       price: product.price,
       image: product.image || 'https://via.placeholder.com/150',
-      chefId: product.restaurantId || '',
-      chefName: 'Restaurant',
+      chefId: product.restaurantId || product.warehouseId || '',
+      chefName: isWarehouseProduct ? 'Warehouse' : 'Restaurant',
+      // Set serviceId based on product type
+      serviceId: isWarehouseProduct ? 'fmcg' : 'fresh', // Default service IDs
+      // Set warehouseId specifically for warehouse products
+      warehouseId: product.warehouseId || '',
+      // Set restaurantId specifically for restaurant products
+      restaurantId: product.restaurantId || '',
     });
   };
 

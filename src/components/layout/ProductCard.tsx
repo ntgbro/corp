@@ -28,6 +28,8 @@ export interface ProductData {
   isAvailable?: boolean;
   category?: string;
   description?: string;
+  restaurantId?: string;
+  warehouseId?: string;
 }
 
 export interface ProductCardProps {
@@ -151,12 +153,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         productId: product.id,
         name: product.name,
         price: product.price,
-        image: product.image || '',
-        chefId: 'default-chef', // This should come from product data
-        chefName: 'Default Chef', // This should come from product data
+        image: product.image || product.imageURL || '',
+        chefId: product.restaurantId || product.warehouseId || 'default-chef',
+        chefName: product.restaurantId ? 'Restaurant' : (product.warehouseId ? 'Warehouse' : 'Default Chef'),
+        // Set serviceId based on product type
+        serviceId: product.restaurantId ? 'fresh' : 'fmcg', // Default service IDs
+        // Set warehouseId specifically for warehouse products
+        warehouseId: product.warehouseId || '',
+        // Set restaurantId specifically for restaurant products
+        restaurantId: product.restaurantId || '',
       };
 
-      addToCart(cartItem);
+      await addToCart(cartItem);
 
       // Show brief success feedback
       setTimeout(() => {
