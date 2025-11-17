@@ -13,6 +13,7 @@ export interface FirebaseCart {
   appliedCoupon: any;
   addedAt: Date;
   updatedAt: Date;
+  usedForOrder?: boolean; // Add this field
 }
 
 export interface FirebaseCartItem {
@@ -88,12 +89,22 @@ export class CartService {
   static async createCart(userId: string): Promise<string> {
     try {
       // First check if there's an existing inactive cart we can reactivate
-      const inactiveCartQuery = query(collection(db, 'users', userId, 'cart'), where('status', '==', 'inactive'));
+      // But skip carts that were used for orders
+      const inactiveCartQuery = query(
+        collection(db, 'users', userId, 'cart'), 
+        where('status', '==', 'inactive')
+      );
       const inactiveCartSnapshot = await getDocs(inactiveCartQuery);
       
-      if (!inactiveCartSnapshot.empty) {
-        // Reactivate the existing inactive cart
-        const existingCartDoc = inactiveCartSnapshot.docs[0];
+      // Filter out carts that were used for orders
+      const suitableCarts = inactiveCartSnapshot.docs.filter((doc: any) => {
+        const data = doc.data();
+        return !data.usedForOrder; // Only consider carts that weren't used for orders
+      });
+      
+      if (suitableCarts.length > 0) {
+        // Reactivate the first suitable inactive cart
+        const existingCartDoc = suitableCarts[0];
         await updateDoc(doc(db, 'users', userId, 'cart', existingCartDoc.id), {
           status: 'active',
           updatedAt: new Date(),
@@ -101,7 +112,7 @@ export class CartService {
         return existingCartDoc.id;
       }
       
-      // If no inactive cart found, create a new one
+      // If no suitable inactive cart found, create a new one
       const cartRef = doc(collection(db, 'users', userId, 'cart'));
       const cartData: Omit<FirebaseCart, 'cartId'> = {
         userId,
@@ -112,6 +123,7 @@ export class CartService {
         appliedCoupon: null,
         addedAt: new Date(),
         updatedAt: new Date(),
+        usedForOrder: false, // Add this field for consistency
       };
       
       await setDoc(cartRef, { ...cartData, cartId: cartRef.id });

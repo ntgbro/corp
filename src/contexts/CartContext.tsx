@@ -318,6 +318,13 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       const cart = await CartService.getCart(user.userId);
       console.log('Loaded cart from Firebase:', cart);
       
+      // If cart exists but is inactive, treat it as no cart
+      if (cart && cart.status === 'inactive') {
+        console.log('Cart is inactive, clearing local state');
+        dispatch({ type: 'CLEAR_CART' });
+        return;
+      }
+      
       if (cart) {
         // Get cart items from Firebase
         const firebaseItems = await CartService.getCartItems(user.userId, cart.cartId);
@@ -428,6 +435,10 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         } else {
           console.log('Cart data unchanged, skipping state update');
         }
+      } else {
+        // No cart found, clear the local state
+        console.log('No cart found, clearing local state');
+        dispatch({ type: 'CLEAR_CART' });
       }
     } catch (error) {
       console.error('Error loading cart from Firebase:', error);
@@ -442,12 +453,15 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       let cart = await CartService.getCart(user.userId);
       let cartId: string;
       
+      // If cart exists but is inactive, we need to create a new one
+      if (cart && cart.status === 'inactive') {
+        cart = null; // Treat inactive cart as no cart
+      }
+      
       if (!cart) {
         cartId = await CartService.createCart(user.userId);
       } else {
         cartId = cart.cartId;
-        // If cart was inactive, it's now active after getCart finds it
-        // No additional action needed as getCart now handles inactive carts
       }
       
       // Sync cart items
@@ -509,6 +523,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         try {
           let cart = await CartService.getCart(user.userId);
           let cartId: string;
+          
+          // If cart exists but is inactive, we need to create a new one
+          if (cart && cart.status === 'inactive') {
+            cart = null; // Treat inactive cart as no cart
+          }
           
           if (!cart) {
             cartId = await CartService.createCart(user.userId);
@@ -769,11 +788,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       deliveryAddress: {
         addressId: address?.id || address?.addressId || '',
         contactName: address?.contactName || address?.name || address?.label || 'Customer',
-        contactPhone: address?.contactPhone || '',
+        contactPhone: address?.contactPhone || address?.phone || '', // Add phone field mapping
         line1: address?.line1 || address?.address || '',
         line2: address?.line2 || '',
         city: address?.city || city,
-        pincode: address?.pincode || pincode,
+        pincode: address?.pincode || address?.zipCode || '', // Add zipCode field mapping
         geoPoint: coordinates,
         saveForFuture: address?.saveForFuture || address?.isDefault || false
       },

@@ -77,6 +77,7 @@ export const initializeUserSubcollections = async (userId: string, retryCount = 
       userId: userId,
       addedAt: new Date(),
       updatedAt: new Date(),
+      usedForOrder: false,
     });
     
     // 5. Create an empty sessions subcollection document

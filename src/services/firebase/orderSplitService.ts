@@ -120,8 +120,12 @@ export class OrderSplitService {
    * Create main order document in orders collection
    */
   static async createMainOrder(orderData: any): Promise<string> {
-    const orderRef = doc(collection(db, 'orders'));
-    const orderId = orderRef.id;
+    // Generate custom order ID with format "ORD:XXXXXXXXX"
+    const timestamp = Date.now().toString();
+    const randomPart = Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
+    const orderId = `ORD:${timestamp.substring(timestamp.length - 6)}${randomPart.substring(randomPart.length - 3)}`;
+    
+    const orderRef = doc(db, 'orders', orderId);
     
     // Debug: Log the order data to see what's being passed
     console.log('Creating order with data:', JSON.stringify(orderData, null, 2));
@@ -388,6 +392,7 @@ export class OrderSplitService {
         const cartDoc = cartSnapshot.docs[0];
         await updateDoc(doc(db, 'users', userId, 'cart', cartDoc.id), {
           status: 'inactive',
+          usedForOrder: true, // Mark that this cart was used for an order
           updatedAt: new Date(),
         });
         console.log('User cart deactivated successfully');
