@@ -274,53 +274,8 @@ export const CartScreen = () => {
     }
   }, [showTimeSlotModal]);
   
-  // Set default address from current location
-  useEffect(() => {
-    if (currentLocation && !selectedAddress) {
-      // Extract city and pincode from address string
-      let city = '';
-      let pincode = '';
-      let line1 = currentLocation.address || '';
-      
-      // If address is empty or just coordinates, create a readable address from coordinates
-      if (!line1 || (line1.includes(',') && line1.includes('.'))) {
-        line1 = `${currentLocation.coordinates?.latitude?.toFixed(6) || 0}, ${currentLocation.coordinates?.longitude?.toFixed(6) || 0}`;
-      }
-      
-      if (currentLocation.address) {
-        // Extract pincode (6-digit number)
-        const pincodeMatch = currentLocation.address.match(/\b\d{6}\b/);
-        if (pincodeMatch) {
-          pincode = pincodeMatch[0];
-        }
-        
-        // Simple extraction - in a real app, you might want to use a more sophisticated approach
-        const addressParts = currentLocation.address.split(', ');
-        if (addressParts.length > 1) {
-          city = addressParts[addressParts.length - 2]; // Usually 2nd from last
-        }
-      }
-      
-      // If we still don't have city info, try to extract from coordinates
-      if (!city && currentLocation.coordinates) {
-        city = `${currentLocation.coordinates.latitude?.toFixed(2) || 0}° N, ${currentLocation.coordinates.longitude?.toFixed(2) || 0}° E`;
-      }
-      
-      setSelectedAddress({
-        id: currentLocation.id,
-        name: currentLocation.label,
-        line1: line1,
-        line2: '',
-        city: city,
-        pincode: pincode,
-        contactName: currentLocation.label || 'Customer',
-        contactPhone: '',
-        coordinates: currentLocation.coordinates,
-        isDefault: true,
-        saveForFuture: false
-      });
-    }
-  }, [currentLocation, selectedAddress]);
+  // Remove the useEffect hook that was setting default address from current location
+  // We want users to explicitly select an address from their saved addresses
   
   const [couponCode, setCouponCode] = useState('');
   const [applyingCoupon, setApplyingCoupon] = useState(false);
@@ -659,7 +614,7 @@ export const CartScreen = () => {
           Delivery Address
         </Text>
         <TouchableOpacity 
-          onPress={() => navigation.navigate('Profile' as never)}
+          onPress={() => (navigation as any).navigate('Profile', { screen: 'Addresses' })}
         >
           <Text style={{ color: theme.colors.primary }}>Manage</Text>
         </TouchableOpacity>
@@ -672,10 +627,10 @@ export const CartScreen = () => {
       ) : addresses.length === 0 ? (
         <TouchableOpacity 
           style={[styles.emptyState, { borderColor: theme.colors.border }]}
-          onPress={() => navigation.navigate('Profile' as never)}
+          onPress={() => (navigation as any).navigate('Profile', { screen: 'Addresses' })}
         >
           <Text style={[styles.emptyStateText, { color: theme.colors.textSecondary }]}>
-            No addresses found. Tap to add address.
+            No saved addresses found. Tap to add address.
           </Text>
         </TouchableOpacity>
       ) : (
@@ -705,7 +660,7 @@ export const CartScreen = () => {
             </>
           ) : (
             <Text style={[styles.placeholderText, { color: theme.colors.textSecondary }]}>
-              Select delivery address
+              Select delivery address from your saved addresses
             </Text>
           )}
         </TouchableOpacity>
@@ -773,7 +728,7 @@ export const CartScreen = () => {
         <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
-              Select Delivery Address
+              Select Delivery Address from Saved Addresses
             </Text>
             <TouchableOpacity onPress={() => setShowAddressModal(false)}>
               <Text style={[styles.closeButton, { color: theme.colors.text }]}>×</Text>
@@ -827,7 +782,7 @@ export const CartScreen = () => {
               style={[styles.addAddressButton, { borderColor: '#754C29', backgroundColor: '#754C29' }]}
               onPress={() => {
                 setShowAddressModal(false);
-                navigation.navigate('Profile' as never);
+                (navigation as any).navigate('Profile', { screen: 'Addresses' });
               }}
             >
               <Text style={[styles.addAddressText, { color: 'white' }]}>
