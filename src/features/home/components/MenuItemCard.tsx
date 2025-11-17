@@ -60,8 +60,11 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ menuItem, restaurant, onPre
       restaurantId: restaurantId,
       // Set serviceId from restaurant data
       serviceId: serviceId,
+      // For restaurant items, warehouseId should be empty
+      warehouseId: '',
     });
 
+    // Call the onAddToCart callback if provided (but don't add to cart again)
     if (onAddToCart) {
       onAddToCart();
     }

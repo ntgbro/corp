@@ -37,24 +37,45 @@ const CouponsScreen = () => {
       setLoading(true);
       const now = new Date();
       
+      console.log('Fetching coupons from Firestore...');
       const querySnapshot = await db.collection('coupons').where('isActive', '==', true).get();
+      
+      console.log(`Found ${querySnapshot.size} coupon documents`);
 
       const validCoupons = querySnapshot.docs
         .map(doc => {
           const data = doc.data();
+          console.log('Coupon data:', doc.id, data);
           return {
             id: doc.id,
             ...data,
-            validFrom: data.validFrom?.toDate(),
-            validTill: data.validTill?.toDate()
+            validFrom: data.validFrom?.toDate ? data.validFrom.toDate() : data.validFrom,
+            validTill: data.validTill?.toDate ? data.validTill.toDate() : (data.validUntil?.toDate ? data.validUntil.toDate() : data.validTill || data.validUntil)
           } as Coupon;
         })
         .filter(coupon => {
-          const fromValid = !coupon.validFrom || coupon.validFrom <= now;
-          const tillValid = !coupon.validTill || coupon.validTill >= now;
-          return fromValid && tillValid;
+          // Log all date information for debugging
+          console.log('Coupon date info:', {
+            code: coupon.code,
+            validFrom: coupon.validFrom,
+            validTill: coupon.validTill,
+            now: now,
+            validFromType: typeof coupon.validFrom,
+            validTillType: typeof coupon.validTill
+          });
+          
+          // More permissive date validation
+          const fromValid = !coupon.validFrom || 
+            (coupon.validFrom instanceof Date ? coupon.validFrom <= now : true);
+          const tillValid = !coupon.validTill || 
+            (coupon.validTill instanceof Date ? coupon.validTill >= now : true);
+          
+          const isValid = fromValid && tillValid;
+          console.log(`Coupon ${coupon.code} is ${isValid ? 'valid' : 'invalid'}`);
+          return isValid;
         });
 
+      console.log(`Found ${validCoupons.length} valid coupons`);
       setCoupons(validCoupons);
     } catch (err) {
       console.error('Error fetching coupons:', err);

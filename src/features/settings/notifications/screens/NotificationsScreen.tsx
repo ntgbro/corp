@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { SafeAreaWrapper } from '../../../../components/layout';
 import { useThemeContext } from '../../../../contexts/ThemeContext';
 import { NotificationItem } from '../components/NotificationItem';
@@ -7,6 +8,7 @@ import { useNotifications } from '../hooks/useNotifications';
 
 export const NotificationsScreen = () => {
   const { theme } = useThemeContext();
+  const navigation = useNavigation();
   const { notifications, loading, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -142,4 +144,3 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NotificationsScreen;

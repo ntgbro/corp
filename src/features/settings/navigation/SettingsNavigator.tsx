@@ -91,6 +91,7 @@ export const SettingsNavigator = () => {
         component={NotificationsScreen}
         options={{ 
           title: 'Notifications',
+          headerShown: true,
         }}
       />
       <Stack.Screen 

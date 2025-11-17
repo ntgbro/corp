@@ -67,6 +67,8 @@ const RestaurantDetailsScreen: React.FC = () => {
       restaurantId: restaurantId,
       // Set serviceId from restaurant data
       serviceId: serviceId,
+      // For restaurant items, warehouseId should be empty
+      warehouseId: '',
     });
   };
 
@@ -106,7 +108,6 @@ const RestaurantDetailsScreen: React.FC = () => {
       menuItem={item}
       restaurant={restaurant}
       onPress={() => handleMenuItemPress(item.menuItemId)}
-      onAddToCart={() => handleAddToCart(item)}
     />
   );
 

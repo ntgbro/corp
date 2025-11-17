@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useMemo, useCallback } from 'react';
 import { Coupon, AppliedCoupon } from '../types/coupon';
 import { CartService } from '../services/firebase/cartService';
 import { useAuth } from './AuthContext';
@@ -69,9 +69,6 @@ export interface OrderData {
   // User information
   customerId: string; // Add this field for Firestore rules
   userId: string;
-  restaurantId?: string;
-  warehouseId?: string;
-  type: 'restaurant' | 'warehouse';
   
   // Metadata
   status: 'pending';
@@ -116,35 +113,47 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const calculateDiscount = (coupon: Coupon, subtotal: number, items: CartItem[] = []): number => {
-  if (!coupon || !coupon.isActive) return 0;
+  console.log('Calculating discount for coupon:', coupon?.code, 'subtotal:', subtotal, 'items:', items.length);
+  console.log('Coupon details:', JSON.stringify(coupon, null, 2));
+  
+  if (!coupon || !coupon.isActive) {
+    console.log('Coupon is invalid or inactive');
+    return 0;
+  }
   
   // Check minimum order amount
   if (subtotal < (coupon.minOrderAmount || 0)) {
+    console.log('Subtotal is less than minimum order amount');
     return 0;
   }
   
   // Check minimum order count (number of items)
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   if (totalItems < (coupon.minOrderCount || 0)) {
+    console.log('Total items is less than minimum order count');
     return 0;
   }
   
   // Check validity period
   const now = new Date();
   if (coupon.validFrom && new Date(coupon.validFrom) > now) {
+    console.log('Coupon is not yet valid');
     return 0;
   }
   if ((coupon.validTill || coupon.validUntil) && new Date(coupon.validTill || coupon.validUntil!) < now) {
+    console.log('Coupon has expired');
     return 0;
   }
   
   // Check usage limits
   if (coupon.usageLimit?.perUserLimit && coupon.usedCount && coupon.usedCount >= coupon.usageLimit.perUserLimit) {
+    console.log('Coupon usage limit reached');
     return 0;
   }
   
   // Check max uses
   if (coupon.maxUses && coupon.usedCount && coupon.usedCount >= coupon.maxUses) {
+    console.log('Coupon max uses reached');
     return 0;
   }
   
@@ -152,27 +161,46 @@ const calculateDiscount = (coupon: Coupon, subtotal: number, items: CartItem[] =
   
   // Use value field if discountValue is not available
   const discountValue = coupon.discountValue || coupon.value || 0;
+  console.log('Discount value:', discountValue);
   
   // Determine discount type (handle both field names)
   const discountType = coupon.discountType || coupon.type || 'percentage';
+  console.log('Discount type:', discountType);
   
   if (discountType === 'percentage') {
     discount = (subtotal * discountValue) / 100;
+    console.log('Percentage discount calculated:', discount);
     if (coupon.maxDiscountAmount && discount > coupon.maxDiscountAmount) {
       discount = coupon.maxDiscountAmount;
+      console.log('Discount capped at max discount amount:', discount);
     }
   } else {
     // Fixed discount
     discount = Math.min(discountValue, subtotal);
+    console.log('Fixed discount calculated:', discount);
   }
   
+  console.log('Final discount:', discount);
   return parseFloat(discount.toFixed(2));
 };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
+  console.log('Cart reducer called with action:', action.type);
+  
   const calculateState = (items: CartItem[], coupon: AppliedCoupon | null = state.appliedCoupon) => {
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    console.log('Calculating state - subtotal:', subtotal, 'coupon:', coupon);
+    
     const discount = coupon ? calculateDiscount(coupon as unknown as Coupon, subtotal, items) : 0;
+    console.log('Calculated discount:', discount);
+    
+    // Update the coupon with the calculated discount amount
+    const updatedCoupon = coupon ? {
+      ...coupon,
+      discountAmount: discount
+    } : null;
+    
+    console.log('Updated coupon:', updatedCoupon);
     
     return {
       items,
@@ -180,13 +208,13 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       subtotal,
       discount,
       totalAmount: Math.max(0, subtotal - discount),
-      appliedCoupon: discount > 0 ? coupon : null // Only keep coupon if discount is applied
+      appliedCoupon: discount > 0 ? updatedCoupon : null // Only keep coupon if discount is applied
     };
   };
 
   switch (action.type) {
     case 'ADD_TO_CART': {
-      // Check for existing item based on productId instead of id
+      // Check for existing item based on productId to group same products
       const existingItem = state.items.find(item => item.productId === action.payload.productId);
       const updatedItems = existingItem
         ? state.items.map(item =>
@@ -200,14 +228,14 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     }
 
     case 'REMOVE_FROM_CART': {
-      // Remove item based on productId instead of id
-      const updatedItems = state.items.filter(item => item.productId !== action.payload);
+      // Remove item based on Firebase document ID
+      const updatedItems = state.items.filter(item => item.id !== action.payload);
       return calculateState(updatedItems);
     }
 
     case 'UPDATE_QUANTITY': {
       const updatedItems = state.items.map(item =>
-        item.productId === action.payload.id
+        item.id === action.payload.id
           ? { ...item, quantity: Math.max(0, action.payload.quantity) }
           : item
       ).filter(item => item.quantity > 0);
@@ -217,18 +245,31 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 
     case 'SET_CART_ITEMS': {
       // Set cart items directly from Firebase
+      console.log('SET_CART_ITEMS action received with payload:', action.payload);
+      console.log('Current applied coupon:', state.appliedCoupon);
+      console.log('New applied coupon:', action.payload.appliedCoupon);
       return calculateState(action.payload.items, action.payload.appliedCoupon || null);
     }
 
     case 'APPLY_COUPON': {
       const { payload: coupon } = action;
+      console.log('APPLY_COUPON action received with coupon:', coupon);
+      
+      // Check if coupon has required fields
+      if (!coupon.id || !coupon.code) {
+        console.warn('Coupon is missing required fields in APPLY_COUPON action - id:', coupon.id, 'code:', coupon.code);
+      }
+      
       const appliedCoupon: AppliedCoupon = {
         ...coupon,
         appliedAt: new Date(),
         discountAmount: 0 // Will be calculated in calculateState
       };
       
-      return calculateState([...state.items], appliedCoupon);
+      console.log('Applying coupon in reducer:', appliedCoupon);
+      const result = calculateState([...state.items], appliedCoupon);
+      console.log('Calculated state after applying coupon:', result);
+      return result;
     }
 
     case 'REMOVE_COUPON':
@@ -265,16 +306,22 @@ interface CartProviderProps {
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
   const { user } = useAuth();
+  
+  console.log('CartProvider state updated:', state);
+  console.log('CartProvider appliedCoupon:', state.appliedCoupon);
 
-  const loadCartFromFirebase = async () => {
+  const loadCartFromFirebase = useCallback(async () => {
     if (!user?.userId) return;
     
     try {
       // Get user's cart from Firebase
       const cart = await CartService.getCart(user.userId);
+      console.log('Loaded cart from Firebase:', cart);
+      
       if (cart) {
         // Get cart items from Firebase
         const firebaseItems = await CartService.getCartItems(user.userId, cart.cartId);
+        console.log('Loaded cart items from Firebase:', firebaseItems);
         
         // Convert Firebase items to local cart items with product images
         const localItems: CartItem[] = [];
@@ -332,7 +379,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
           }
           
           localItems.push({
-            id: productIdToUse,
+            id: firebaseItem.itemId, // Use the Firebase document ID as the local item ID
             productId: productIdToUse,
             name: firebaseItem.name,
             price: firebaseItem.price,
@@ -346,21 +393,48 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
           });
         }
         
-        // Dispatch a special action to set the cart items directly
-        dispatch({ 
-          type: 'SET_CART_ITEMS', 
-          payload: { 
-            items: localItems,
-            appliedCoupon: cart.appliedCoupon || null
-          } 
-        });
+        // Log applied coupon information
+        console.log('Applied coupon from Firebase cart:', cart.appliedCoupon);
+        console.log('Applied coupon type:', typeof cart.appliedCoupon);
+        console.log('Applied coupon keys:', cart.appliedCoupon ? Object.keys(cart.appliedCoupon) : 'null');
+        
+        // Check if appliedCoupon is actually null or an empty object
+        let appliedCoupon = cart.appliedCoupon;
+        if (appliedCoupon && typeof appliedCoupon === 'object' && Object.keys(appliedCoupon).length === 0) {
+          console.log('Applied coupon is an empty object, treating as null');
+          appliedCoupon = null;
+        }
+        
+        // Check if we need to update the state to avoid unnecessary re-renders
+        const currentItems = state.items;
+        const currentCoupon = state.appliedCoupon;
+        
+        // Compare items
+        const itemsChanged = JSON.stringify(currentItems) !== JSON.stringify(localItems);
+        // Compare coupons
+        const couponChanged = JSON.stringify(currentCoupon) !== JSON.stringify(appliedCoupon && Object.keys(appliedCoupon).length > 0 ? appliedCoupon : null);
+        
+        // Only dispatch if there are actual changes
+        if (itemsChanged || couponChanged) {
+          console.log('Cart data changed, updating state');
+          // Dispatch a special action to set the cart items directly
+          dispatch({ 
+            type: 'SET_CART_ITEMS', 
+            payload: { 
+              items: localItems,
+              appliedCoupon: appliedCoupon && Object.keys(appliedCoupon).length > 0 ? appliedCoupon : null
+            } 
+          });
+        } else {
+          console.log('Cart data unchanged, skipping state update');
+        }
       }
     } catch (error) {
       console.error('Error loading cart from Firebase:', error);
     }
-  };
+  }, [user?.userId]);
 
-  const syncWithFirebase = async () => {
+  const syncWithFirebase = useCallback(async () => {
     if (!user?.userId) return;
     
     try {
@@ -372,6 +446,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         cartId = await CartService.createCart(user.userId);
       } else {
         cartId = cart.cartId;
+        // If cart was inactive, it's now active after getCart finds it
+        // No additional action needed as getCart now handles inactive carts
       }
       
       // Sync cart items
@@ -382,7 +458,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Error syncing cart with Firebase:', error);
     }
-  };
+  }, [user?.userId]);
 
   const addToCart = async (item: Omit<CartItem, 'quantity'>) => {
     // Fetch serviceId, restaurantId, and warehouseId if not already present
@@ -453,23 +529,18 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     
     // Sync with Firebase if user is logged in (non-blocking)
     if (user?.userId) {
-      // Use setTimeout to make Firebase sync non-blocking
-      setTimeout(async () => {
+      // Use Promise to handle the async operation without blocking
+      Promise.resolve().then(async () => {
         try {
           const cart = await CartService.getCart(user.userId);
           if (cart) {
-            // Find the Firebase item ID by product ID
-            const firebaseItems = await CartService.getCartItems(user.userId, cart.cartId);
-            const itemToRemove = firebaseItems.find(item => item.productId === id);
-            
-            if (itemToRemove) {
-              await CartService.removeItemFromCart(user.userId, cart.cartId, itemToRemove.itemId);
-            }
+            // id is now the Firebase document ID, so we can use it directly
+            await CartService.removeItemFromCart(user.userId, cart.cartId, id);
           }
         } catch (error) {
           console.error('Error removing item from Firebase cart:', error);
         }
-      }, 0);
+      });
     }
   };
 
@@ -478,23 +549,18 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     
     // Sync with Firebase if user is logged in (non-blocking)
     if (user?.userId) {
-      // Use setTimeout to make Firebase sync non-blocking
-      setTimeout(async () => {
+      // Use Promise to handle the async operation without blocking
+      Promise.resolve().then(async () => {
         try {
           const cart = await CartService.getCart(user.userId);
           if (cart) {
-            // Find the Firebase item ID by product ID
-            const firebaseItems = await CartService.getCartItems(user.userId, cart.cartId);
-            const itemToUpdate = firebaseItems.find(item => item.productId === id);
-            
-            if (itemToUpdate) {
-              await CartService.updateItemQuantity(user.userId, cart.cartId, itemToUpdate.itemId, quantity);
-            }
+            // id is now the Firebase document ID, so we can use it directly
+            await CartService.updateItemQuantity(user.userId, cart.cartId, id, quantity);
           }
         } catch (error) {
           console.error('Error updating item quantity in Firebase cart:', error);
         }
-      }, 0);
+      });
     }
   };
 
@@ -518,11 +584,18 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   };
 
   const getItemQuantity = (id: string) => {
-    return state.items.find(item => item.productId === id)?.quantity || 0;
+    return state.items.find(item => item.id === id)?.quantity || 0;
   };
 
-  const applyCoupon = async (coupon: Coupon): Promise<{ success: boolean; message: string }> => {
+  const applyCoupon = useCallback(async (coupon: Coupon): Promise<{ success: boolean; message: string }> => {
     try {
+      console.log('Applying coupon in CartContext:', coupon);
+      
+      // Check if coupon has required fields
+      if (!coupon.id || !coupon.code) {
+        console.warn('Coupon is missing required fields - id:', coupon.id, 'code:', coupon.code);
+      }
+      
       dispatch({ type: 'APPLY_COUPON', payload: coupon });
       
       // Sync with Firebase if user is logged in
@@ -530,19 +603,24 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         try {
           const cart = await CartService.getCart(user.userId);
           if (cart) {
+            console.log('Applying coupon to Firebase cart:', coupon);
             await CartService.applyCoupon(user.userId, cart.cartId, coupon);
           }
         } catch (error) {
           console.error('Error applying coupon in Firebase cart:', error);
+          return { success: false, message: 'Failed to apply coupon. Please try again.' };
         }
       }
+      
+      // Additional debugging
+      console.log('State after applying coupon:', state);
       
       return { success: true, message: 'Coupon applied successfully!' };
     } catch (error) {
       console.error('Error applying coupon:', error);
       return { success: false, message: 'Failed to apply coupon. Please try again.' };
     }
-  };
+  }, [user?.userId, state]);
 
   const removeCoupon = async () => {
     dispatch({ type: 'REMOVE_COUPON' });
@@ -561,7 +639,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   };
 
   // Add new method for preparing order data
-  const prepareOrderData = async (deliveryInfo: {
+  const prepareOrderData = useCallback(async (deliveryInfo: {
     address: any;
     timeSlot: any;
     instructions?: string;
@@ -573,7 +651,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
 
     console.log('Preparing order data for user:', user.userId);
-    
+    console.log('Current cart state:', JSON.stringify(state, null, 2));
+
     // Extract address information
     const address = deliveryInfo.address;
     const timeSlot = deliveryInfo.timeSlot;
@@ -632,6 +711,10 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       scheduledFor.setHours(10, 0, 0, 0);
     }
 
+    // Log applied coupon information
+    console.log('Applied coupon in cart context:', state.appliedCoupon);
+    console.log('Full cart state:', JSON.stringify(state, null, 2));
+    
     // Determine order type and related IDs based on cart items
     // We'll use the first item to determine the order type
     let serviceId = '';
@@ -654,13 +737,33 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       }
     }
     
+    // Prepare applied coupons array with proper structure
+    let appliedCoupons: any[] = [];
+    if (state.appliedCoupon && Object.keys(state.appliedCoupon).length > 0) {
+      console.log('Found applied coupon, adding to order data');
+      // Ensure the coupon has all required fields
+      const coupon = {
+        ...state.appliedCoupon,
+        // Ensure we have the required fields for proper tracking
+        id: state.appliedCoupon.id || state.appliedCoupon.couponId || '',
+        code: state.appliedCoupon.code || '',
+        discountAmount: state.appliedCoupon.discountAmount || state.discount || 0
+      };
+      appliedCoupons = [coupon];
+      console.log('Applied coupons for order:', JSON.stringify(appliedCoupons, null, 2));
+    } else {
+      console.log('No applied coupon found or coupon is empty');
+      console.log('Applied coupon value:', state.appliedCoupon);
+      console.log('Applied coupon keys:', state.appliedCoupon ? Object.keys(state.appliedCoupon) : 'null');
+    }
+    
     const orderData: OrderData = {
       // Cart information
       items: [...state.items],
       subtotal: state.subtotal,
       discount: state.discount,
       totalAmount: state.totalAmount,
-      appliedCoupons: state.appliedCoupon ? [state.appliedCoupon] : [],
+      appliedCoupons: appliedCoupons,
       
       // Delivery information
       deliveryAddress: {
@@ -678,7 +781,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       // Time slot information
       scheduledFor: scheduledFor,
       estimatedDeliveryTime: '30 mins', // Default value
-      actualDeliveryTime: '25 mins', // Default value
+      actualDeliveryTime: deliveryInfo.timeSlot || '25 mins', // Use selected time slot
       
       // Additional information
       instructions: deliveryInfo.instructions || '',
@@ -689,9 +792,6 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       // User information
       customerId: user.userId, // Add this field for Firestore rules
       userId: user.userId,
-      restaurantId: restaurantId,
-      warehouseId: warehouseId,
-      type: type,
       
       // Metadata
       status: 'pending',
@@ -702,25 +802,40 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       updatedAt: new Date()
     };
 
-    console.log('Prepared order data:', JSON.stringify(orderData, null, 2));
+    console.log('Prepared order data with coupons:', JSON.stringify(orderData.appliedCoupons, null, 2));
+    console.log('Full order data:', JSON.stringify(orderData, null, 2));
+    
+    // Additional validation
+    if (orderData.appliedCoupons && orderData.appliedCoupons.length > 0) {
+      console.log('Validating applied coupons before order creation:');
+      for (const coupon of orderData.appliedCoupons) {
+        console.log('Coupon ID:', coupon.id || coupon.couponId || coupon.code);
+        console.log('Coupon discount amount:', coupon.discountAmount);
+      }
+    } else {
+      console.log('No coupons in order data');
+    }
     
     return orderData;
-  };
+  }, [user?.userId, state.items, state.subtotal, state.discount, state.totalAmount, state.appliedCoupon]);
 
-  const value = useMemo(() => ({
-    state,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    clearCart,
-    getItemQuantity,
-    applyCoupon,
-    removeCoupon,
-    calculateDiscount,
-    syncWithFirebase,
-    loadCartFromFirebase,
-    prepareOrderData, // Add the new method
-  }), [state, user]);
+  const value = useMemo(() => {
+    console.log('Creating CartContext value with appliedCoupon:', state.appliedCoupon);
+    return {
+      state,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      getItemQuantity,
+      applyCoupon,
+      removeCoupon,
+      calculateDiscount,
+      syncWithFirebase,
+      loadCartFromFirebase,
+      prepareOrderData,
+    };
+  }, [state, user, addToCart, removeFromCart, updateQuantity, clearCart, getItemQuantity, applyCoupon, removeCoupon, calculateDiscount, syncWithFirebase, prepareOrderData]);
 
   return (
     <CartContext.Provider value={value}>

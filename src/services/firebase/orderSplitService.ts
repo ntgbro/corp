@@ -3,6 +3,7 @@ import { collection, doc, setDoc, updateDoc, query, where, getDocs } from '@reac
 import { db } from '../../config/firebase';
 import { CartItem } from '../../types';
 import { GeoPoint } from '@react-native-firebase/firestore';
+import { addCouponUsage } from '../../utils/userSubcollections';
 
 export interface OrderItemCustomization {
   name: string;
@@ -63,8 +64,10 @@ export class OrderSplitService {
     try {
       console.log('Splitting and storing order with data:', JSON.stringify(orderData, null, 2));
       
-      // Create main order document
+      // Create main order document and get the orderId
       const orderId = await this.createMainOrder(orderData);
+      
+      console.log('Main order created with ID:', orderId);
       
       // Create order items in subcollection
       await this.createOrderItems(orderId, orderData);
@@ -79,7 +82,7 @@ export class OrderSplitService {
       await this.addToUserOrderHistory(orderData.userId || orderData.customerId, orderData, orderId);
       
       // Deactivate user's cart
-      await this.deactivateUserCart(orderData.customerId);
+      await this.deactivateUserCart(orderData.userId || orderData.customerId);
       
       console.log('Order split and stored successfully with ID:', orderId);
       return orderId;
@@ -89,12 +92,42 @@ export class OrderSplitService {
     }
   }
 
+  static async createOrder(orderData: any): Promise<string> {
+    console.log('Creating order with data:', JSON.stringify(orderData, null, 2));
+    
+    // Create main order document
+    const orderId = await this.createMainOrder(orderData);
+    
+    // Create order items
+    await this.createOrderItems(orderId, orderData);
+    
+    // Create payment record
+    await this.createPaymentRecord(orderId, orderData);
+    
+    // Create status history
+    await this.createStatusHistory(orderId, orderData);
+    
+    // Deactivate user's cart
+    await this.deactivateUserCart(orderData.userId || orderData.customerId);
+    
+    // Add to user order history
+    await this.addToUserOrderHistory(orderData.userId || orderData.customerId, orderData, orderId);
+    
+    return orderId;
+  }
+
   /**
    * Create main order document in orders collection
    */
   static async createMainOrder(orderData: any): Promise<string> {
     const orderRef = doc(collection(db, 'orders'));
     const orderId = orderRef.id;
+    
+    // Debug: Log the order data to see what's being passed
+    console.log('Creating order with data:', JSON.stringify(orderData, null, 2));
+    console.log('Order data userId:', orderData.userId);
+    console.log('Order data customerId:', orderData.customerId);
+    console.log('Using userId for coupon tracking:', orderData.userId || orderData.customerId);
     
     // Process the delivery address to ensure proper format
     let deliveryAddress = orderData.deliveryAddress;
@@ -123,7 +156,7 @@ export class OrderSplitService {
     
     // Extract only the fields needed for the main order document
     const orderMainData = {
-      actualDeliveryTime: orderData.actualDeliveryTime || "25 mins",
+      actualDeliveryTime: orderData.selectedTimeSlot || orderData.actualDeliveryTime || "25 mins",
       appliedCoupons: orderData.appliedCoupons || [],
       cancellationReason: "None",
       createdAt: new Date(orderData.createdAt),
@@ -135,7 +168,6 @@ export class OrderSplitService {
       estimatedDeliveryTime: orderData.estimatedDeliveryTime || "30 mins",
       finalAmount: orderData.finalAmount || 0,
       instructions: orderData.instructions || "",
-      items: orderData.items || [], // Include items array
       orderId: orderId,
       paymentMethod: orderData.paymentMethod || "UPI",
       paymentStatus: orderData.paymentStatus || "pending",
@@ -145,17 +177,89 @@ export class OrderSplitService {
       status: orderData.status || "pending",
       taxes: orderData.taxes || 0,
       totalAmount: orderData.totalAmount || 0,
-      type: orderData.type || "restaurant",
       updatedAt: new Date(orderData.updatedAt),
       userId: orderData.userId || orderData.customerId,
-      warehouseId: orderData.warehouseId || "",
-      serviceId: orderData.serviceId || "",
       customerId: orderData.customerId, // Include customerId for security rules
       orderDate: new Date(orderData.createdAt), // Add orderDate field for compatibility
     };
     
     await setDoc(orderRef, orderMainData);
     console.log('Main order document created with ID:', orderId);
+    
+    // Debug: Log coupon data
+    console.log('Applied coupons:', JSON.stringify(orderData.appliedCoupons, null, 2));
+    console.log('Applied coupons length:', orderData.appliedCoupons?.length);
+    console.log('Applied coupons type:', typeof orderData.appliedCoupons);
+    
+    // Track coupon usage if coupons were applied
+    if (orderData.appliedCoupons && orderData.appliedCoupons.length > 0) {
+      console.log('Processing coupon usage tracking for', orderData.appliedCoupons.length, 'coupons');
+      for (const coupon of orderData.appliedCoupons) {
+        try {
+          console.log('Processing coupon:', JSON.stringify(coupon, null, 2));
+          console.log('Coupon type:', typeof coupon);
+          
+          // Extract coupon ID - try multiple possible fields
+          const couponId = coupon.id || coupon.couponId || coupon.code || 'unknown';
+          console.log('Coupon ID:', couponId);
+          
+          // Extract discount amount - try multiple possible fields
+          const discountAmount = coupon.discountAmount || coupon.appliedDiscount || orderData.discount || 0;
+          console.log('Discount amount:', discountAmount);
+          
+          // Get user ID
+          const userId = orderData.userId || orderData.customerId;
+          console.log('User ID for coupon tracking:', userId);
+          
+          // Validate required data
+          if (!userId) {
+            console.warn('⚠️ Missing user ID for coupon tracking');
+            continue;
+          }
+          
+          if (!couponId || couponId === 'unknown') {
+            console.warn('⚠️ Missing or invalid coupon ID for coupon tracking');
+            continue;
+          }
+          
+          // Additional validation to ensure we have valid data
+          if (typeof discountAmount !== 'number' || isNaN(discountAmount)) {
+            console.warn('⚠️ Invalid discount amount for coupon tracking:', discountAmount);
+            continue;
+          }
+          
+          if (!orderId) {
+            console.warn('⚠️ Missing order ID for coupon tracking');
+            continue;
+          }
+          
+          // Ensure we have valid data before calling addCouponUsage
+          if (userId && couponId && orderId && typeof discountAmount === 'number' && !isNaN(discountAmount)) {
+            console.log('Calling addCouponUsage with:', { userId, couponId, orderId, discountAmount });
+            await addCouponUsage(
+              userId,
+              couponId,
+              orderId,
+              discountAmount
+            );
+            console.log('✅ Coupon usage record added for coupon:', couponId);
+          } else {
+            console.warn('⚠️ Missing or invalid required data for coupon tracking - userId:', userId, 'couponId:', couponId, 'orderId:', orderId, 'discountAmount:', discountAmount);
+          }
+        } catch (error) {
+          console.error('Error tracking coupon usage for coupon:', coupon, error);
+        }
+      }
+    } else {
+      console.log('No coupons applied to this order');
+      // Add additional logging to see why no coupons were applied
+      if (orderData.appliedCoupons) {
+        console.log('Applied coupons array exists but is empty');
+      } else {
+        console.log('Applied coupons array is null or undefined');
+      }
+    }
+    
     return orderId;
   }
 
@@ -164,17 +268,22 @@ export class OrderSplitService {
    */
   static async createOrderItems(orderId: string, orderData: any): Promise<void> {
     if (orderData.items && Array.isArray(orderData.items)) {
+      // Determine order type based on the first item
+      // If the first item has restaurantId, it's a restaurant order
+      // If the first item has warehouseId, it's a warehouse order
+      const firstItem = orderData.items[0];
+      const isRestaurantOrder = firstItem.restaurantId && firstItem.restaurantId !== '';
+      const itemType = isRestaurantOrder ? 'menu_item' : 'product';
+      
       for (const item of orderData.items) {
         const orderItemRef = doc(collection(db, 'orders', orderId, 'order_items'));
         
-        // Determine item type and related fields
-        const itemType = orderData.type === 'restaurant' ? 'menu_item' : 'product';
+        // Get item-specific data
         const chefId = item.chefId || '';
-        const restaurantId = orderData.restaurantId || '';
-        const warehouseId = orderData.warehouseId || '';
-        const serviceId = orderData.serviceId || '';
+        const restaurantId = item.restaurantId || '';
+        const warehouseId = item.warehouseId || '';
+        const serviceId = item.serviceId || '';
         
-        // Use actual item data instead of hardcoded values
         // Determine the correct IDs based on item type
         let menuItemId = '';
         let productId = '';
@@ -323,7 +432,6 @@ export class OrderSplitService {
           orderId: orderId,
           status: orderData.status || 'pending',
           amount: orderData.finalAmount || 0,
-          items: orderData.items || [],
           itemCount: orderData.items ? orderData.items.reduce((total: number, item: any) => total + item.quantity, 0) : 0,
           deliveryAddress: orderData.deliveryAddress || {},
           createdAt: new Date(orderData.createdAt),

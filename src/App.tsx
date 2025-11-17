@@ -163,13 +163,13 @@ const App: React.FC = () => {
         <ThemeProvider>
           <LocationProvider>
             <FirebaseProvider>
-              <NotificationProvider>
-                <AuthProvider>
+              <AuthProvider>
+                <NotificationProvider>
                   <CartProvider>
                     <AppContent />
                   </CartProvider>
-                </AuthProvider>
-              </NotificationProvider>
+                </NotificationProvider>
+              </AuthProvider>
             </FirebaseProvider>
           </LocationProvider>
         </ThemeProvider>

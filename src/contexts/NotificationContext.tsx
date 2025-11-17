@@ -3,6 +3,8 @@ import { Alert, Platform } from 'react-native';
 // Import the modular API functions
 import { getMessaging, requestPermission as requestMessagingPermission, hasPermission, getToken as getMessagingToken, onMessage, onNotificationOpenedApp, getInitialNotification, AuthorizationStatus } from '@react-native-firebase/messaging';
 import type { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
+import { updateSessionWithFCMToken } from '../utils/userSubcollections';
+import { useAuth } from './AuthContext';
 
 export interface NotificationData {
   title?: string;
@@ -38,6 +40,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   // Notification event listeners
   const [notificationReceivedCallbacks, setNotificationReceivedCallbacks] = useState<Set<(notification: NotificationData) => void>>(new Set());
@@ -58,6 +61,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           if (token) {
             setFcmToken(token);
             console.log('✅ FCM token obtained:', token);
+            
+            // Update session with FCM token if user is authenticated
+            if (user?.userId) {
+              await updateSessionWithFCMToken(user.userId, token);
+            }
           }
 
           // Set up notification listeners
@@ -76,7 +84,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     return () => {
       // Cleanup notification listeners if needed
     };
-  }, []);
+  }, [user?.userId]);
 
   const requestPermission = async (): Promise<boolean> => {
     try {
