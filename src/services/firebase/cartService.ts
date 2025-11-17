@@ -38,12 +38,41 @@ export class CartService {
    */
   static async getCart(userId: string): Promise<FirebaseCart | null> {
     try {
-      const cartQuery = query(collection(db, 'users', userId, 'cart'), where('status', '==', 'active'));
-      const cartSnapshot = await getDocs(cartQuery);
+      // First try to get an active cart
+      let cartQuery = query(collection(db, 'users', userId, 'cart'), where('status', '==', 'active'));
+      let cartSnapshot = await getDocs(cartQuery);
+      
+      // If no active cart found, try to get an inactive cart
+      if (cartSnapshot.empty) {
+        cartQuery = query(collection(db, 'users', userId, 'cart'), where('status', '==', 'inactive'));
+        cartSnapshot = await getDocs(cartQuery);
+      }
       
       if (!cartSnapshot.empty) {
         const cartDoc = cartSnapshot.docs[0];
-        return { cartId: cartDoc.id, ...cartDoc.data() } as FirebaseCart;
+        const cartData = cartDoc.data() as any; // Cast to any to avoid type issues
+        
+        // Log the applied coupon data for debugging
+        console.log('Applied coupon data from Firebase:', cartData.appliedCoupon);
+        console.log('Applied coupon type:', typeof cartData.appliedCoupon);
+        console.log('Applied coupon keys:', cartData.appliedCoupon ? Object.keys(cartData.appliedCoupon) : 'null');
+        
+        // Check if appliedCoupon is actually null or an empty object
+        if (cartData.appliedCoupon && typeof cartData.appliedCoupon === 'object' && Object.keys(cartData.appliedCoupon).length === 0) {
+          console.log('Applied coupon is an empty object, treating as null');
+          cartData.appliedCoupon = null;
+        }
+        
+        // Check if appliedCoupon is actually null or undefined
+        if (cartData.appliedCoupon === undefined) {
+          console.log('Applied coupon is undefined, treating as null');
+          cartData.appliedCoupon = null;
+        }
+        
+        return { 
+          cartId: cartDoc.id, 
+          ...cartData 
+        } as FirebaseCart;
       }
       
       return null;
@@ -58,6 +87,21 @@ export class CartService {
    */
   static async createCart(userId: string): Promise<string> {
     try {
+      // First check if there's an existing inactive cart we can reactivate
+      const inactiveCartQuery = query(collection(db, 'users', userId, 'cart'), where('status', '==', 'inactive'));
+      const inactiveCartSnapshot = await getDocs(inactiveCartQuery);
+      
+      if (!inactiveCartSnapshot.empty) {
+        // Reactivate the existing inactive cart
+        const existingCartDoc = inactiveCartSnapshot.docs[0];
+        await updateDoc(doc(db, 'users', userId, 'cart', existingCartDoc.id), {
+          status: 'active',
+          updatedAt: new Date(),
+        });
+        return existingCartDoc.id;
+      }
+      
+      // If no inactive cart found, create a new one
       const cartRef = doc(collection(db, 'users', userId, 'cart'));
       const cartData: Omit<FirebaseCart, 'cartId'> = {
         userId,
@@ -65,7 +109,7 @@ export class CartService {
         totalAmount: 0,
         status: 'active',
         deliveryType: 'delivery',
-        appliedCoupon: {},
+        appliedCoupon: null,
         addedAt: new Date(),
         updatedAt: new Date(),
       };
@@ -99,6 +143,12 @@ export class CartService {
    */
   static async addItemToCart(userId: string, cartId: string, item: Omit<CartItem, 'quantity'>): Promise<void> {
     try {
+      // Ensure the cart is active
+      await updateDoc(doc(db, 'users', userId, 'cart', cartId), {
+        status: 'active',
+        updatedAt: new Date()
+      });
+      
       // Check if item already exists in cart
       // For restaurant items, check menuItemId; for warehouse items, check productId
       const itemsQuery = query(
@@ -159,6 +209,12 @@ export class CartService {
    */
   static async updateItemQuantity(userId: string, cartId: string, itemId: string, quantity: number): Promise<void> {
     try {
+      // Ensure the cart is active
+      await updateDoc(doc(db, 'users', userId, 'cart', cartId), {
+        status: 'active',
+        updatedAt: new Date()
+      });
+      
       if (quantity <= 0) {
         // Remove item if quantity is 0 or less
         await deleteDoc(doc(db, 'users', userId, 'cart', cartId, 'cart_items', itemId));
@@ -192,6 +248,12 @@ export class CartService {
    */
   static async removeItemFromCart(userId: string, cartId: string, itemId: string): Promise<void> {
     try {
+      // Ensure the cart is active
+      await updateDoc(doc(db, 'users', userId, 'cart', cartId), {
+        status: 'active',
+        updatedAt: new Date()
+      });
+      
       await deleteDoc(doc(db, 'users', userId, 'cart', cartId, 'cart_items', itemId));
       await this.updateCartTotals(userId, cartId);
     } catch (error) {
@@ -218,6 +280,7 @@ export class CartService {
       await updateDoc(doc(db, 'users', userId, 'cart', cartId), {
         itemCount: 0,
         totalAmount: 0,
+        status: 'active', // Ensure cart remains active
         updatedAt: new Date()
       });
     } catch (error) {
@@ -239,6 +302,7 @@ export class CartService {
       await updateDoc(doc(db, 'users', userId, 'cart', cartId), {
         itemCount,
         totalAmount,
+        status: 'active', // Ensure cart remains active
         updatedAt: new Date()
       });
     } catch (error) {
@@ -252,10 +316,45 @@ export class CartService {
    */
   static async applyCoupon(userId: string, cartId: string, coupon: any): Promise<void> {
     try {
+      console.log('Applying coupon in CartService:', coupon);
+      console.log('Coupon type:', typeof coupon);
+      console.log('Coupon keys:', Object.keys(coupon));
+      
+      // Ensure the coupon object has the required structure
+      const couponToSave = {
+        ...coupon,
+        // Make sure we have the essential fields
+        id: coupon.id || coupon.couponId || '',
+        code: coupon.code || '',
+        appliedAt: new Date()
+      };
+      
+      console.log('Coupon to save:', couponToSave);
+      
+      // Check if couponToSave has the required fields
+      if (!couponToSave.id || !couponToSave.code) {
+        console.warn('Coupon is missing required fields - id:', couponToSave.id, 'code:', couponToSave.code);
+      }
+      
+      // Ensure the cart is active before applying the coupon
       await updateDoc(doc(db, 'users', userId, 'cart', cartId), {
-        appliedCoupon: coupon,
+        appliedCoupon: couponToSave,
+        status: 'active', // Ensure cart is active when applying coupon
         updatedAt: new Date()
       });
+      
+      console.log('Successfully applied coupon to Firebase cart');
+      
+      // Verify the coupon was saved by reading it back
+      const cartDoc = await getDoc(doc(db, 'users', userId, 'cart', cartId));
+      if (cartDoc.exists()) {
+        const cartData = cartDoc.data();
+        if (cartData) {
+          console.log('Verified saved coupon:', cartData.appliedCoupon);
+          console.log('Verified saved coupon type:', typeof cartData.appliedCoupon);
+          console.log('Verified saved coupon keys:', cartData.appliedCoupon ? Object.keys(cartData.appliedCoupon) : 'null');
+        }
+      }
     } catch (error) {
       console.error('Error applying coupon:', error);
       throw error;
@@ -268,7 +367,8 @@ export class CartService {
   static async removeCoupon(userId: string, cartId: string): Promise<void> {
     try {
       await updateDoc(doc(db, 'users', userId, 'cart', cartId), {
-        appliedCoupon: {},
+        appliedCoupon: null,
+        status: 'active', // Ensure cart remains active
         updatedAt: new Date()
       });
     } catch (error) {

@@ -99,11 +99,14 @@ export const useAddresses = () => {
           ...address,
           geoPoint,
           isDefault: addresses.length === 0,
-          addressId: '', // Will be set by Firebase
+          addressId: '', // Will be set after document creation
           isActive: true,
         };
         
         const docRef = await addDoc(addressesRef, newAddress);
+        
+        // Update the document with its own ID as addressId
+        await updateDoc(docRef, { addressId: docRef.id });
         
         const addedAddress: Address = {
           ...address,

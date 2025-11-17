@@ -11,7 +11,7 @@ import {
   ScrollView,
   TextInput as RNTextInput,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaWrapper } from '../../../components/layout';
 import { Button, Card, TextInput } from '../../../components/common';
@@ -23,6 +23,7 @@ import { useAddresses } from '../../settings/addresses/hooks/useAddresses';
 import { useLocationContext } from '../../../contexts/LocationContext';
 import { CartService } from '../../../services/firebase/cartService';
 import { CartStackParamList } from '../../../navigation/CartStackNavigator';
+import { db } from '../../../config/firebase';
 
 interface CartItemProps {
   item: any;
@@ -251,13 +252,20 @@ export const CartScreen = () => {
   // Load cart from Firebase when component mounts
   useEffect(() => {
     loadCartFromFirebase();
-  }, [loadCartFromFirebase]);
+  }, []); // Empty dependency array to run only once on mount
   
   // Sync with Firebase when component mounts
   useEffect(() => {
     syncWithFirebase();
-  }, [syncWithFirebase]);
+  }, []); // Empty dependency array to run only once on mount
   
+  // Refresh cart when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadCartFromFirebase();
+    }, [loadCartFromFirebase])
+  );
+
   // Initialize selected day when time slot modal opens
   useEffect(() => {
     if (showTimeSlotModal && !selectedDayId) {
@@ -418,6 +426,10 @@ export const CartScreen = () => {
       return;
     }
     
+    // Log coupon data specifically
+    console.log('Coupon data in order:', JSON.stringify(orderData.appliedCoupons, null, 2));
+    console.log('Number of coupons in order:', orderData.appliedCoupons.length);
+    
     try {
       // Create order in Firebase
       const orderId = await CartService.createOrder(orderData);
@@ -442,34 +454,130 @@ export const CartScreen = () => {
       setApplyingCoupon(true);
       setCouponError('');
       
-      // In a real app, you would validate the coupon with your backend
-      // For now, we'll just show a success message if the code is not empty
-      const tempCoupon: Coupon = {
-        id: 'temp-id',
-        code: couponCode,
-        name: 'Temporary Coupon',
-        title: `${couponCode} Discount`,
-        description: 'Temporary discount coupon',
-        discountType: 'percentage',
-        discountValue: 10, // 10% off as an example
-        validFrom: new Date(),
-        validTill: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-        isActive: true,
-        isStackable: false,
-        minOrderAmount: 0,
-        minOrderCount: 1,
-        usedCount: 0,
-        maxUses: 1000,
+      console.log('Validating coupon code:', couponCode.trim());
+      
+      // Validate the coupon code against the real coupons collection
+      const querySnapshot = await db.collection('coupons')
+        .where('code', '==', couponCode.trim())
+        .where('isActive', '==', true)
+        .get();
+
+      console.log(`Found ${querySnapshot.size} matching coupons`);
+
+      if (querySnapshot.empty) {
+        console.log('No coupons found with code:', couponCode.trim());
+        setCouponError('Invalid coupon code');
+        return;
+      }
+
+      // Get the first matching coupon
+      const couponDoc = querySnapshot.docs[0];
+      const couponData = couponDoc.data();
+      
+      console.log('Coupon data from Firestore:', couponDoc.id, couponData);
+      
+      // Check if coupon is valid based on dates
+      const now = new Date();
+      const validFrom = couponData.validFrom?.toDate ? couponData.validFrom.toDate() : couponData.validFrom;
+      const validTill = (couponData.validTill || couponData.validUntil)?.toDate ? 
+        (couponData.validTill || couponData.validUntil).toDate() : 
+        (couponData.validTill || couponData.validUntil);
+      
+      console.log('Coupon dates - validFrom:', validFrom, 'validTill:', validTill, 'now:', now);
+      
+      // More permissive date validation
+      if (validFrom && validFrom instanceof Date && validFrom > now) {
+        console.log('Coupon is not yet valid');
+        setCouponError('Coupon is not yet valid');
+        return;
+      }
+      
+      if (validTill && validTill instanceof Date && validTill < now) {
+        console.log('Coupon has expired');
+        setCouponError('Coupon has expired');
+        return;
+      }
+      
+      // Check usage limits
+      if (couponData.usage) {
+        console.log('Coupon usage data:', couponData.usage);
+        // Check per user limit
+        if (couponData.usage.perUserLimit && couponData.usage.usedCount && 
+            couponData.usage.usedCount >= couponData.usage.perUserLimit) {
+          console.log('Coupon usage limit reached');
+          setCouponError('Coupon usage limit reached');
+          return;
+        }
+        
+        // Check total usage
+        if (couponData.usage.totalUsage && couponData.usage.usedCount && 
+            couponData.usage.usedCount >= couponData.usage.totalUsage) {
+          console.log('Coupon has reached its total usage limit');
+          setCouponError('Coupon has reached its total usage limit');
+          return;
+        }
+      }
+      
+      // Create coupon object with proper structure including all required fields
+      const coupon: Coupon = {
+        id: couponDoc.id,
+        code: couponData.code,
+        name: couponData.name || couponData.title || 'Coupon',
+        title: couponData.title || couponData.name || couponData.code,
+        description: couponData.description || '',
+        imageURL: couponData.imageURL,
+        isActive: couponData.isActive !== undefined ? couponData.isActive : true,
+        isStackable: couponData.isStackable || false,
+        maxUses: couponData.maxUses || couponData.usage?.totalUsage,
+        usedCount: couponData.usedCount || couponData.usage?.usedCount,
+        maxDiscountAmount: couponData.maxDiscountAmount,
+        minOrderAmount: couponData.minOrderAmount || 0,
+        minOrderCount: couponData.minOrderCount !== undefined ? couponData.minOrderCount : 1,
+        discountType: couponData.discountType || couponData.type || 'percentage',
+        discountValue: couponData.discountValue !== undefined ? couponData.discountValue : (couponData.value || 0),
+        validFrom: validFrom,
+        validTill: validTill,
+        validUntil: couponData.validUntil?.toDate ? couponData.validUntil.toDate() : couponData.validUntil,
+        cities: couponData.cities,
+        restaurants: couponData.restaurants,
+        services: couponData.services,
+        zones: couponData.zones,
+        warehouses: couponData.warehouses,
+        categories: couponData.categories,
+        dayOfWeek: couponData.dayOfWeek,
+        userType: couponData.userType,
+        applicableFor: couponData.applicableFor,
+        usage: couponData.usage,
+        maxUsagePerUser: couponData.maxUsagePerUser,
+        maxUsage: couponData.maxUsage,
+        createdAt: couponData.createdAt,
+        updatedAt: couponData.updatedAt,
+        createdBy: couponData.createdBy,
+        termsAndConditions: couponData.termsAndConditions,
+        usageLimit: couponData.usageLimit,
+        couponId: couponData.couponId || couponDoc.id,
+        type: couponData.type || couponData.discountType,
+        value: couponData.value !== undefined ? couponData.value : couponData.discountValue,
       };
       
-      const result = await applyCoupon(tempCoupon);
+      console.log('Created coupon object:', JSON.stringify(coupon, null, 2));
+      
+      const result = await applyCoupon(coupon);
+      
+      console.log('Apply coupon result:', result);
+      
+      // Additional debugging
+      console.log('Applied coupon after applyCoupon call:', appliedCoupon);
       
       if (result.success) {
         setCouponCode('');
+        // Reload cart to reflect the applied coupon
+        await loadCartFromFirebase();
       } else {
         setCouponError(result.message);
       }
     } catch (error) {
+      console.error('Error validating coupon:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to apply coupon';
       setCouponError(errorMessage);
     } finally {
@@ -477,66 +585,71 @@ export const CartScreen = () => {
     }
   };
 
-  const renderCouponSection = () => (
-    <View style={styles.sectionContainer}>
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-          Apply Coupon
-        </Text>
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('Coupons' as never)}
-        >
-          <Text style={{ color: theme.colors.primary }}>View All</Text>
-        </TouchableOpacity>
-      </View>
-      
-      {appliedCoupon ? (
-        <View style={[styles.appliedCouponContainer, { backgroundColor: theme.colors.surface }]}>
-          <View style={styles.appliedCouponInfo}>
-            <Text style={[styles.appliedCouponCode, { color: theme.colors.text }]}>
-              {appliedCoupon.code}
-            </Text>
-            <Text style={[styles.appliedCouponDiscount, { color: theme.colors.success }]}>
-              {appliedCoupon.discountType === 'percentage' 
-                ? `${appliedCoupon.discountValue}% off` 
-                : `₹${appliedCoupon.discountValue} off`}
-            </Text>
-          </View>
+  const renderCouponSection = () => {
+    console.log('Rendering coupon section, appliedCoupon:', appliedCoupon);
+    console.log('Applied coupon type:', typeof appliedCoupon);
+    console.log('Applied coupon keys:', appliedCoupon ? Object.keys(appliedCoupon) : 'null');
+    return (
+      <View style={styles.sectionContainer}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+            Apply Coupon
+          </Text>
           <TouchableOpacity 
-            style={[styles.removeCouponButton, { backgroundColor: theme.colors.error }]}
-            onPress={removeCoupon}
+            onPress={() => navigation.navigate('Coupons' as never)}
           >
-            <Text style={[styles.removeCouponText, { color: theme.colors.white }]}>Remove</Text>
+            <Text style={{ color: theme.colors.primary }}>View All</Text>
           </TouchableOpacity>
         </View>
-      ) : (
-        <View style={styles.couponInputContainer}>
-          <TextInput
-            placeholder="Enter coupon code"
-            value={couponCode}
-            onChangeText={setCouponCode}
-            style={[styles.couponInput, { 
-              borderColor: theme.colors.border,
-              backgroundColor: theme.colors.surface,
-              color: theme.colors.text
-            }]}
-          />
-          <Button
-            title="Apply"
-            onPress={handleApplyCoupon}
-            style={styles.applyButton}
-            textStyle={styles.applyButtonText}
-            disabled={!couponCode.trim() || applyingCoupon}
-          />
-        </View>
-      )}
-      {couponError ? (
-        <Text style={[styles.errorText, { color: theme.colors.error }]}>
-          {couponError}
-        </Text>
-      ) : null}
-    </View>
-  );
+        
+        {appliedCoupon ? (
+          <View style={[styles.appliedCouponContainer, { backgroundColor: theme.colors.surface }]}>
+            <View style={styles.appliedCouponInfo}>
+              <Text style={[styles.appliedCouponCode, { color: theme.colors.text }]}>
+                {appliedCoupon.code}
+              </Text>
+              <Text style={[styles.appliedCouponDiscount, { color: theme.colors.success }]}>
+                {appliedCoupon.discountType === 'percentage' 
+                  ? `${appliedCoupon.discountValue}% off` 
+                  : `₹${appliedCoupon.discountValue} off`}
+              </Text>
+            </View>
+            <TouchableOpacity 
+              style={[styles.removeCouponButton, { backgroundColor: theme.colors.error }]}
+              onPress={removeCoupon}
+            >
+              <Text style={[styles.removeCouponText, { color: theme.colors.white }]}>Remove</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.couponInputContainer}>
+            <TextInput
+              placeholder="Enter coupon code"
+              value={couponCode}
+              onChangeText={setCouponCode}
+              style={[styles.couponInput, { 
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.surface,
+                color: theme.colors.text
+              }]}
+            />
+            <Button
+              title="Apply"
+              onPress={handleApplyCoupon}
+              style={styles.applyButton}
+              textStyle={styles.applyButtonText}
+              disabled={!couponCode.trim() || applyingCoupon}
+            />
+          </View>
+        )}
+        {couponError ? (
+          <Text style={[styles.errorText, { color: theme.colors.error }]}>
+            {couponError}
+          </Text>
+        ) : null}
+      </View>
+    );
+  };
 
   // Render address selection component
   const renderAddressSelection = () => (
@@ -870,7 +983,7 @@ export const CartScreen = () => {
       {items.length > 0 ? (
         items.map((item, index) => (
           <CartItem
-            key={item.productId}
+            key={item.id}
             item={item}
             onUpdateQuantity={handleUpdateQuantity}
             onRemove={handleRemoveItem}
