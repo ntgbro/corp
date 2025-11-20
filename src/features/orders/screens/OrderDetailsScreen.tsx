@@ -59,26 +59,6 @@ export const OrderDetailsScreen = () => {
     }
   };
 
-  // Get status icon
-  const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'delivered':
-        return 'checkmark-circle';
-      case 'out_for_delivery':
-        return 'bicycle';
-      case 'confirmed':
-        return 'checkmark';
-      case 'preparing':
-        return 'restaurant';
-      case 'ready':
-        return 'fast-food';
-      case 'cancelled':
-        return 'close-circle';
-      default:
-        return 'time';
-    }
-  };
-
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -140,11 +120,6 @@ export const OrderDetailsScreen = () => {
                 Order {orderDetails.orderId}
               </Text>
               <View style={styles.statusContainer}>
-                <Icon 
-                  name={getStatusIcon(orderDetails.status)} 
-                  size={16} 
-                  color={getStatusColor(orderDetails.status)} 
-                />
                 <Text style={[styles.statusText, { color: getStatusColor(orderDetails.status) }]}>
                   {orderDetails.status.charAt(0).toUpperCase() + orderDetails.status.slice(1).replace(/_/g, ' ')}
                 </Text>
@@ -335,11 +310,6 @@ export const OrderDetailsScreen = () => {
               <View key={status.id} style={styles.statusHistoryItem}>
                 <View style={styles.statusHistoryHeader}>
                   <View style={styles.statusHistoryInfo}>
-                    <Icon 
-                      name={getStatusIcon(status.status)} 
-                      size={16} 
-                      color={getStatusColor(status.status)} 
-                    />
                     <Text style={[styles.statusHistoryStatus, { color: theme.colors.text }]}>
                       {status.status.charAt(0).toUpperCase() + status.status.slice(1).replace(/_/g, ' ')}
                     </Text>

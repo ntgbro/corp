@@ -120,10 +120,10 @@ export class OrderSplitService {
    * Create main order document in orders collection
    */
   static async createMainOrder(orderData: any): Promise<string> {
-    // Generate custom order ID with format "ORD:XXXXXXXXX"
+    // Generate custom order ID with format "ORD_XXXXXXXXX" (using underscore instead of colon for PhonePe compatibility)
     const timestamp = Date.now().toString();
     const randomPart = Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
-    const orderId = `ORD:${timestamp.substring(timestamp.length - 6)}${randomPart.substring(randomPart.length - 3)}`;
+    const orderId = `ORD_${timestamp.substring(timestamp.length - 6)}${randomPart.substring(randomPart.length - 3)}`;
     
     const orderRef = doc(db, 'orders', orderId);
     
@@ -340,8 +340,8 @@ export class OrderSplitService {
     let provider = "UPI";
     if (orderData.paymentMethod === "Cash on Delivery") {
       provider = "Cash";
-    } else if (orderData.paymentMethod === "Credit Card" || orderData.paymentMethod === "Debit Card") {
-      provider = "Card";
+    } else if (orderData.paymentMethod === "UPI") {
+      provider = "PhonePe"; // UPI payments go through PhonePe gateway
     }
     
     const paymentData: PaymentData = {

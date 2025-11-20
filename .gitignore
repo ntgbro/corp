@@ -70,6 +70,7 @@ yarn-error.log
 firebase-service-account-key.json
 firebase-credentials.json
 *.firebase.json
+service-account-key.json
 
 # Environment Variables
 .env

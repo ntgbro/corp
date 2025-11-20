@@ -7,6 +7,9 @@
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+    
+    <!-- PhonePe SDK permissions -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
     <!-- Location permissions for enhanced geolocation service -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -71,6 +74,19 @@
           android:name="firebase_crashlytics_collection_enabled"
           android:value="true" />
           
+      <!-- PhonePe SDK activities -->
+      <activity
+        android:name="com.phonepe.intent.sdk.v2.PhonePePaymentActivity"
+        android:exported="true"
+        android:launchMode="singleTop"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+      
+      <activity
+        android:name="com.phonepe.intent.sdk.v2.RedirectActivity"
+        android:exported="true"
+        android:launchMode="singleTop"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+      
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
@@ -81,6 +97,13 @@
         <intent-filter>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
+        <!-- PhonePe callback URL scheme -->
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="ppemerchantsdkv3" />
         </intent-filter>
       </activity>
     </application>

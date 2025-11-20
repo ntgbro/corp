@@ -9,7 +9,8 @@ import {
   Alert,
   Modal,
   ScrollView,
-  TextInput as RNTextInput,
+  Linking,
+  TextInput as RNTextInput
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -22,8 +23,17 @@ import { Coupon } from '../../../types/coupon';
 import { useAddresses } from '../../settings/addresses/hooks/useAddresses';
 import { useLocationContext } from '../../../contexts/LocationContext';
 import { CartService } from '../../../services/firebase/cartService';
+import { OrderService } from '../../../services/firebase/orderService';
 import { CartStackParamList } from '../../../navigation/CartStackNavigator';
 import { db } from '../../../config/firebase';
+import { initiatePhonePePayment } from '../../../services/firebase/phonePeService';
+import PhonePePaymentSDK from 'react-native-phonepe-pg';
+import { ENVIRONMENT } from '../../../config/environment';
+
+import { Buffer } from 'buffer';
+if (typeof global.Buffer === 'undefined') {
+  global.Buffer = Buffer;
+}
 
 interface CartItemProps {
   item: any;
@@ -385,18 +395,101 @@ export const CartScreen = () => {
     console.log('Coupon data in order:', JSON.stringify(orderData.appliedCoupons, null, 2));
     console.log('Number of coupons in order:', orderData.appliedCoupons.length);
     
-    try {
-      // Create order in Firebase
-      const orderId = await CartService.createOrder(orderData);
-      
-      console.log('Order created successfully with ID:', orderId);
-      
-      // Navigate to order confirmation screen
-      navigation.navigate('OrderConfirmation' as any, { orderId });
-    } catch (error) {
-      console.error('Error creating order:', error);
-      Alert.alert('Error', 'Failed to create order. Please try again.');
+    // Handle Cash on Delivery directly
+    if (paymentMethod === 'Cash on Delivery') {
+      try {
+        // Create order in Firebase
+        const orderId = await CartService.createOrder(orderData);
+        
+        console.log('Order created successfully with ID:', orderId);
+        
+        // Navigate to order confirmation screen
+        navigation.navigate('OrderConfirmation' as any, { orderId });
+      } catch (error) {
+        console.error('Error creating order:', error);
+        Alert.alert('Error', 'Failed to create order. Please try again.');
+      }
+    } else {
+      // For UPI/PhonePe payments - Create order first with pending status
+      try {
+        // Step 1: Create order in Firebase with pending status
+        const orderId = await CartService.createOrder({
+          ...orderData,
+          status: 'pending',
+          paymentStatus: 'pending'
+        });
+        console.log('Order created with ID:', orderId);
+
+        // Step 2: Generate PhonePe payment request
+        const paymentData = await initiatePhonePePayment(
+          orderData.finalAmount + 20,
+          orderId,
+          orderData.customerId
+        );
+
+        console.log('PhonePe payment data:', paymentData);
+
+        // Step 3: Build PhonePe web checkout URL
+        const phonepeWebUrl = paymentData.paymentUrl || `https://mercury-uat.phonepe.com/transact/pg?token=${encodeURIComponent(paymentData.payload)}`;
+
+        console.log('Opening PhonePe URL:', phonepeWebUrl);
+
+        // Step 4: Open PhonePe in browser
+        const canOpen = await Linking.canOpenURL(phonepeWebUrl);
+        
+        if (canOpen) {
+          await Linking.openURL(phonepeWebUrl);
+          
+          // === CHANGED: Start listening for backend confirmation ===
+          // We don't ask the user anymore. We ask the Database.
+          waitForPaymentCompletion(orderId);
+          
+        } else {
+          throw new Error('Cannot open PhonePe URL');
+        }
+
+      } catch (error) {
+        console.error('Error initiating PhonePe payment:', error);
+        Alert.alert('Payment Error', 'Failed to initiate payment. Please try again.');
+      }
+      return;
     }
+  };
+
+  // Add this function to listen for payment status changes in real-time
+  const waitForPaymentCompletion = (orderId: string) => {
+    console.log(`Starting to watch order ${orderId} for payment status...`);
+    
+    // Show a loading indicator (optional)
+    Alert.alert("Processing Payment", "Please complete the payment in the browser. We are watching for confirmation...");
+
+    // Listen to the specific order document in Firestore
+    const unsubscribe = db.collection('orders').doc(orderId)
+      .onSnapshot((snapshot) => {
+        const data = snapshot.data();
+        
+        // Check if backend has updated the status
+        if (data) {
+          console.log(`Real-time Order Status: ${data.status} | Payment: ${data.paymentStatus}`);
+          
+          if (data.status === 'confirmed' || data.paymentStatus === 'paid') {
+            // SUCCESS! Stop listening and navigate
+            unsubscribe();
+            console.log('Payment confirmed by backend! Navigating...');
+            
+            // Dismiss any open alerts (if possible) and navigate
+            navigation.navigate('OrderConfirmation' as any, { orderId });
+          } 
+          else if (data.status === 'cancelled' || data.paymentStatus === 'failed') {
+            // FAILED
+            unsubscribe();
+            Alert.alert("Payment Failed", "The payment was declined or cancelled.");
+          }
+        }
+      });
+      
+    // Safety: Stop listening after 5 minutes if nothing happens to prevent memory leaks
+    setTimeout(() => unsubscribe(), 300000); 
   };
 
   const handleApplyCoupon = async () => {
@@ -557,7 +650,7 @@ export const CartScreen = () => {
           </TouchableOpacity>
         </View>
         
-        {appliedCoupon ? (
+        {appliedCoupon && typeof appliedCoupon === 'object' && Object.keys(appliedCoupon).length > 0 ? (
           <View style={[styles.appliedCouponContainer, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.appliedCouponInfo}>
               <Text style={[styles.appliedCouponCode, { color: theme.colors.text }]}>
@@ -983,7 +1076,7 @@ export const CartScreen = () => {
       </View>
       
       <View style={styles.paymentMethodsContainer}>
-        {['UPI', 'Credit Card', 'Debit Card', 'Cash on Delivery'].map((method) => (
+        {['UPI', 'Cash on Delivery'].map((method) => (
           <TouchableOpacity
             key={method}
             style={[
