@@ -1,4 +1,6 @@
 // Environment configuration
+import { PHONEPE_BACKEND_URL } from './env';
+
 export const ENVIRONMENT = {
   // App Environment
   APP_ENV: __DEV__ ? 'development' : 'production',
@@ -12,6 +14,14 @@ export const ENVIRONMENT = {
       : 'https://api.corpease.com/api',
     TIMEOUT: 30000, // 30 seconds
     RETRY_ATTEMPTS: 3,
+  },
+
+  // PhonePe Backend Configuration
+  PHONEPE_BACKEND: {
+    BASE_URL: __DEV__
+      ? PHONEPE_BACKEND_URL // Use environment variable from env.ts
+      : 'https://phonepe-backend.corpease.com',
+    TIMEOUT: 10000, // 10 seconds
   },
 
   // Firebase Configuration

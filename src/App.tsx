@@ -9,6 +9,9 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useThemeContext } from './contexts/ThemeContext';
 import { store, persistor } from './store';
 
+// PhonePe SDK import (for testing)
+import PhonePePaymentSDK from 'react-native-phonepe-pg';
+
 // Google Sign-In configuration
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 

@@ -1,5 +1,5 @@
 // src/services/firebase/orderService.ts
-import { collection, doc, getDoc, getDocs, query, setDoc, where } from '@react-native-firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from '@react-native-firebase/firestore';
 import { db } from '../../config/firebase';
 import { Order, OrderItem, StatusHistory, Payment } from '../../types/firestore';
 
@@ -33,5 +33,19 @@ export class OrderService {
   static async addStatusHistory(orderId: string, history: Omit<StatusHistory, 'statusId'>): Promise<void> {
     const docRef = doc(collection(db, 'orders', orderId, 'status_history'));
     await setDoc(docRef, { ...history, statusId: docRef.id });
+  }
+
+  static async updateOrderStatus(orderId: string, status: string, paymentStatus?: string): Promise<void> {
+    const orderRef = doc(db, 'orders', orderId);
+    const updateData: any = {
+      status: status,
+      updatedAt: new Date()
+    };
+    
+    if (paymentStatus) {
+      updateData.paymentStatus = paymentStatus;
+    }
+    
+    await updateDoc(orderRef, updateData);
   }
 }

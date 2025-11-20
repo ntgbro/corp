@@ -1,115 +1,122 @@
-# Corpease - B2B Commerce Platform
+# CorpEase - Food Delivery App
 
-A React Native mobile commerce application for fresh produce, FMCG products, office supplies, and corporate catering services.
+CorpEase is a comprehensive food delivery application built with React Native and Firebase.
 
 ## Features
 
-- 📱 Multi-service B2B platform (Fresh Serve, FMCG, Office Supplies, Corporate Catering)
-- 🔐 Phone number authentication with OTP
-- 📍 Location-based services with enhanced geocoding
-- 🛒 Shopping cart and order management
-- 👨‍🍳 Chef and restaurant discovery
-- 🎨 Light/Dark theme support
-- 🔔 Push notifications (FCM)
-- 📊 Firebase backend integration
+- User authentication (Phone, Email, Google)
+- Restaurant browsing and menu exploration
+- Cart management and checkout
+- Order tracking and history
+- Real-time notifications
+- Location-based services
+- Payment integration (PhonePe, Cash on Delivery)
 
-## New Features
+## Prerequisites
 
-- 🔄 Real-time cart synchronization with Firebase
-- ☁️ Cloud-persisted shopping cart across devices
-- 📱 Offline cart functionality with automatic sync
+- Node.js (v16 or higher)
+- React Native CLI
+- Android Studio / Xcode
+- Firebase account
+- PhonePe merchant account (for payment integration)
 
-## Firebase Setup
+## Installation
 
-This project uses Firebase for backend services. Follow these steps to set up Firebase:
-
-### 1. Create Firebase Project
-
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project or use existing project `corpeas-ee450`
-3. Enable required services:
-   - Authentication (Phone provider)
-   - Firestore Database
-   - Storage
-   - Cloud Messaging (optional)
-
-### 2. Download Service Account Key
-
-1. Go to Project Settings > Service Accounts
-2. Generate new private key (JSON format)
-3. **IMPORTANT**: Do NOT commit this file to GitHub
-4. Rename it to `firebase-service-account-key.json`
-5. Place it in the project root directory
-
-### 3. Environment Variables
-
-1. Copy `.env.example` to `.env`
-2. Fill in your Firebase configuration values:
-   ```env
-   FIREBASE_API_KEY=your_api_key
-   FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-   FIREBASE_PROJECT_ID=your_project_id
-   FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-   FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   FIREBASE_APP_ID=your_app_id
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd corpease
    ```
 
-### 4. Mobile App Configuration
+2. Install dependencies:
+   ```bash
+   yarn install
+   ```
 
-#### Android
-1. Download `google-services.json` from Firebase Console
-2. Place in `android/app/` directory
+3. Set up Firebase:
+   - Create a Firebase project
+   - Download the `google-services.json` file (Android) and `GoogleService-Info.plist` file (iOS)
+   - Place them in the appropriate directories
 
-#### iOS
-1. Download `GoogleService-Info.plist` from Firebase Console
-2. Place in `ios/` directory
+4. Configure environment variables:
+   - Copy `.env.example` to `.env`
+   - Update the values with your actual configuration
 
-## 🚨 SECURITY ALERT - IMPORTANT
+## PhonePe Payment Gateway Configuration
 
-If you see this message, your Firebase credentials have been exposed. This is a **CRITICAL SECURITY ISSUE**.
+For detailed instructions on configuring PhonePe payment gateway, please refer to [PHONEPE_CONFIGURATION.md](PHONEPE_CONFIGURATION.md).
 
-### Immediate Actions Required:
+To get started quickly:
 
-1. **Generate a new service account key** in Firebase Console
-2. **Delete the old exposed key** from Firebase Console
-3. **Update your local `firebase-service-account-key.json`**
-4. **Review your Google Cloud Console activity logs**
-5. **Check for unauthorized access**
+1. Update the IP address in your `.env` file:
+   ```
+   PHONEPE_BACKEND_URL=http://YOUR_COMPUTER_IP:3001
+   ```
 
-### For Security Incidents:
-- Contact Google Cloud Support immediately
-- Review all Firebase usage and billing
-- Check for unauthorized data access
-- Monitor your project for suspicious activity
+2. Add your PhonePe credentials to the `.env` file:
+   ```
+   PHONEPE_MERCHANT_ID=your_merchant_id_here
+   PHONEPE_SALT=your_secret_key_here
+   PHONEPE_SALT_INDEX=your_salt_index_here
+   ```
 
----
+3. Find your computer's IP address:
+   - Windows: Run `ipconfig` and look for "IPv4 Address"
+   - Mac/Linux: Run `ifconfig` or `ip addr show`
 
-## Proper Secret Management
+4. Make sure your mobile device and computer are on the same network
 
-**⚠️ NEVER commit these files:**
-- `firebase-service-account-key.json` (contains private keys)
-- `.env` (with real API keys)
-- `android/app/google-services.json`
-- `ios/GoogleService-Info.plist`
+5. Start the PhonePe backend:
+   ```bash
+   yarn phonepe-backend
+   ```
 
-**✅ Use these templates instead:**
-- `firebase-service-account-key.example.json`
-- `.env.example`
+## Running the App
 
-## Getting Started
+### Android
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
-
-## Step 1: Start Metro
-
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
-
-To start the Metro dev server, run the following command from the root of your React Native project:
-
-```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+```bash
+yarn android
 ```
+
+### iOS
+
+```bash
+yarn ios
+```
+
+## Development Scripts
+
+- `yarn start`: Start the Metro bundler
+- `yarn seed`: Seed the database with sample data
+- `yarn phonepe-backend`: Start the PhonePe backend service
+- `yarn test`: Run tests
+
+## Project Structure
+
+```
+src/
+├── components/        # Reusable UI components
+├── config/            # Configuration files
+├── contexts/          # React contexts
+├── features/          # Feature modules
+├── hooks/             # Custom hooks
+├── navigation/        # Navigation setup
+├── screens/           # Screen components
+├── scripts/           # Utility scripts
+├── services/          # Service integrations
+├── types/             # TypeScript types
+└── utils/             # Utility functions
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a pull request
+
+## License
+
+This project is licensed under the MIT License.

@@ -7,7 +7,6 @@ import { OrderList } from '../components/OrderList';
 import { useMainOrders } from '../hooks/useMainOrders';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { OrdersStackParamList } from '../../../navigation/OrdersStackNavigator';
-import Icon from 'react-native-vector-icons/Ionicons';
 
 type MainOrdersScreenNavigationProp = StackNavigationProp<OrdersStackParamList, 'OrderDetails'>;
 
@@ -15,26 +14,45 @@ export const MainOrdersScreen = () => {
   const navigation = useNavigation<MainOrdersScreenNavigationProp>();
   const theme = useTheme();
   const { orders, loading, error, refreshOrders } = useMainOrders();
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<string>('present');
 
   const handleOrderPress = (orderId: string) => {
     // Navigate to order details screen
     navigation.navigate('OrderDetails', { orderId });
   };
 
-  const filteredOrders = filter === 'all' 
-    ? orders 
-    : orders.filter((order: any) => order.status.toLowerCase() === filter);
+  // Group orders by status
+  const presentOrders = orders.filter((order: any) => 
+    ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'].includes(order.status.toLowerCase())
+  );
+  
+  const deliveredOrders = orders.filter((order: any) => 
+    order.status.toLowerCase() === 'delivered'
+  );
+  
+  const cancelledOrders = orders.filter((order: any) => 
+    order.status.toLowerCase() === 'cancelled'
+  );
+
+  const getFilteredOrders = () => {
+    switch (filter) {
+      case 'present':
+        return presentOrders;
+      case 'delivered':
+        return deliveredOrders;
+      case 'cancelled':
+        return cancelledOrders;
+      default:
+        return presentOrders;
+    }
+  };
+
+  const filteredOrders = getFilteredOrders();
 
   const statusFilters = [
-    { key: 'all', label: 'All Orders' },
-    { key: 'pending', label: 'Pending' },
-    { key: 'confirmed', label: 'Confirmed' },
-    { key: 'preparing', label: 'Preparing' },
-    { key: 'ready', label: 'Ready' },
-    { key: 'out_for_delivery', label: 'Out for Delivery' },
-    { key: 'delivered', label: 'Delivered' },
-    { key: 'cancelled', label: 'Cancelled' },
+    { key: 'present', label: 'Present Orders', count: presentOrders.length },
+    { key: 'delivered', label: 'Delivered', count: deliveredOrders.length },
+    { key: 'cancelled', label: 'Cancelled', count: cancelledOrders.length },
   ];
 
   if (error) {
@@ -43,7 +61,7 @@ export const MainOrdersScreen = () => {
         {/* Header */}
         <View style={[styles.header, { backgroundColor: '#F5DEB3', borderBottomColor: theme.colors.border }]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="arrow-back" size={24} color={theme.colors.text} />
+            <Text style={{ fontSize: 24, color: theme.colors.text }}>←</Text>
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.colors.text }]}>My Orders</Text>
           <View style={{ width: 24 }} />
@@ -81,25 +99,21 @@ export const MainOrdersScreen = () => {
 
       {/* Replaced ScrollView with View to fix nested VirtualizedLists warning */}
       <View style={styles.content}>
-        {/* Status Filters */}
+        {/* Status Filters - Vertical List */}
         <View style={[styles.filterContainer, { backgroundColor: '#FBF5EB' }]}>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterContent}
-          >
-            {statusFilters.map((status) => (
-              <TouchableOpacity
-                key={status.key}
-                style={[
-                  styles.filterButton,
-                  { 
-                    backgroundColor: filter === status.key ? theme.colors.primary : 'transparent',
-                    borderColor: '#754C29',
-                  }
-                ]}
-                onPress={() => setFilter(status.key)}
-              >
+          {statusFilters.map((status) => (
+            <TouchableOpacity
+              key={status.key}
+              style={[
+                styles.filterButton,
+                { 
+                  backgroundColor: filter === status.key ? theme.colors.primary : 'transparent',
+                  borderColor: '#754C29',
+                }
+              ]}
+              onPress={() => setFilter(status.key)}
+            >
+              <View style={styles.filterContent}>
                 <Text 
                   style={[
                     styles.filterText,
@@ -110,9 +124,19 @@ export const MainOrdersScreen = () => {
                 >
                   {status.label}
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                <Text 
+                  style={[
+                    styles.filterCount,
+                    { 
+                      color: filter === status.key ? theme.colors.white : theme.colors.textSecondary,
+                    }
+                  ]}
+                >
+                  ({status.count})
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Order Count */}
@@ -172,20 +196,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
-  filterContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   filterButton: {
     borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+  },
+  filterContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   filterText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '500',
+  },
+  filterCount: {
+    fontSize: 14,
+    fontWeight: '400',
   },
   orderCountContainer: {
     marginBottom: 16,
