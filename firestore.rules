@@ -1,8 +1,12 @@
-// Firestore Security Rules
+// ============================================================================
+// FIXED FIRESTORE SECURITY RULES - WITH DELIVERY PARTNERS
+// ============================================================================
+// This fixes the permission errors for restaurant/warehouse owners and adds delivery_partners rules
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
     // Auth helpers
     function isAuthenticated() {
       return request.auth != null;
@@ -27,16 +31,42 @@ service cloud.firestore {
     }
 
     function hasRestaurantOwnerRole() {
-      return isAuthenticated() && request.auth.token.role == 'restaurant_owner';
+      return isAuthenticated() && (
+        request.auth.token.role == 'restaurant_owner' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'restaurant_owner'
+      );
     }
 
-    function canAccessOrder(orderData) {
+    function hasWarehouseRole() {
       return isAuthenticated() && (
-        (orderData.customerId != null && orderData.customerId == request.auth.uid) ||
-        (orderData.chefId != null && orderData.chefId == request.auth.uid) ||
-        (orderData.restaurantId != null && orderData.restaurantId == request.auth.token.restaurantId) ||
-        isAdmin()
+        request.auth.token.role == 'warehouse' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'warehouse'
       );
+    }
+
+    function hasDeliveryRole() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'delivery' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'delivery'
+      );
+    }
+
+    // Get user's restaurantId from user document (safe - returns null if not found)
+    function getUserRestaurantId() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc != null && userDoc.data != null ? userDoc.data.restaurantId : null;
+    }
+
+    // Get user's warehouseId from user document (safe - returns null if not found)
+    function getUserWarehouseId() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc != null && userDoc.data != null ? userDoc.data.warehouseId : null;
+    }
+
+    // Get delivery partner's userId from partner document
+    function getDeliveryPartnerUserId(partnerId) {
+      let partnerDoc = get(/databases/$(database)/documents/delivery_partners/$(partnerId));
+      return partnerDoc != null && partnerDoc.data != null ? partnerDoc.data.userId : null;
     }
 
     // ============================================================================
@@ -45,10 +75,8 @@ service cloud.firestore {
     match /users/{userId} {
       // Users can read/write their own profile
       allow read, write: if isOwner(userId);
-
       // Allow create during registration (before user document exists)
       allow create: if isAuthenticated();
-
       // Allow admins to read all user profiles
       allow read: if isAdmin();
     }
@@ -59,84 +87,125 @@ service cloud.firestore {
     
     // User addresses subcollection
     match /users/{userId}/addresses/{addressId} {
-      // Allow users to read/write their own addresses
       allow read, write, create, delete: if isOwner(userId);
-      
-      // Allow admins to read all addresses
       allow read: if isAdmin();
     }
     
     // User cart subcollection
     match /users/{userId}/cart/{cartId} {
-      // Allow users to manage their own cart
       allow read, write, create, delete: if isOwner(userId);
     }
     
     // User cart_items subcollection
     match /users/{userId}/cart/{cartId}/cart_items/{itemId} {
-      // Allow users to manage their own cart items
       allow read, write, create, delete: if isOwner(userId);
     }
     
     // User coupon_usage subcollection
     match /users/{userId}/coupon_usage/{usageId} {
-      // Allow users to manage their own coupon usage
       allow read, write, create, delete: if isOwner(userId);
     }
     
     // User notifications subcollection
     match /users/{userId}/notifications/{notificationId} {
-      // Allow users to read their own notifications
       allow read: if isOwner(userId);
-      
-      // Allow users to update their notification read status
       allow update: if isOwner(userId);
-      
-      // Allow system to create notifications for users
       allow create: if isAdmin() || isOwner(userId);
-      
-      // Allow users to delete their own notifications
       allow delete: if isOwner(userId) || isAdmin();
     }
     
     // User sessions subcollection
     match /users/{userId}/sessions/{sessionId} {
-      // Allow users to manage their own sessions
       allow read, write, create, delete: if isOwner(userId);
     }
     
     // User wishlist subcollection
     match /users/{userId}/wishlist/{wishlistId} {
-      // Allow users to manage their own wishlist
       allow read, write, create, delete: if isOwner(userId);
     }
     
     // User order_history subcollection
     match /users/{userId}/order_history/{historyId} {
-      // Allow users to read their own order history
       allow read: if isOwner(userId);
-      
-      // Allow users to update their order history
       allow update: if isOwner(userId);
-      
-      // Allow system to create order history for users
       allow create: if isAdmin() || isOwner(userId);
-      
-      // Allow users to delete their own order history
       allow delete: if isOwner(userId) || isAdmin();
     }
 
+    // ============================================================================
+    // DELIVERY PARTNERS COLLECTION
+    // ============================================================================
+    match /delivery_partners/{partnerId} {
+      // Admins can read/write all delivery partners
+      allow read, write, create, delete: if isAdmin();
+      
+      // Delivery partners can read their own profile
+      // Updated to directly check auth UID against the document's userId field
+      allow read: if isAuthenticated() && 
+        request.auth.uid == resource.data.userId;
+      
+      // Delivery partners can update their own profile (status, location, availability)
+      allow update: if isAuthenticated() && 
+        request.auth.uid == resource.data.userId &&
+        // Only allow updating specific fields (prevent changing critical data)
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId', 'partnerId', 'earnings', 'totalDeliveries', 'rating', 'totalRatings']));
+      
+      // Delivery history subcollection
+      match /delivery_history/{historyId} {
+        allow read: if isAuthenticated() && (
+          isAdmin() ||
+          request.auth.uid == resource.data.userId
+        );
+        allow create, write: if isAuthenticated() && (
+          isAdmin() ||
+          request.auth.uid == resource.data.userId
+        );
+        allow delete: if isAdmin();
+      }
+      
+      // KYC docs subcollection
+      match /kyc_docs/{docId} {
+        allow read: if isAuthenticated() && (
+          isAdmin() ||
+          request.auth.uid == resource.data.userId
+        );
+        allow create, write: if isAdmin();
+        allow delete: if isAdmin();
+      }
+      
+      // Notifications subcollection
+      match /notifications/{notificationId} {
+        allow read: if isAuthenticated() && (
+          isAdmin() ||
+          request.auth.uid == resource.data.userId
+        );
+        allow create: if isAdmin();
+        allow update: if isAuthenticated() && 
+          request.auth.uid == resource.data.userId;
+        allow delete: if isAuthenticated() && (
+          isAdmin() ||
+          request.auth.uid == resource.data.userId
+        );
+      }
+      
+      // Payouts subcollection
+      match /payouts/{payoutId} {
+        allow read: if isAuthenticated() && (
+          isAdmin() ||
+          request.auth.uid == resource.data.userId
+        );
+        allow create, write: if isAdmin();
+        allow delete: if isAdmin();
+      }
+    }
+
+    // ============================================================================
     // RESTAURANTS
+    // ============================================================================
     match /restaurants/{restaurantId} {
-      // public read (catalog)
       allow read: if true;
-
-      // owner
       allow update: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
-      // admin
       allow create, update, delete: if isAdmin();
-
-      // owner read own restaurant explicitly
       allow read: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
 
       // MENU ITEMS
@@ -199,7 +268,7 @@ service cloud.firestore {
         );
       }
     }
-
+		
     // MENU ITEMS (collectionGroup for cross-restaurant queries)
     match /{path=**}/menu_items/{menuItemId} {
       allow read: if true;
@@ -210,7 +279,7 @@ service cloud.firestore {
 
     // SERVICES (NEW) - used for service selection in forms
     match /services/{serviceId} {
-      allow read: if true;                    // Populate dropdowns
+      allow read: if true;
       allow create, update, delete: if isAdmin();
     }
     
@@ -218,10 +287,11 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
+
     // CUISINES (top-level)
     match /cuisines/{cuisineId} {
-      allow read: if true;                 // anyone can read for dropdowns
-      allow create, update, delete: if isAdmin();  // only admins manage cuisines
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     // FRESH SERVE
@@ -255,47 +325,150 @@ service cloud.firestore {
       allow write, create, delete: if isAdmin();
     }
 
-    // ORDERS
+    // ============================================================================
+    // ORDERS COLLECTION - FIXED FOR RESTAURANT/WAREHOUSE ACCESS
+    // ============================================================================
     match /orders/{orderId} {
-      allow read, write: if isAuthenticated() && canAccessOrder(resource.data);
-      allow create: if isAuthenticated() && (request.resource.data.customerId == request.auth.uid || isAdmin());
+      // CRITICAL FIX: Check admin FIRST, then other conditions
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.customerId == request.auth.uid ||
+        hasRestaurantOwnerRole() ||
+        hasWarehouseRole() ||
+        (hasDeliveryRole() && resource.data.deliveryPartnerId != null && 
+         exists(/databases/$(database)/documents/delivery_partners/$(resource.data.deliveryPartnerId)) &&
+         get(/databases/$(database)/documents/delivery_partners/$(resource.data.deliveryPartnerId)).data.userId == request.auth.uid)
+      );
+      
+      // Allow write (update) - same conditions as read
+      allow write: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.customerId == request.auth.uid ||
+        hasRestaurantOwnerRole() ||
+        hasWarehouseRole() ||
+        (hasDeliveryRole() && resource.data.deliveryPartnerId != null && 
+         exists(/databases/$(database)/documents/delivery_partners/$(resource.data.deliveryPartnerId)) &&
+         get(/databases/$(database)/documents/delivery_partners/$(resource.data.deliveryPartnerId)).data.userId == request.auth.uid)
+      );
+      
+      // Allow create if user is creating their own order or is admin
+      allow create: if isAuthenticated() && (isAdmin() || request.resource.data.customerId == request.auth.uid);
+      
+      // Allow delete only for admins
       allow delete: if isAdmin();
       
-      // ORDER ITEMS subcollection
+      // ORDER ITEMS subcollection - FIXED
       match /order_items/{itemId} {
+        // CRITICAL FIX: Check admin FIRST
         allow read: if isAuthenticated() && (
+          isAdmin() ||
           get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid || 
-          isAdmin()
+          hasRestaurantOwnerRole() ||
+          hasWarehouseRole() ||
+          (hasDeliveryRole() && get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId != null && 
+           exists(/databases/$(database)/documents/delivery_partners/$(get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId)) &&
+           get(/databases/$(database)/documents/delivery_partners/$(get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId)).data.userId == request.auth.uid)
         );
-        allow create, write, delete: if isAuthenticated() && (
+        
+        // Allow create/write - Check admin FIRST
+        allow create, write: if isAuthenticated() && (
+          isAdmin() ||
           get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid || 
-          isAdmin()
+          hasRestaurantOwnerRole() ||
+          hasWarehouseRole() ||
+          (hasDeliveryRole() && get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId != null && 
+           exists(/databases/$(database)/documents/delivery_partners/$(get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId)) &&
+           get(/databases/$(database)/documents/delivery_partners/$(get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId)).data.userId == request.auth.uid)
+        );
+        
+        // Allow delete if user is customer or admin
+        allow delete: if isAuthenticated() && (
+          isAdmin() ||
+          get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid
         );
       }
       
-      // PAYMENT subcollection
+      // PAYMENT subcollection - Check admin FIRST
       match /payment/{paymentId} {
         allow read: if isAuthenticated() && (
-          get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid || 
-          isAdmin()
+          isAdmin() ||
+          get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid ||
+          (hasDeliveryRole() && get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId != null && 
+           exists(/databases/$(database)/documents/delivery_partners/$(get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId)) &&
+           get(/databases/$(database)/documents/delivery_partners/$(get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId)).data.userId == request.auth.uid)
         );
         allow create, write, delete: if isAuthenticated() && (
-          get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid || 
-          isAdmin()
+          isAdmin() ||
+          get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid
         );
       }
       
-      // STATUS HISTORY subcollection
+      // STATUS HISTORY subcollection - FIXED - Check admin FIRST
       match /status_history/{historyId} {
         allow read: if isAuthenticated() && (
-          get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid || 
-          isAdmin()
+          isAdmin() ||
+          get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid ||
+          hasRestaurantOwnerRole() ||
+          hasWarehouseRole() ||
+          (hasDeliveryRole() && get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId != null && 
+           exists(/databases/$(database)/documents/delivery_partners/$(get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId)) &&
+           get(/databases/$(database)/documents/delivery_partners/$(get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId)).data.userId == request.auth.uid)
         );
-        allow create, write, delete: if isAuthenticated() && (
-          get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid || 
+        allow create, write: if isAuthenticated() && (
+          isAdmin() ||
+          get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid ||
+          hasRestaurantOwnerRole() ||
+          hasWarehouseRole() ||
+          (hasDeliveryRole() && get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId != null && 
+           exists(/databases/$(database)/documents/delivery_partners/$(get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId)) &&
+           get(/databases/$(database)/documents/delivery_partners/$(get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId)).data.userId == request.auth.uid)
+        );
+        allow delete: if isAdmin();
+      }
+    }
+
+    // ============================================================================
+    // WAREHOUSES COLLECTION
+    // ============================================================================
+    match /warehouses/{warehouseId} {
+      allow read: if true;
+      allow update: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+      allow create, update, delete: if isAdmin();
+      allow read: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+
+      // PRODUCTS subcollection
+      match /products/{productId} {
+        allow read: if true;
+        allow create, update, delete: if isAuthenticated() &&
+          get(/databases/$(database)/documents/warehouses/$(warehouseId)).data.ownerId == request.auth.uid;
+        allow create, update, delete: if isAdmin();
+      }
+
+      // INVENTORY subcollection
+      match /inventory/{inventoryId} {
+        allow read, write, create, delete: if isAuthenticated() &&
+          get(/databases/$(database)/documents/warehouses/$(warehouseId)).data.ownerId == request.auth.uid;
+        allow read, write, create, delete: if isAdmin();
+      }
+
+      // REVIEWS subcollection (under warehouse)
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+        allow update, delete: if isAuthenticated() && (
+          resource.data.userId == request.auth.uid ||
+          get(/databases/$(database)/documents/warehouses/$(warehouseId)).data.ownerId == request.auth.uid ||
           isAdmin()
         );
       }
+    }
+
+    // PRODUCTS (collectionGroup for cross-warehouse queries)
+    match /{path=**}/products/{productId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthenticated() &&
+        get(/databases/$(database)/documents/warehouses/$(path[1])).data.ownerId == request.auth.uid;
+      allow create, update, delete: if isAdmin();
     }
 
     // PROMOTIONS
@@ -337,33 +510,65 @@ service cloud.firestore {
     }
     
     match /cities/{cityId} {
-      allow read: if true;                    // Anyone can read cities
-      allow write, create, delete: if isAdmin(); // Only admins can manage cities
+      allow read: if true;
+      allow write, create, delete: if isAdmin();
 
       // DELIVERY ZONES subcollection
       match /deliveryZones/{zoneId} {
-        allow read: if true;                  // Anyone can read zones
-        allow write, create, delete: if isAdmin(); // Only admins can manage zones
+        allow read: if true;
+        allow write, create, delete: if isAdmin();
 
         // PINCODES subcollection under zones
         match /pincodes/{pincodeId} {
-          allow read: if true;                // Anyone can read pincodes
-          allow write, create, delete: if isAdmin(); // Only admins can manage pincodes
+          allow read: if true;
+          allow write, create, delete: if isAdmin();
         }
       }
     }
 
     // COUPONS COLLECTION  
     match /coupons/{couponId} {
-      allow read: if true;                    // Anyone can read coupons
-      allow write, create, delete: if isAdmin(); // Only admins can manage coupons
+      allow read: if true;
+      allow write, create, delete: if isAdmin();
     }
 
     // PROMOTIONS COLLECTION
     match /promotions/{promotionId} {
-      allow read: if true;                    // Anyone can read promotions
-      allow write, create, delete: if isAdmin(); // Only admins can manage promotions
+      allow read: if true;
+      allow write, create, delete: if isAdmin();
     }
+    
+         // DELIVERIES COLLECTION
+    match /deliveries/{deliveryId} {
+      // Admin can do everything
+      allow read, write, create, delete: if isAdmin();
+
+      // Assigned delivery partner can read their own delivery
+      // Updated to check if the delivery partner document's userId matches the authenticated user's UID
+      allow read: if isAuthenticated()
+        && hasDeliveryRole()
+        && exists(/databases/$(database)/documents/delivery_partners/$(resource.data.deliveryPartnerId))
+        && get(/databases/$(database)/documents/delivery_partners/$(resource.data.deliveryPartnerId)).data.userId == request.auth.uid;
+
+      // Assigned delivery partner can update status of their own delivery
+      // Updated to check if the delivery partner document's userId matches the authenticated user's UID
+      allow update: if isAuthenticated()
+        && hasDeliveryRole()
+        && exists(/databases/$(database)/documents/delivery_partners/$(resource.data.deliveryPartnerId))
+        && get(/databases/$(database)/documents/delivery_partners/$(resource.data.deliveryPartnerId)).data.userId == request.auth.uid;
+    }
+
+		match /companies/{companyId} {
+      allow read, write, create, delete: if isAdmin();
+      match /accounts/{accountId} {
+        allow read, write, create, delete: if isAdmin();
+      }
+    }
+
+    match /invoices/{invoiceId} {
+      allow read, write, create, delete: if isAdmin();
+    }
+
 
     // DEFAULT DENY
     match /{document=**} {

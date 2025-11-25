@@ -138,7 +138,8 @@ export const useCategories = () => {
         
         const allCategories: string[] = [];
         for (const restaurant of restaurants) {
-          const menuItems = await HomeService.getMenuItems(restaurant.restaurantId, 50);
+          // Increase limit for menu items to ensure we get all categories
+          const menuItems = await HomeService.getMenuItems(restaurant.restaurantId, 100);
           const restaurantCategories = menuItems.map((item: any) => item.category).filter(Boolean);
           allCategories.push(...restaurantCategories);
         }
@@ -176,7 +177,8 @@ export const useRestaurantDetails = (restaurantId: string) => {
         setRestaurant(restaurantData);
 
         if (restaurantData) {
-          const menuData = await HomeService.getMenuItems(restaurantId, 50);
+          // Fetch all menu items instead of limiting to 50
+          const menuData = await HomeService.getMenuItems(restaurantId, 200); // Increased limit to 200
           console.log('Menu items fetched:', menuData.length);
           setMenuItems(menuData);
 

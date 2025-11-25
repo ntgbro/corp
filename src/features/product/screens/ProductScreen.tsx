@@ -134,7 +134,8 @@ const ProductScreen: React.FC = () => {
   
   return (
     <SafeAreaWrapper style={{ backgroundColor: theme.colors.background }}>
-      {(restaurantId || warehouseId) && entity && (
+      {/* Only show restaurant/warehouse header when we have a specific entity ID and we're not coming from categories screen */}
+      {(restaurantId || warehouseId) && entity && !searchQuery && (
         <View style={styles.restaurantHeader}>
           <View style={styles.restaurantInfo}>
             <View style={styles.logoContainer}>
@@ -178,6 +179,7 @@ const ProductScreen: React.FC = () => {
       <ProductGrid
         products={products}
         onProductPress={handleProductPress}
+        onAddToCart={handleAddToCart}
         onRefresh={handleRefresh}
         refreshing={loading}
         numColumns={2}

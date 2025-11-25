@@ -18,7 +18,7 @@ const getLocalIPAddress = () => {
 
 // Export environment variables with proper typing
 export const PHONEPE_BACKEND_URL = __DEV__ 
-  ? `http://${getLocalIPAddress()}:3001` 
+  ? 'https://percutaneous-bairnish-winfred.ngrok-free.dev'  // Use Ngrok URL for external access
   : 'https://phonepe-backend.corpease.com'; // Production URL
 
 // Log the environment variables

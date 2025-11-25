@@ -2,7 +2,7 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import type { MainStackParamList } from './types';
 import ProductScreen from '../features/product/screens/ProductScreen';
-import ProductsPage from '../features/product/screens/ProductsPage';
+// import ProductsPage from '../features/product/screens/ProductsPage'; // Commented out as we're deprecating this screen
 import ProductDetailsScreen from '../features/product/screens/ProductDetailsScreen';
 import SearchResultsScreen from '../features/product/screens/SearchResultsScreen';
 import UnifiedHeader from '../components/layout/UnifiedHeader';
@@ -93,7 +93,8 @@ export const ProductStackNavigator: React.FC = () => {
           },
         })}
       />
-      <Stack.Screen
+      {/* Commented out ProductsPage screen as we're redirecting to ProductScreen instead */}
+      {/* <Stack.Screen
         name="ProductsPage"
         component={ProductsPage}
         options={({ route, navigation }) => ({
@@ -114,7 +115,7 @@ export const ProductStackNavigator: React.FC = () => {
             );
           },
         })}
-      />
+      /> */}
       <Stack.Screen
         name="ProductDetails"
         component={ProductDetailsScreen}
@@ -159,9 +160,10 @@ export const ProductStackNavigator: React.FC = () => {
           },
         })}
       />
+      {/* ChefProfile now points to ProductScreen instead of ProductsPage */}
       <Stack.Screen
         name="ChefProfile"
-        component={ProductsPage}
+        component={ProductScreen}
         options={{
           headerShown: false,
         }}

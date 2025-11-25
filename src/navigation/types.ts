@@ -16,7 +16,7 @@ export type MainStackParamList = {
   Product: undefined;
   Products: undefined;
   RestaurantItems: { restaurantId?: string; category?: string; service?: 'fresh' | 'fmcg' | 'supplies' };
-  ProductsPage: { category: string; service?: 'fresh' | 'fmcg' | 'supplies' }; // Shows restaurants/warehouses for a category
+  // ProductsPage: { category: string; service?: 'fresh' | 'fmcg' | 'supplies' }; // Deprecated - redirecting to ProductScreen
   SearchResults: { searchQuery: string }; // Make searchQuery required for SearchResults
   ChefProfile: { chefId: string };
   RestaurantDetails: { restaurantId: string };
@@ -52,5 +52,5 @@ export type ProductStackParamList = {
     warehouseId?: string;
   };
   ProductDetails: { menuItemId: string };
-  ProductsPage: { category: string; service?: 'fresh' | 'fmcg' | 'supplies' };
+  // ProductsPage: { category: string; service?: 'fresh' | 'fmcg' | 'supplies' }; // Deprecated - redirecting to ProductScreen
 };

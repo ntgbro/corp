@@ -1,31 +1,33 @@
 import { StyleSheet } from 'react-native';
-import { CARD_DIMENSIONS, SPACING, BORDERS, SHADOWS } from '../../constants/ui';
+import { SPACING, BORDERS, SHADOWS, CARD_DIMENSIONS } from '../../constants/ui';
 
-// Shared product card dimensions for consistency across screens
+// Product Card Dimensions Configuration
 export const PRODUCT_CARD_DIMENSIONS = {
-  // ProductCard standard size (for ProductScreen grid)
-  STANDARD: {
-    width: CARD_DIMENSIONS.product.width,
-    height: CARD_DIMENSIONS.product.height,
-    imageHeight: CARD_DIMENSIONS.product.imageHeight,
-    borderRadius: CARD_DIMENSIONS.product.borderRadius,
-    padding: CARD_DIMENSIONS.product.padding,
+  // Vertical list dimensions (standard grid)
+  VERTICAL: {
+    width: 160,
+    imageWidth: 160,
+    imageHeight: 120, // Decreased from 160 to 120 to make more room for content
+    borderRadius: BORDERS.radius.medium,
+    padding: SPACING.content.small,
   },
-  // Horizontal list dimensions (for ProductsPage)
+  
+  // Horizontal list dimensions (for ProductScreen)
   HORIZONTAL: {
-    width: CARD_DIMENSIONS.product.width,
-    imageWidth: CARD_DIMENSIONS.product.width,
-    imageHeight: CARD_DIMENSIONS.product.imageHeight,
-    borderRadius: CARD_DIMENSIONS.product.borderRadius,
-    padding: CARD_DIMENSIONS.product.padding,
+    width: 140,
+    imageWidth: 140,
+    imageHeight: 100, // Decreased from 140 to 100 to make more room for content
+    borderRadius: BORDERS.radius.medium,
+    padding: SPACING.content.small,
   },
 } as const;
 
-export const ProductCardStyles = StyleSheet.create({
+export default StyleSheet.create({
   // Standard card container with consistent styling
   cardContainer: {
-    width: PRODUCT_CARD_DIMENSIONS.STANDARD.width,
-    borderRadius: PRODUCT_CARD_DIMENSIONS.STANDARD.borderRadius,
+    width: PRODUCT_CARD_DIMENSIONS.VERTICAL.width,
+    height: 200, // Fixed height for consistent card size
+    borderRadius: PRODUCT_CARD_DIMENSIONS.VERTICAL.borderRadius,
     borderWidth: BORDERS.width.medium,
     borderColor: '#e5e7eb',
     backgroundColor: '#ffffff',
@@ -37,7 +39,7 @@ export const ProductCardStyles = StyleSheet.create({
   // Image container with consistent styling
   imageContainer: {
     width: '100%',
-    height: PRODUCT_CARD_DIMENSIONS.STANDARD.imageHeight,
+    height: PRODUCT_CARD_DIMENSIONS.VERTICAL.imageHeight,
     backgroundColor: '#f0f0f0',
     overflow: 'hidden',
   },
@@ -50,10 +52,10 @@ export const ProductCardStyles = StyleSheet.create({
 
   // Info container with consistent padding
   infoContainer: {
-    // Removed fixed height to allow responsive sizing
-    padding: PRODUCT_CARD_DIMENSIONS.STANDARD.padding,
+    padding: PRODUCT_CARD_DIMENSIONS.VERTICAL.padding,
     justifyContent: 'space-between',
-    minHeight: 94, // Updated from 114 to match new dimensions (cardHeight(200) - imageHeight(90) - padding(16))
+    height: 80, // Fixed height for consistent spacing (200 card height - 120 image height - 16 padding * 2)
+    paddingBottom: 35, // Add extra padding at bottom for the button
   },
 
   // Add to cart button
@@ -67,11 +69,10 @@ export const ProductCardStyles = StyleSheet.create({
     marginTop: 0,
     minHeight: 40, // Maintaining minimum height at 40px
     minWidth: 48, // Increased minimum width from 44px to 48px
-    alignSelf: 'flex-end',
   },
 
   addToCartText: {
-    fontSize: 18, // Reduced font size for better fit in circular button
+    fontSize: 14, // Reduced from 20 to 14 to fit better in wider button
     fontWeight: '600',
     color: '#754C29', // Updated to match specification
   },

@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
-import { useTheme } from '../../config/theme';
+import { useThemeContext } from '../../contexts/ThemeContext';
 
 export interface ChipProps {
   children: React.ReactNode;
@@ -21,7 +21,7 @@ export const Chip: React.FC<ChipProps> = ({
   disabled = false,
   style,
 }) => {
-  const theme = useTheme();
+  const { theme } = useThemeContext();
 
   const getSizeStyles = () => {
     const sizes = {

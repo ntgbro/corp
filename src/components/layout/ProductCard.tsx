@@ -7,10 +7,10 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { useTheme } from '../../config/theme';
+import { useThemeContext } from '../../contexts/ThemeContext';
 import { useCart } from '../../contexts/CartContext';
-import { ProductCardStyles, PRODUCT_CARD_DIMENSIONS } from './ProductCardStyles';
-import { SPACING, BORDERS, CARD_DIMENSIONS } from '../../constants/ui';
+import ProductCardStyles, { PRODUCT_CARD_DIMENSIONS } from './ProductCardStyles';
+import { SPACING, BORDERS, CARD_DIMENSIONS, SHADOWS } from '../../constants/ui';
 import FavoriteButton from '../../components/common/FavoriteButton';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleProductFavorite } from '../../store/slices/productsSlice';
@@ -35,7 +35,7 @@ export interface ProductData {
 export interface ProductCardProps {
   product: ProductData;
   onPress?: () => void;
-  onAddToCart?: () => void;
+  onAddToCart?: (product: ProductData) => void;
   size?: 'small' | 'medium' | 'large';
   style?: any;
   showRating?: boolean;
@@ -51,7 +51,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   showCategory = false,
   size = 'medium',
 }) => {
-  const theme = useTheme();
+  const { theme } = useThemeContext();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -81,9 +81,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         } as const;
       default: // medium - standard product card
         return {
-          width: hasCustomWidth ? style?.width : PRODUCT_CARD_DIMENSIONS.STANDARD.width,
-          height: PRODUCT_CARD_DIMENSIONS.STANDARD.height,
-          borderRadius: PRODUCT_CARD_DIMENSIONS.STANDARD.borderRadius,
+          width: hasCustomWidth ? style?.width : PRODUCT_CARD_DIMENSIONS.VERTICAL.width,
+          height: 200, // Fixed height for consistency
+          borderRadius: PRODUCT_CARD_DIMENSIONS.VERTICAL.borderRadius,
         } as const;
     }
   };
@@ -142,6 +142,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const handleAddToCart = async () => {
+    // Use the passed onAddToCart function if provided, otherwise use the local implementation
+    if (onAddToCart) {
+      onAddToCart(product);
+      return;
+    }
+    
     if (isAddingToCart || !product.isAvailable) return;
 
     setIsAddingToCart(true);
@@ -196,6 +202,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       setIsTogglingFavorite(false);
     }
   };
+
+  // Debug log to see what product data is being passed
+  React.useEffect(() => {
+    console.log('ProductCard: received product data', {
+      productId: product.id,
+      productName: product.name,
+      isAvailable: product.isAvailable,
+      hasImage: !!(product.image || product.imageURL),
+      onAddToCart: !!onAddToCart
+    });
+  }, [product, onAddToCart]);
 
   return (
     <Container
@@ -258,7 +275,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {product.name}
         </Text>
 
-        {/* Price and Rating Row with Add to Cart Button - Positioned at the bottom */}
+        {/* Price and Rating Row */}
         <View style={styles.bottomRow}>
           <View style={styles.priceRatingContainer}>
             {/* Price - Blue color */}
@@ -288,24 +305,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </View>
             )}
           </View>
-
-          {/* Add to Cart Button - Custom colors */}
-          <TouchableOpacity
-            style={[
-              ProductCardStyles.addToCartButton,
-              {
-                backgroundColor: '#f1ede9', // Background color as requested
-                opacity: isAddingToCart ? 0.7 : 1,
-              },
-            ]}
-            onPress={handleAddToCart}
-            disabled={isAddingToCart || !product.isAvailable}
-          >
-            <Text style={[ProductCardStyles.addToCartText, { color: '#754C29' }]}>
-              {isAddingToCart ? 'Adding...' : product.isAvailable ? '+' : 'Out'}
-            </Text>
-          </TouchableOpacity>
         </View>
+        
+        {/* Add to Cart Button - Positioned at bottom right of card */}
+        <TouchableOpacity
+          style={[styles.addToCartButtonBottom, { backgroundColor: '#f1ede9' }]}
+          onPress={handleAddToCart}
+          disabled={isAddingToCart || !product.isAvailable}
+        >
+          <Text style={[ProductCardStyles.addToCartText, { color: '#754C29' }]}>
+            {isAddingToCart ? '...' : product.isAvailable ? '+' : 'Out'}
+          </Text>
+        </TouchableOpacity>
       </View>
     </Container>
   );
@@ -352,7 +363,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 16,
     color: '#333',
-    // Removed marginBottom to fit within fixed height container
+    height: 32, // Fixed height for two lines of text (16px line height * 2)
   },
   price: {
     fontSize: 15,
@@ -374,10 +385,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: SPACING.content.small,
+    height: 40, // Fixed height for consistent spacing
   },
   priceRatingContainer: {
     flex: 1,
     marginRight: SPACING.content.small,
+    height: 30, // Fixed height for consistent spacing
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -388,6 +401,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginRight: SPACING.content.small,
     color: '#FFD700',
+  },
+  // Add new style for bottom positioned add to cart button
+  addToCartButtonBottom: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    zIndex: 1,
+    width: 50,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#f1ede9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
 });
 

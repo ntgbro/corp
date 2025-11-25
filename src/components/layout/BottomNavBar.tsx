@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
-import { useTheme } from '../../config/theme';
+import { useThemeContext } from '../../contexts/ThemeContext';
 
 export interface BottomNavBarProps {
   children: React.ReactNode;
@@ -11,7 +11,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   children,
   style,
 }) => {
-  const theme = useTheme();
+  const { theme } = useThemeContext();
 
   return (
     <View

@@ -1,23 +1,23 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
-import { useTheme } from '../../config/theme';
+import { useThemeContext } from '../../contexts/ThemeContext';
 
-export interface TypographyProps {
+interface TypographyProps {
   children: React.ReactNode;
   variant?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'body1' | 'body2' | 'caption' | 'button';
-  color?: 'primary' | 'secondary' | 'text' | 'error' | 'success' | 'warning';
+  color?: 'primary' | 'secondary' | 'text' | 'error' | 'success' | 'warning' | string;
   style?: any;
   fontFamily?: 'regular' | 'medium' | 'semibold' | 'bold' | 'variable' | 'italicVariable';
 }
 
-export const Typography: React.FC<TypographyProps> = ({
+const Typography: React.FC<TypographyProps> = ({
   children,
   variant = 'body1',
   color = 'text',
   style,
   fontFamily = 'regular',
 }) => {
-  const theme = useTheme();
+  const { theme } = useThemeContext();
 
   const getVariantStyles = () => {
     switch (variant) {

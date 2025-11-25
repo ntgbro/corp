@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
-import { useTheme } from '../../config/theme';
+import { useThemeContext } from '../../contexts/ThemeContext';
 
 interface CardProps {
   children: React.ReactNode;
@@ -10,14 +10,14 @@ interface CardProps {
   padding?: 'none' | 'small' | 'medium' | 'large';
 }
 
-export const Card: React.FC<CardProps> = ({
+const Card: React.FC<CardProps> = ({
   children,
   style,
   shadow = true,
   variant = 'default',
   padding = 'medium'
 }) => {
-  const theme = useTheme();
+  const { theme } = useThemeContext();
 
   const getCardStyle = () => {
     const baseStyle: ViewStyle = {

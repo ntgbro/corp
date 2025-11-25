@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
-import { useTheme } from '../../config/theme';
+import { useThemeContext } from '../../contexts/ThemeContext';
 import Typography from '../common/Typography';
 import { SPACING, BORDERS } from '../../constants/ui';
 
@@ -17,7 +17,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
   action,
   style,
 }) => {
-  const theme = useTheme();
+  const { theme } = useThemeContext();
 
   return (
     <View style={[styles.container, style]}>
