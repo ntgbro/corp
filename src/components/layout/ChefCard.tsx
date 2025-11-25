@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
-import { useTheme } from '../../config/theme';
+import { useThemeContext } from '../../contexts/ThemeContext';
 
 export interface ChefData {
   id: string;
@@ -31,7 +31,7 @@ export const ChefCard: React.FC<ChefCardProps> = ({
   showRating = true,
   showDistance = false,
 }) => {
-  const theme = useTheme();
+  const { theme } = useThemeContext();
 
   const getSizeStyles = () => {
     switch (size) {
@@ -206,12 +206,10 @@ export const ChefCard: React.FC<ChefCardProps> = ({
             </View>
           )}
 
-          {showDistance && chef.distance && (
-            <View style={styles.distanceContainer}>
-              <Text style={[styles.distanceText, { color: theme.colors.textSecondary }]}>
-                {chef.distance}km
-              </Text>
-            </View>
+          {showDistance && chef.distance !== undefined && (
+            <Text style={[styles.distance, { color: theme.colors.textSecondary }]}>
+              {chef.distance.toFixed(1)} km
+            </Text>
           )}
         </View>
       </View>
@@ -221,29 +219,27 @@ export const ChefCard: React.FC<ChefCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderWidth: 1,
     borderRadius: 12,
+    borderWidth: 1,
     overflow: 'hidden',
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
   },
   imageContainer: {
-    position: 'relative',
     alignItems: 'center',
-    paddingVertical: 16,
+    padding: 12,
+    position: 'relative',
   },
   image: {
     borderRadius: 35,
+    marginBottom: 8,
   },
   placeholderImage: {
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   placeholderText: {
     fontSize: 24,
@@ -251,11 +247,11 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    top: 16,
+    right: 16,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
     minWidth: 60,
     alignItems: 'center',
   },
@@ -264,16 +260,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   infoContainer: {
-    flex: 1,
     padding: 12,
-    justifyContent: 'space-between',
+    paddingTop: 0,
   },
   name: {
     fontWeight: '600',
     marginBottom: 4,
   },
   specialty: {
-    marginBottom: 2,
+    marginBottom: 4,
   },
   cuisine: {
     fontWeight: '500',
@@ -289,18 +284,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   stars: {
-    fontSize: 14,
+    fontSize: 12,
     marginRight: 4,
   },
   ratingText: {
     fontSize: 12,
   },
-  distanceContainer: {
-    alignItems: 'center',
-  },
-  distanceText: {
+  distance: {
     fontSize: 12,
-    fontWeight: '500',
   },
 });
 

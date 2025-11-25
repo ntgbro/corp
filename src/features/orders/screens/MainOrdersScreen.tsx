@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '../../../config/theme';
+import { useThemeContext } from '../../../contexts/ThemeContext';
 import { OrderList } from '../components/OrderList';
 import { useMainOrders } from '../hooks/useMainOrders';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -12,7 +12,7 @@ type MainOrdersScreenNavigationProp = StackNavigationProp<OrdersStackParamList, 
 
 export const MainOrdersScreen = () => {
   const navigation = useNavigation<MainOrdersScreenNavigationProp>();
-  const theme = useTheme();
+  const { theme } = useThemeContext();
   const { orders, loading, error, refreshOrders } = useMainOrders();
   const [filter, setFilter] = useState<string>('present');
 
@@ -64,7 +64,9 @@ export const MainOrdersScreen = () => {
             <Text style={{ fontSize: 24, color: theme.colors.text }}>←</Text>
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.colors.text }]}>My Orders</Text>
-          <View style={{ width: 24 }} />
+          <TouchableOpacity onPress={refreshOrders}>
+            <Text style={{ fontSize: 24, color: theme.colors.text }}>↻</Text>
+          </TouchableOpacity>
         </View>
         
         <View style={styles.content}>
@@ -88,13 +90,15 @@ export const MainOrdersScreen = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* Header with back button */}
+      {/* Header with back button and reload button */}
       <View style={[styles.header, { backgroundColor: '#F5DEB3', borderBottomColor: theme.colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={{ fontSize: 24, color: theme.colors.text }}>←</Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>My Orders</Text>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity onPress={refreshOrders}>
+          <Text style={{ fontSize: 24, color: theme.colors.text }}>↻</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Replaced ScrollView with View to fix nested VirtualizedLists warning */}
@@ -194,13 +198,14 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 3,
   },
   filterButton: {
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginVertical: 4,
   },
   filterContent: {
     flexDirection: 'row',
@@ -217,7 +222,6 @@ const styles = StyleSheet.create({
   },
   orderCountContainer: {
     marginBottom: 16,
-    marginHorizontal: 16,
   },
   orderCountText: {
     fontSize: 16,
@@ -227,34 +231,32 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingVertical: 32,
   },
   loadingText: {
-    marginTop: 10,
+    marginTop: 8,
     fontSize: 16,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 32,
     borderRadius: 12,
-    margin: 16,
+    marginVertical: 16,
   },
   errorText: {
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   retryButton: {
-    paddingHorizontal: 24,
     paddingVertical: 12,
+    paddingHorizontal: 24,
     borderRadius: 8,
   },
   retryText: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });
-
-export default MainOrdersScreen;

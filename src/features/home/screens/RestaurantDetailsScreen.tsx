@@ -40,12 +40,13 @@ const RestaurantDetailsScreen: React.FC = () => {
   };
 
   const handleSeeAllPress = (category: string) => {
-    // Navigate to products page with the specific category and restaurant through Product stack
+    // Navigate to products page with the specific category only (without restaurantId)
+    // to show all items for this category across all restaurants
     (navigation as any).navigate('Product', {
       screen: 'Products',
       params: {
         category,
-        restaurantId: restaurantId
+        // Removed restaurantId to avoid showing specific restaurant information
       }
     });
   };

@@ -1,21 +1,21 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { useTheme } from '../../config/theme';
+import { View, Text, StyleSheet } from 'react-native';
+import { useThemeContext } from '../../contexts/ThemeContext';
 
-export interface BadgeProps {
+interface BadgeProps {
   children: React.ReactNode;
   variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'error';
   size?: 'small' | 'medium' | 'large';
-  style?: ViewStyle;
+  style?: any;
 }
 
-export const Badge: React.FC<BadgeProps> = ({
+const Badge: React.FC<BadgeProps> = ({
   children,
   variant = 'primary',
   size = 'medium',
   style,
 }) => {
-  const theme = useTheme();
+  const { theme } = useThemeContext();
 
   const getVariantStyles = () => {
     const variants = {

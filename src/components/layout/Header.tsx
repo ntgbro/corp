@@ -7,7 +7,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { useTheme } from '../../config/theme';
+import { useThemeContext } from '../../contexts/ThemeContext';
 
 interface HeaderProps {
   title?: string;
@@ -34,7 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
   onBackPress,
   variant = 'default',
 }) => {
-  const theme = useTheme();
+  const { theme } = useThemeContext();
 
   const getHeaderStyle = () => {
     const baseStyle: ViewStyle = {

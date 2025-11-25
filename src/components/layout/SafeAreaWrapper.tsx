@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useThemeContext } from '../../contexts/ThemeContext';
 
 interface SafeAreaWrapperProps {
   children: React.ReactNode;
@@ -13,6 +14,7 @@ export const SafeAreaWrapper: React.FC<SafeAreaWrapperProps> = ({
   style,
   edges = ['top', 'bottom', 'left', 'right'],
 }) => {
+  const { theme } = useThemeContext();
   const insets = useSafeAreaInsets();
 
   const safeAreaStyle = {
@@ -23,7 +25,7 @@ export const SafeAreaWrapper: React.FC<SafeAreaWrapperProps> = ({
   };
 
   return (
-    <View style={[{ flex: 1, backgroundColor: '#ffffff' }, safeAreaStyle, style]}>
+    <View style={[{ flex: 1, backgroundColor: theme.colors.background }, safeAreaStyle, style]}>
       {children}
     </View>
   );

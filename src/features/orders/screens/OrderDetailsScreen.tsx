@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../../../config/theme';
+import { useThemeContext } from '../../../contexts/ThemeContext';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { useOrderDetails } from '../hooks/useOrderDetails';
 import { OrderItem, PaymentDetails, StatusHistory } from '../hooks/useOrderDetails';
@@ -12,7 +12,7 @@ type OrderDetailsRouteProp = RouteProp<{
 }, 'OrderDetails'>;
 
 export const OrderDetailsScreen = () => {
-  const theme = useTheme();
+  const { theme } = useThemeContext();
   const route = useRoute<OrderDetailsRouteProp>();
   const navigation = useNavigation();
   const { orderId } = route.params || {};
@@ -177,7 +177,6 @@ export const OrderDetailsScreen = () => {
           
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={[styles.totalLabel, { color: theme.colors.text }]}>
-
               Total
             </Text>
             <Text style={[styles.totalValue, { color: theme.colors.text }]}>
@@ -202,131 +201,112 @@ export const OrderDetailsScreen = () => {
                   {formatPrice(item.totalPrice)}
                 </Text>
               </View>
-              
-              <View style={styles.itemDetails}>
-                <Text style={[styles.itemQuantity, { color: theme.colors.textSecondary }]}>
-                  Qty: {item.quantity} × {formatPrice(item.unitPrice)}
-                </Text>
-                
-                {item.customizations && item.customizations.length > 0 && (
-                  <View style={styles.customizations}>
-                    {item.customizations.map((custom: { name: string; price: number }, index: number) => (
-                      <View key={index} style={styles.customizationRow}>
-                        <Text style={[styles.customizationName, { color: theme.colors.textSecondary }]}>
-                          + {custom.name}
-                        </Text>
-                        <Text style={[styles.customizationPrice, { color: theme.colors.textSecondary }]}>
-                          {formatPrice(custom.price)}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
+              <Text style={[styles.itemQuantity, { color: theme.colors.textSecondary }]}>
+                Qty: {item.quantity}
+              </Text>
+              {item.customizations && item.customizations.length > 0 && (
+                <View style={styles.customizationsContainer}>
+                  <Text style={[styles.customizationsTitle, { color: theme.colors.textSecondary }]}>
+                    Customizations:
+                  </Text>
+                  {item.customizations.map((customization, index: number) => (
+                    <Text key={index} style={[styles.customizationItem, { color: theme.colors.textSecondary }]}>
+                      • {customization.name} (+{formatPrice(customization.price)})
+                    </Text>
+                  ))}
+                </View>
+              )}
             </View>
           ))}
         </View>
 
-        {/* Payment */}
-        {orderDetails.payment.length > 0 && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Payment
+        {/* Delivery Information */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+            Delivery Information
+          </Text>
+          
+          <View style={styles.infoRow}>
+            <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>
+              Delivery Address:
             </Text>
-            
-            <View style={styles.paymentRow}>
-              <Text style={[styles.paymentLabel, { color: theme.colors.textSecondary }]}>
-                Method
-              </Text>
-              <Text style={[styles.paymentValue, { color: theme.colors.text }]}>
-                {orderDetails.payment[0].method}
-              </Text>
-            </View>
-            
-            <View style={styles.paymentRow}>
-              <Text style={[styles.paymentLabel, { color: theme.colors.textSecondary }]}>
-                Status
-              </Text>
-              <Text style={[styles.paymentValue, { color: theme.colors.text }]}>
-                {orderDetails.payment[0].status}
-              </Text>
-            </View>
-            
-            <View style={styles.paymentRow}>
-              <Text style={[styles.paymentLabel, { color: theme.colors.textSecondary }]}>
-                Date
-              </Text>
-              <Text style={[styles.paymentValue, { color: theme.colors.text }]}>
-                {formatDate(orderDetails.payment[0].timestamp)}
-              </Text>
-            </View>
+            <Text style={[styles.infoValue, { color: theme.colors.text }]}>
+              {typeof orderDetails.deliveryAddress === 'string' 
+                ? orderDetails.deliveryAddress 
+                : JSON.stringify(orderDetails.deliveryAddress)}
+            </Text>
           </View>
-        )}
+          
+          <View style={styles.infoRow}>
+            <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>
+              Estimated Delivery:
+            </Text>
+            <Text style={[styles.infoValue, { color: theme.colors.text }]}>
+              {orderDetails.estimatedDeliveryTime}
+            </Text>
+          </View>
+        </View>
 
-        {/* Delivery */}
-        {orderDetails.deliveryAddress && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Delivery Address
+        {/* Payment Information */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+            Payment Information
+          </Text>
+          
+          <View style={styles.infoRow}>
+            <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>
+              Payment Method:
             </Text>
-            
-            <Text style={[styles.addressText, { color: theme.colors.text }]}>
-              {orderDetails.deliveryAddress.addressLine1}
+            <Text style={[styles.infoValue, { color: theme.colors.text }]}>
+              {orderDetails.paymentMethod}
             </Text>
-            {orderDetails.deliveryAddress.addressLine2 ? (
-              <Text style={[styles.addressText, { color: theme.colors.text }]}>
-                {orderDetails.deliveryAddress.addressLine2}
+          </View>
+          
+          <View style={styles.infoRow}>
+            <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>
+              Payment Status:
+            </Text>
+            <Text style={[styles.infoValue, { color: theme.colors.text }]}>
+              {orderDetails.paymentStatus}
+            </Text>
+          </View>
+          
+          {orderDetails.payment.length > 0 && orderDetails.payment[0].transactionId && (
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>
+                Transaction ID:
               </Text>
-            ) : null}
-            <Text style={[styles.addressText, { color: theme.colors.text }]}>
-              {orderDetails.deliveryAddress.city}, {orderDetails.deliveryAddress.state} - {orderDetails.deliveryAddress.pincode}
-            </Text>
-            <Text style={[styles.addressText, { color: theme.colors.text }]}>
-              Phone: {orderDetails.deliveryAddress.contactPhone}
-            </Text>
-          </View>
-        )}
-
-        {/* Special Instructions */}
-        {orderDetails.instructions && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Special Instructions
-            </Text>
-            <Text style={[styles.instructionsText, { color: theme.colors.textSecondary }]}>
-              {orderDetails.instructions}
-            </Text>
-          </View>
-        )}
+              <Text style={[styles.infoValue, { color: theme.colors.text }]}>
+                {orderDetails.payment[0].transactionId}
+              </Text>
+            </View>
+          )}
+        </View>
 
         {/* Status History */}
-        {orderDetails.statusHistory.length > 0 && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Status History
-            </Text>
-            
-            {orderDetails.statusHistory.map((status: StatusHistory, index: number) => (
-              <View key={status.id} style={styles.statusHistoryItem}>
-                <View style={styles.statusHistoryHeader}>
-                  <View style={styles.statusHistoryInfo}>
-                    <Text style={[styles.statusHistoryStatus, { color: theme.colors.text }]}>
-                      {status.status.charAt(0).toUpperCase() + status.status.slice(1).replace(/_/g, ' ')}
-                    </Text>
-                  </View>
-                  <Text style={[styles.statusHistoryDate, { color: theme.colors.textSecondary }]}>
-                    {formatDate(status.timestamp)}
-                  </Text>
-                </View>
-                {status.notes && (
-                  <Text style={[styles.statusHistoryNotes, { color: theme.colors.textSecondary }]}>
-                    {status.notes}
-                  </Text>
-                )}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+            Status History
+          </Text>
+          
+          {orderDetails.statusHistory && orderDetails.statusHistory.map((history: StatusHistory, index: number) => (
+            <View key={index} style={styles.historyItem}>
+              <View style={styles.historyHeader}>
+                <Text style={[styles.historyStatus, { color: getStatusColor(history.status) }]}>
+                  {history.status.charAt(0).toUpperCase() + history.status.slice(1).replace(/_/g, ' ')}
+                </Text>
+                <Text style={[styles.historyDate, { color: theme.colors.textSecondary }]}>
+                  {formatDate(history.timestamp)}
+                </Text>
               </View>
-            ))}
-          </View>
-        )}
+              {history.notes && (
+                <Text style={[styles.historyNote, { color: theme.colors.textSecondary }]}>
+                  {history.notes}
+                </Text>
+              )}
+            </View>
+          ))}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -338,33 +318,24 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
+    padding: 16,
   },
   section: {
-    margin: 8,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#754C29',
-    backgroundColor: '#FBF5EB',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    marginBottom: 24,
   },
   orderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
   },
   orderInfo: {
     flex: 1,
   },
   orderId: {
     fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   statusContainer: {
     flexDirection: 'row',
@@ -372,145 +343,135 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 4,
+    fontWeight: '600',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   orderDate: {
     fontSize: 14,
+    textAlign: 'right',
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  summaryLabel: {
+    fontSize: 16,
+  },
+  summaryValue: {
+    fontSize: 16,
+    fontWeight: '500',
   },
   totalRow: {
     borderTopWidth: 1,
-    borderTopColor: '#eee',
-    paddingTop: 8,
+    borderTopColor: '#e0e0e0',
     marginTop: 8,
-  },
-  summaryLabel: {
-    fontSize: 14,
-  },
-  summaryValue: {
-    fontSize: 14,
+    paddingTop: 12,
   },
   totalLabel: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
   totalValue: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
   itemContainer: {
-    marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    marginBottom: 8,
   },
   itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 4,
   },
   itemName: {
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '600',
   },
   itemPrice: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  itemDetails: {
-    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: '600',
   },
   itemQuantity: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 4,
   },
-  customizations: {
+  customizationsContainer: {
     marginTop: 4,
   },
-  customizationRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  customizationName: {
-    fontSize: 13,
-  },
-  customizationPrice: {
-    fontSize: 13,
-  },
-  paymentRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  paymentLabel: {
+  customizationsTitle: {
     fontSize: 14,
-  },
-  paymentValue: {
-    fontSize: 14,
-  },
-  addressText: {
-    fontSize: 14,
+    fontWeight: '600',
     marginBottom: 2,
   },
-  instructionsText: {
-    fontSize: 14,
-    fontStyle: 'italic',
+  customizationItem: {
+    fontSize: 13,
+    marginLeft: 8,
   },
-  statusHistoryItem: {
-    marginBottom: 12,
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+  },
+  infoLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    flex: 1,
+  },
+  infoValue: {
+    fontSize: 16,
+    flex: 1,
+    textAlign: 'right',
+  },
+  historyItem: {
     padding: 12,
-    backgroundColor: '#FBF5EB',
+    backgroundColor: '#f8f9fa',
     borderRadius: 8,
+    marginBottom: 8,
   },
-  statusHistoryHeader: {
+  historyHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
   },
-  statusHistoryInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  historyStatus: {
+    fontSize: 16,
+    fontWeight: '600',
   },
-  statusHistoryStatus: {
+  historyDate: {
     fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 4,
   },
-  statusHistoryDate: {
-    fontSize: 12,
-  },
-  statusHistoryNotes: {
-    fontSize: 13,
+  historyNote: {
+    fontSize: 14,
     fontStyle: 'italic',
-    marginTop: 4,
+  },
+  errorText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
   },
   retryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    padding: 16,
     borderRadius: 8,
-    marginTop: 20,
-    alignSelf: 'center',
+    alignItems: 'center',
   },
   retryText: {
     fontSize: 16,
-    fontWeight: '500',
-  },
-  errorText: {
-    textAlign: 'center',
-    fontSize: 16,
-    padding: 20,
+    fontWeight: '600',
   },
 });
-
-export default OrderDetailsScreen;

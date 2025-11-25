@@ -1,6 +1,6 @@
 import React from 'react';
 import { FlatList, Text, View, StyleSheet, ViewStyle, RefreshControl, ListRenderItem, Dimensions } from 'react-native';
-import { useTheme } from '../../config/theme';
+import { useThemeContext } from '../../contexts/ThemeContext';
 import { ProductCard, ProductData } from './ProductCard';
 import { SectionHeader } from './SectionHeader';
 import { SPACING, CARD_DIMENSIONS } from '../../constants/ui';
@@ -8,22 +8,24 @@ import { SPACING, CARD_DIMENSIONS } from '../../constants/ui';
 export interface ProductGridProps {
   products: ProductData[];
   onProductPress?: (product: ProductData) => void;
+  onAddToCart?: (product: ProductData) => void;
   style?: ViewStyle;
-  numColumns?: 2 | 3 | 4;
+  numColumns?: number;
+  cardSize?: 'small' | 'medium' | 'large';
   showRating?: boolean;
   showCategory?: boolean;
-  cardSize?: 'small' | 'medium' | 'large';
   loading?: boolean;
-  emptyMessage?: string;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
   onRefresh?: () => void;
   refreshing?: boolean;
-  onLoadMore?: () => void;
-  hasMore?: boolean;
+  emptyMessage?: string;
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({
   products,
   onProductPress,
+  onAddToCart,
   style,
   numColumns = 2,
   showRating = true,
@@ -36,7 +38,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   onLoadMore,
   hasMore = false,
 }) => {
-  const theme = useTheme();
+  const { theme } = useThemeContext();
   const screenWidth = Dimensions.get('window').width;
   const horizontalPadding = SPACING.screen;
   const availableWidth = screenWidth - (horizontalPadding * 2);
@@ -47,6 +49,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
       <ProductCard
         product={item}
         onPress={() => onProductPress?.(item)}
+        onAddToCart={(product) => onAddToCart?.(product)}
         showRating={showRating}
         showCategory={showCategory}
         size={cardSize}
@@ -89,7 +92,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <FlatList
         data={products}
         keyExtractor={(item) => item.id}

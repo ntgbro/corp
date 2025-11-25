@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, ScrollView } from 'react-native';
-import { useTheme } from '../../../config/theme';
+import { useThemeContext } from '../../../contexts/ThemeContext';
 
 interface OrderItem {
   id: string;
@@ -10,6 +10,9 @@ interface OrderItem {
   amount: number;
   restaurantName?: string;
   deliveryAddress?: string;
+  otp?: string;
+  deliveryPartnerName?: string; // Add delivery partner name
+  deliveryPartnerPhone?: string; // Add delivery partner phone
 }
 
 interface OrderListProps {
@@ -28,7 +31,7 @@ const ORDER_STATUS_FLOW = [
 ];
 
 export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) => {
-  const theme = useTheme();
+  const { theme } = useThemeContext();
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
   const [showPopup, setShowPopup] = useState(false);
 
@@ -80,13 +83,14 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) =>
       <View style={styles.orderHeader}>
         <View style={styles.orderInfo}>
           <Text style={[styles.orderId, { color: theme.colors.text }]}>{item.orderId}</Text>
+          <Text style={[styles.orderAmount, { color: theme.colors.text }]}>{formatPrice(item.amount)}</Text>
           <View style={styles.statusContainer}>
             <Text style={[styles.orderStatus, { color: getStatusColor(item.status) }]}>
               {getStatusText(item.status)}
             </Text>
           </View>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.detailsButton}
           onPress={() => onOrderPress(item.id)}
         >
@@ -95,42 +99,25 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) =>
           </Text>
         </TouchableOpacity>
       </View>
-      
-      {item.restaurantName && (
-        <Text style={[styles.restaurantName, { color: theme.colors.textSecondary }]} numberOfLines={1}>
-          {item.restaurantName}
-        </Text>
-      )}
-      
-      <View style={styles.orderDetails}>
-        <Text style={[styles.orderDate, { color: theme.colors.textSecondary }]}>{item.date}</Text>
-        <Text style={[styles.orderAmount, { color: theme.colors.text }]}>{formatPrice(item.amount)}</Text>
-      </View>
-      
-      {item.deliveryAddress && (
-        <Text style={[styles.deliveryAddress, { color: theme.colors.textSecondary }]} numberOfLines={1}>
-          {item.deliveryAddress}
-        </Text>
-      )}
     </TouchableOpacity>
   );
 
-  const renderOrderStatusTimeline = (currentStatus: string) => {
+  const renderOrderStatusTimeline = (currentStatus: string, otp?: string, deliveryPartnerName?: string, deliveryPartnerPhone?: string) => {
     const currentIndex = ORDER_STATUS_FLOW.indexOf(currentStatus.toLowerCase());
-    
+
     return (
       <View style={styles.timelineContainer}>
         {ORDER_STATUS_FLOW.map((status, index) => {
           const isCompleted = index <= currentIndex;
           const isActive = index === currentIndex;
           const isLast = index === ORDER_STATUS_FLOW.length - 1;
-          
+
           return (
             <View key={status} style={styles.timelineItem}>
               <View style={styles.timelineLeft}>
                 {/* Status indicator circle */}
                 <View style={[
-                  styles.timelineDot, 
+                  styles.timelineDot,
                   {
                     backgroundColor: isCompleted ? theme.colors.primary : '#f5f5f5',
                     borderWidth: 2,
@@ -141,22 +128,22 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) =>
                     <View style={styles.timelineDotInner} />
                   )}
                 </View>
-                
+
                 {/* Vertical connecting line */}
                 {!isLast && (
                   <View style={[
-                    styles.timelineLine, 
+                    styles.timelineLine,
                     {
                       backgroundColor: isCompleted && currentIndex > index ? theme.colors.primary : '#d0d0d0',
                     }
                   ]} />
                 )}
               </View>
-              
+
               {/* Status text */}
               <View style={styles.timelineRight}>
                 <Text style={[
-                  styles.statusLabel, 
+                  styles.statusLabel,
                   {
                     color: isCompleted ? theme.colors.text : '#999',
                     fontWeight: isActive ? '700' : isCompleted ? '600' : '400',
@@ -164,6 +151,19 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) =>
                 ]}>
                   {getStatusText(status)}
                 </Text>
+                {isActive && status === 'out_for_delivery' && otp && (
+                  <View style={[styles.otpBadge, { backgroundColor: theme.colors.primary }]}>
+                    <Text style={styles.otpBadgeText}>OTP: {otp}</Text>
+                  </View>
+                )}
+                {isActive && status === 'out_for_delivery' && deliveryPartnerName && (
+                  <View style={styles.deliveryPartnerInfo}>
+                    <Text style={styles.deliveryPartnerText}>Delivery Partner: {deliveryPartnerName}</Text>
+                    {deliveryPartnerPhone && (
+                      <Text style={styles.deliveryPartnerText}>Phone: {deliveryPartnerPhone}</Text>
+                    )}
+                  </View>
+                )}
                 {isActive && (
                   <View style={[styles.activeBadge, { backgroundColor: theme.colors.primary }]}>
                     <Text style={styles.activeBadgeText}>Active</Text>
@@ -192,7 +192,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) =>
           </View>
         }
       />
-      
+
       {/* Order Popup */}
       <Modal
         animationType="slide"
@@ -200,74 +200,54 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) =>
         visible={showPopup}
         onRequestClose={() => setShowPopup(false)}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowPopup(false)}
-        >
-          <TouchableOpacity 
-            style={[styles.modalContent, { backgroundColor: '#FFFFFF' }]}
-            activeOpacity={1}
-            onPress={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: '#000' }]}>
-                Order Progress
-              </Text>
-              <TouchableOpacity 
-                onPress={() => setShowPopup(false)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Text style={styles.closeButton}>×</Text>
-              </TouchableOpacity>
-            </View>
-            
-            {selectedOrder && (
-              <ScrollView 
-                style={styles.modalBody}
-                showsVerticalScrollIndicator={false}
-                bounces={false}
-              >
-                {/* Order Info */}
-                <View style={styles.orderInfoCard}>
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Order ID:</Text>
-                    <Text style={styles.infoValue}>{selectedOrder.orderId}</Text>
-                  </View>
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Amount:</Text>
-                    <Text style={[styles.infoValue, { fontWeight: '700' }]}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+            <ScrollView>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+                  Order Status
+                </Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setShowPopup(false)}
+                >
+                  <Text style={[styles.closeButtonText, { color: theme.colors.text }]}>
+                    ✕
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {selectedOrder && (
+                <>
+                  <View style={styles.orderSummary}>
+                    <Text style={[styles.orderIdLarge, { color: theme.colors.text }]}>
+                      {selectedOrder.orderId}
+                    </Text>
+                    <Text style={[styles.orderAmountLarge, { color: theme.colors.text }]}>
                       {formatPrice(selectedOrder.amount)}
                     </Text>
                   </View>
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Status:</Text>
-                    <Text style={[styles.infoValue, { color: getStatusColor(selectedOrder.status), fontWeight: '600' }]}>
-                      {getStatusText(selectedOrder.status)}
-                    </Text>
+
+                  {renderOrderStatusTimeline(
+                    selectedOrder.status,
+                    selectedOrder.otp,
+                    selectedOrder.deliveryPartnerName,
+                    selectedOrder.deliveryPartnerPhone
+                  )}
+
+                  <View style={styles.buttonContainer}>
+                    <TouchableOpacity
+                      style={[styles.viewDetailsButton, { backgroundColor: theme.colors.primary }]}
+                      onPress={handleViewDetails}
+                    >
+                      <Text style={styles.viewDetailsButtonText}>View Details</Text>
+                    </TouchableOpacity>
                   </View>
-                </View>
-                
-                {/* Status Timeline */}
-                <View style={styles.timelineSection}>
-                  <Text style={styles.sectionTitle}>Order Tracking</Text>
-                  {renderOrderStatusTimeline(selectedOrder.status)}
-                </View>
-                
-                {/* Action Button */}
-                <TouchableOpacity
-                  style={[styles.viewDetailsButton, { backgroundColor: theme.colors.primary }]}
-                  onPress={handleViewDetails}
-                >
-                  <Text style={styles.viewDetailsButtonText}>
-                    View Full Details
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
-            )}
-          </TouchableOpacity>
-        </TouchableOpacity>
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -278,21 +258,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   orderItem: {
-    borderWidth: 1,
-    borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
+    marginVertical: 8,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 4,
   },
   orderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
   },
   orderInfo: {
     flex: 1,
@@ -302,72 +282,41 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 4,
   },
+  orderAmount: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   orderStatus: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '500',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   detailsButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#754C29',
+    padding: 8,
   },
   detailsButtonText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  restaurantName: {
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  orderDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  orderDate: {
     fontSize: 14,
-  },
-  orderAmount: {
-    fontSize: 16,
     fontWeight: '600',
   },
-  deliveryAddress: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-  },
-  // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    paddingBottom: 30,
+    width: '90%',
     maxHeight: '80%',
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    borderRadius: 20,
+    padding: 20,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -376,58 +325,42 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
   },
   closeButton: {
-    fontSize: 32,
-    fontWeight: '300',
-    color: '#666',
+    padding: 8,
   },
-  modalBody: {
-    flexGrow: 1,
-  },
-  orderInfoCard: {
-    backgroundColor: '#f8f8f8',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  infoValue: {
-    fontSize: 14,
-    color: '#000',
+  closeButtonText: {
+    fontSize: 18,
     fontWeight: '600',
   },
-  timelineSection: {
+  orderSummary: {
+    alignItems: 'center',
     marginBottom: 20,
+    padding: 16,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    borderRadius: 12,
   },
-  sectionTitle: {
-    fontSize: 16,
+  orderIdLarge: {
+    fontSize: 18,
     fontWeight: '700',
-    color: '#000',
-    marginBottom: 16,
+    marginBottom: 8,
+  },
+  orderAmountLarge: {
+    fontSize: 24,
+    fontWeight: '800',
   },
   timelineContainer: {
-    paddingLeft: 8,
+    marginBottom: 20,
   },
   timelineItem: {
     flexDirection: 'row',
-    marginBottom: 0,
+    marginBottom: 16,
   },
   timelineLeft: {
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 12,
   },
   timelineDot: {
     width: 20,
@@ -440,42 +373,75 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: 'white',
+    backgroundColor: '#fff',
   },
   timelineLine: {
     width: 2,
     flex: 1,
-    minHeight: 32,
+    marginTop: 4,
   },
   timelineRight: {
     flex: 1,
-    paddingTop: 2,
-    paddingBottom: 14,
   },
   statusLabel: {
-    fontSize: 15,
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  otpBadge: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  otpBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  deliveryPartnerInfo: {
+    marginTop: 8,
+  },
+  deliveryPartnerText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 2,
   },
   activeBadge: {
     alignSelf: 'flex-start',
+    paddingVertical: 4,
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    borderRadius: 8,
     marginTop: 4,
   },
   activeBadgeText: {
-    color: 'white',
-    fontSize: 11,
+    color: '#fff',
+    fontSize: 12,
     fontWeight: '600',
   },
+  buttonContainer: {
+    marginTop: 20,
+    marginBottom: 10,
+  },
   viewDetailsButton: {
-    paddingVertical: 16,
+    padding: 16,
     borderRadius: 12,
     alignItems: 'center',
   },
   viewDetailsButtonText: {
-    color: 'white',
+    color: '#fff',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyText: {
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
 

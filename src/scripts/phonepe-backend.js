@@ -47,7 +47,10 @@ const MERCHANT_ID = 'PGTESTPAYUAT86';
 const PHONEPE_SALT = '96434309-7796-489d-8924-ab56988a6076';
 const PHONEPE_SALT_INDEX = '1';
 const PHONEPE_API_URL = 'https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay';
-const PHONEPE_BACKEND_URL = process.env.PHONEPE_BACKEND_URL || `http://192.168.0.4:${PORT}`;
+// CHANGE THIS LINE:
+// Old: const PHONEPE_BACKEND_URL = process.env.PHONEPE_BACKEND_URL || `http://192.168.0.4:${PORT}`;
+// New: Paste your Ngrok URL here (no trailing slash)
+const PHONEPE_BACKEND_URL = process.env.PHONEPE_BACKEND_URL || 'https://percutaneous-bairnish-winfred.ngrok-free.dev'; 
 
 console.log('=== PhonePe Service Starting (Sanitized) ===');
 console.log('MERCHANT_ID:', MERCHANT_ID);

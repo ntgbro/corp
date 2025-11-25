@@ -26,21 +26,13 @@ const CategoriesScreen: React.FC = () => {
   const handleCategoryPress = (category: { id: string; name: string }, service: 'fresh' | 'fmcg') => {
     console.log('[NAVIGATION] Category pressed:', { category, service });
     
-    // For FMCG categories, navigate directly to ProductScreen (Products route)
-    // For Fresh categories, navigate to ProductsPage as before
-    if (service === 'fmcg') {
-      console.log('[NAVIGATION] Navigating to Product/Products for FMCG category');
-      (navigation as any).navigate('Product', {
-        screen: 'Products',
-        params: { category: category.id, service }
-      });
-    } else {
-      console.log('[NAVIGATION] Navigating to Product/ProductsPage for Fresh category');
-      (navigation as any).navigate('Product', {
-        screen: 'ProductsPage',
-        params: { category: category.id, service }
-      });
-    }
+    // For both FMCG and Fresh categories, navigate directly to ProductScreen (Products route)
+    // without passing restaurantId or warehouseId to avoid showing specific entity names
+    console.log('[NAVIGATION] Navigating to Product/Products for category');
+    (navigation as any).navigate('Product', {
+      screen: 'Products',
+      params: { category: category.id, service }
+    });
   };
 
   // Function to get service title

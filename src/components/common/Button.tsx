@@ -1,18 +1,11 @@
 import React from 'react';
-import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  ViewStyle,
-  TextStyle,
-} from 'react-native';
-import { useTheme } from '../../config/theme';
+import { TouchableOpacity, Text, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
+import { useThemeContext } from '../../contexts/ThemeContext';
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'success' | 'error' | 'warning';
+  variant?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'outline';
   size?: 'small' | 'medium' | 'large';
   loading?: boolean;
   disabled?: boolean;
@@ -21,7 +14,7 @@ interface ButtonProps {
   fullWidth?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({
+const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
   variant = 'primary',
@@ -32,7 +25,7 @@ export const Button: React.FC<ButtonProps> = ({
   textStyle,
   fullWidth = false,
 }) => {
-  const theme = useTheme();
+  const { theme } = useThemeContext();
 
   const getButtonStyle = () => {
     const baseStyle: ViewStyle = {

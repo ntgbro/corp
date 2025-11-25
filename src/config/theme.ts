@@ -114,15 +114,11 @@ const lightTheme: Theme = {
   },
 };
 
+// Use the same colors for dark theme as light theme
 const darkTheme: Theme = {
   ...lightTheme,
   colors: {
     ...lightTheme.colors,
-    background: '#000000',
-    surface: '#1C1C1E',
-    text: '#FFFFFF',
-    textSecondary: '#8E8E93',
-    border: '#38383A',
   },
 };
 
