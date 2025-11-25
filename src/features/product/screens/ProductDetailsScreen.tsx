@@ -117,14 +117,14 @@ const ProductDetailsScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.container}>
         <Image source={{ uri: product.mainImageURL || product.imageURL }} style={styles.image} />
         <View style={styles.details}>
-          <Typography variant="h2" color="text" style={{ textAlign: 'center', marginBottom: 10 }}>
+          <Typography variant="h2" color="text" style={{ textAlign: 'center', marginBottom: 5 }}> {/* Reduced from 10 to 5 for less padding */}
             {product.name}
           </Typography>
-          <Typography variant="body1" color="secondary" style={{ textAlign: 'center', marginBottom: 10 }}>
+          <Typography variant="body1" color="secondary" style={{ textAlign: 'center', marginBottom: 5 }}> {/* Reduced from 10 to 5 for less padding */}
             {product.description}
           </Typography>
           <View style={styles.priceContainer}>
-            <Typography variant="h3" color="primary" style={{ marginBottom: 20 }}>
+            <Typography variant="h2" color="primary" style={{ marginRight: 10, color: '#3b82f6' }}> {/* Changed from h3 to h2 for larger size */}
               ₹{product.price}
             </Typography>
             <AddToCartButton onPress={handleAddToCart} size={50} />
@@ -261,7 +261,9 @@ const ProductDetailsScreen: React.FC = () => {
           {product.galleryURLs && product.galleryURLs.length > 0 && (
             <View style={styles.section}>
               <FlatList
-                data={product.galleryURLs.filter((url: string) => typeof url === 'string' && url.trim() !== '' && url !== product.mainImageURL && url !== product.imageURL)}
+                data={product.galleryURLs.filter((url: any) => 
+                  url && typeof url === 'string' && url.trim() !== '' && url !== product.mainImageURL && url !== product.imageURL
+                )}
                 keyExtractor={(url, index) => index.toString()}
                 horizontal
                 renderItem={({ item }) => (
@@ -293,7 +295,12 @@ const styles = StyleSheet.create({
   container: { padding: 20 },
   image: { width: '100%', height: 200, borderRadius: 8, marginBottom: 20 },
   details: { alignItems: 'center' },
-  priceContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  priceContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 5 // Reduced from 10 to 5 to move section upward
+  },
   table: {
     marginBottom: 20,
     alignItems: 'center',
@@ -315,7 +322,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     flex: 1,
-    backgroundColor: '#FBF5EB',
     padding: 5,
     borderRadius: 5,
     marginRight: 5
@@ -323,7 +329,10 @@ const styles = StyleSheet.create({
   tableValue: {
     fontSize: 16,
     flex: 1,
-    textAlign: 'right'
+    textAlign: 'right',
+    backgroundColor: '#FBF5EB',
+    padding: 5,
+    borderRadius: 5
   },
   section: { marginBottom: 15, alignItems: 'center' },
   galleryImage: { width: 100, height: 100, borderRadius: 8, marginRight: 10 },

@@ -274,23 +274,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         >
           {product.name}
         </Text>
-
-        {/* Price and Rating Row */}
-        <View style={styles.bottomRow}>
+        
+        {/* Price, Rating, and Add to Cart Section */}
+        <View style={styles.bottomSection}>
           <View style={styles.priceRatingContainer}>
-            {/* Price - Blue color */}
-            <Text
-              style={[
-                styles.price,
-                {
-                  color: '#3b82f6', // Blue color as requested
-                  fontSize: fontSizes.price,
-                }
-              ]}
-            >
-              {formatPrice(product.price)}
-            </Text>
-
+            <View style={styles.priceContainer}>
+              {/* Price - Blue color */}
+              <Text
+                style={[
+                  styles.price,
+                  {
+                    color: '#3b82f6', // Blue color as requested
+                    fontSize: fontSizes.price,
+                  }
+                ]}
+              >
+                {formatPrice(product.price)}
+              </Text>
+            </View>
+            
             {/* Rating */}
             {showRating && product.rating !== undefined && (
               <View style={styles.ratingContainer}>
@@ -305,18 +307,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </View>
             )}
           </View>
+          
+          {/* Add to Cart Button */}
+          <TouchableOpacity
+            style={[styles.addToCartButton, { backgroundColor: '#f1ede9' }]}
+            onPress={handleAddToCart}
+            disabled={isAddingToCart || !product.isAvailable}
+          >
+            <Text style={[ProductCardStyles.addToCartText, { color: '#754C29' }]}>
+              {isAddingToCart ? '...' : product.isAvailable ? '+' : 'Out'}
+            </Text>
+          </TouchableOpacity>
         </View>
-        
-        {/* Add to Cart Button - Positioned at bottom right of card */}
-        <TouchableOpacity
-          style={[styles.addToCartButtonBottom, { backgroundColor: '#f1ede9' }]}
-          onPress={handleAddToCart}
-          disabled={isAddingToCart || !product.isAvailable}
-        >
-          <Text style={[ProductCardStyles.addToCartText, { color: '#754C29' }]}>
-            {isAddingToCart ? '...' : product.isAvailable ? '+' : 'Out'}
-          </Text>
-        </TouchableOpacity>
       </View>
     </Container>
   );
@@ -358,12 +360,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
+  infoContainer: {
+    padding: PRODUCT_CARD_DIMENSIONS.VERTICAL.padding,
+    justifyContent: 'flex-start',
+    height: 100, // Adjusted for 100px image height (200 card height - 100 image height - 16 padding * 2)
+  },
   title: {
     fontSize: 13,
     fontWeight: '600',
     lineHeight: 16,
     color: '#333',
-    height: 32, // Fixed height for two lines of text (16px line height * 2)
+    // Removed fixed height to allow flexible sizing
   },
   price: {
     fontSize: 15,
@@ -372,45 +379,43 @@ const styles = StyleSheet.create({
     // Removed marginBottom to fit within fixed height container
   },
   rating: {
-    fontSize: 20, // Further increased from 18 for better visibility
+    fontSize: 22, // Further increased from 20 to 22 for better visibility
     color: '#FFD700',
     marginRight: SPACING.content.small,
   },
   reviewCount: {
-    fontSize: 16, // Further increased from 14 for better visibility
+    fontSize: 18, // Further increased from 16 to 18 for better visibility
     color: '#666',
   },
-  bottomRow: {
+  bottomSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: SPACING.content.small,
-    height: 40, // Fixed height for consistent spacing
+    marginTop: 'auto', // Push to the end of the container
   },
   priceRatingContainer: {
-    flex: 1,
-    marginRight: SPACING.content.small,
-    height: 30, // Fixed height for consistent spacing
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    flex: 1, // Allow it to take available space
+  },
+  priceContainer: {
+    marginBottom: 0, // Removed padding between price and rating
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    // Removed marginBottom to fit within fixed height container
+    justifyContent: 'flex-start',
   },
   stars: {
     fontSize: 12,
     marginRight: SPACING.content.small,
     color: '#FFD700',
   },
-  // Add new style for bottom positioned add to cart button
-  addToCartButtonBottom: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    zIndex: 1,
-    width: 50,
-    height: 24,
-    borderRadius: 12,
+  addToCartButton: {
+    width: 45, // Increased from 40 to 45 for better visibility
+    height: 45, // Increased from 40 to 45 for better visibility
+    borderRadius: 22.5, // Increased from 20 to 22.5 to maintain round shape (half of height/width)
     backgroundColor: '#f1ede9',
     justifyContent: 'center',
     alignItems: 'center',
