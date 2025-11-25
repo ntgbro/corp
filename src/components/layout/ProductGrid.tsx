@@ -130,8 +130,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         legacyImplementation={false}
         // ✅ Added getItemLayout for better performance with fixed height cards
         getItemLayout={(data, index) => {
-          const cardHeight = 200; // Fixed height for all product cards (updated from 240)
-          const rowHeight = cardHeight; // Each row has the same height
+          const cardHeight = 200; // Fixed height for all product cards
+          const rowHeight = cardHeight + SPACING.card.vertical; // Include vertical spacing
           const rowIndex = Math.floor(index / numColumns);
           return {
             length: rowHeight,

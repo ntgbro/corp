@@ -7,7 +7,7 @@ export const PRODUCT_CARD_DIMENSIONS = {
   VERTICAL: {
     width: 160,
     imageWidth: 160,
-    imageHeight: 120, // Decreased from 160 to 120 to make more room for content
+    imageHeight: 100, // Restored to 100px as requested
     borderRadius: BORDERS.radius.medium,
     padding: SPACING.content.small,
   },
@@ -16,12 +16,11 @@ export const PRODUCT_CARD_DIMENSIONS = {
   HORIZONTAL: {
     width: 140,
     imageWidth: 140,
-    imageHeight: 100, // Decreased from 140 to 100 to make more room for content
+    imageHeight: 100, // Restored to 100px as requested
     borderRadius: BORDERS.radius.medium,
     padding: SPACING.content.small,
   },
-} as const;
-
+};
 export default StyleSheet.create({
   // Standard card container with consistent styling
   cardContainer: {
@@ -53,9 +52,9 @@ export default StyleSheet.create({
   // Info container with consistent padding
   infoContainer: {
     padding: PRODUCT_CARD_DIMENSIONS.VERTICAL.padding,
-    justifyContent: 'space-between',
-    height: 80, // Fixed height for consistent spacing (200 card height - 120 image height - 16 padding * 2)
-    paddingBottom: 35, // Add extra padding at bottom for the button
+    justifyContent: 'flex-start', // Changed from space-between to flex-start
+    height: 100, // Adjusted for 100px image height (200 card height - 100 image height - 16 padding * 2)
+    // Removed paddingBottom since add to cart button is now in the row
   },
 
   // Add to cart button
@@ -72,7 +71,7 @@ export default StyleSheet.create({
   },
 
   addToCartText: {
-    fontSize: 14, // Reduced from 20 to 14 to fit better in wider button
+    fontSize: 22, // Further increased from 18 to 22 for better visibility
     fontWeight: '600',
     color: '#754C29', // Updated to match specification
   },

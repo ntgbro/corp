@@ -16,7 +16,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({ onPress, disabled = f
       style={[
         styles.button,
         { 
-          backgroundColor: disabled ? '#ccc' : theme.colors.primary,
+          backgroundColor: disabled ? '#ccc' : '#f1ede9',
           width: size,
           height: size,
           borderRadius: size / 2,
@@ -25,7 +25,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({ onPress, disabled = f
       onPress={onPress}
       disabled={disabled}
     >
-      <Text style={[styles.text, { color: theme.colors.white, fontSize: size / 2 }]}>+</Text>
+      <Text style={[styles.text, { color: '#754C29', fontSize: size / 2 }]}>+</Text>
     </TouchableOpacity>
   );
 };

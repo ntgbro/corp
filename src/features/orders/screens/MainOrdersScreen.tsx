@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeContext } from '../../../contexts/ThemeContext';
@@ -15,11 +15,34 @@ export const MainOrdersScreen = () => {
   const { theme } = useThemeContext();
   const { orders, loading, error, refreshOrders } = useMainOrders();
   const [filter, setFilter] = useState<string>('present');
+  const [spinValue] = useState(new Animated.Value(0)); // For rotation animation
 
   const handleOrderPress = (orderId: string) => {
     // Navigate to order details screen
     navigation.navigate('OrderDetails', { orderId });
   };
+
+  // Function to trigger refresh with animation
+  const handleRefresh = () => {
+    // Reset animation value
+    spinValue.setValue(0);
+    
+    // Start rotation animation
+    Animated.timing(spinValue, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
+    
+    // Call refresh function
+    refreshOrders();
+  };
+
+  // Create interpolated rotation value
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   // Group orders by status
   const presentOrders = orders.filter((order: any) => 
@@ -96,8 +119,10 @@ export const MainOrdersScreen = () => {
           <Text style={{ fontSize: 24, color: theme.colors.text }}>←</Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>My Orders</Text>
-        <TouchableOpacity onPress={refreshOrders}>
-          <Text style={{ fontSize: 24, color: theme.colors.text }}>↻</Text>
+        <TouchableOpacity onPress={handleRefresh}>
+          <Animated.Text style={[styles.refreshIcon, { transform: [{ rotate: spin }] }]}>
+            ↻
+          </Animated.Text>
         </TouchableOpacity>
       </View>
 
@@ -127,16 +152,6 @@ export const MainOrdersScreen = () => {
                   ]}
                 >
                   {status.label}
-                </Text>
-                <Text 
-                  style={[
-                    styles.filterCount,
-                    { 
-                      color: filter === status.key ? theme.colors.white : theme.colors.textSecondary,
-                    }
-                  ]}
-                >
-                  ({status.count})
                 </Text>
               </View>
             </TouchableOpacity>
@@ -175,7 +190,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 20,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
@@ -185,13 +200,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
+  refreshIcon: {
+    fontSize: 30, // Increased size of refresh icon
+    color: '#000000',
+  },
   content: {
     flex: 1,
     paddingHorizontal: 16,
   },
   filterContainer: {
     borderRadius: 12,
-    padding: 8,
+    padding: 7, // Increased from 6 to 7
     marginHorizontal: 0,
     marginVertical: 16,
     elevation: 2,
@@ -199,26 +218,28 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
+    flexDirection: 'row', // Changed from column to row
+    justifyContent: 'space-around', // Distribute filters evenly
+    alignItems: 'center', // Center items vertically
   },
   filterButton: {
     borderWidth: 1,
     borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 12, // Increased from 10 to 12
+    paddingHorizontal: 14, // Increased from 12 to 14
     marginVertical: 4,
+    marginHorizontal: 4, // Add horizontal spacing between buttons
+    minWidth: 80, // Increased from 70 to 80
   },
   filterContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center', // Center content in each button
     alignItems: 'center',
   },
   filterText: {
-    fontSize: 16,
+    fontSize: 14, // Increased from 13 to 14
     fontWeight: '500',
-  },
-  filterCount: {
-    fontSize: 14,
-    fontWeight: '400',
+    textAlign: 'center', // Center text
   },
   orderCountContainer: {
     marginBottom: 16,

@@ -38,9 +38,9 @@ export const SPACING = {
 export const CARD_DIMENSIONS = {
   // Standard card sizes across all screens
   product: {
-    width: 140, // Increased from 120 to 140 for better visibility
+    width: 140,
     height: 200,
-    imageHeight: 100, // ✅ Increased from 90 to 100 for better image visibility
+    imageHeight: 100, // Restored to 100px as requested
     borderRadius: 12,
     padding: 8,
   },
@@ -54,7 +54,7 @@ export const CARD_DIMENSIONS = {
   menuItem: {
     width: 140,
     height: 200,
-    imageHeight: 110,
+    imageHeight: 100, // Restored to 100px as requested
     borderRadius: 8,
     padding: 8,
   },
@@ -62,7 +62,7 @@ export const CARD_DIMENSIONS = {
   productEdgeToEdge: {
     width: 0, // Will be calculated dynamically
     height: 240,
-    imageHeight: 110,
+    imageHeight: 100, // Restored to 100px as requested
     borderRadius: 12,
     padding: 8,
   },

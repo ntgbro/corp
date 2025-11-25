@@ -72,10 +72,15 @@ const HomeScreen: React.FC = () => {
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => {
         const nextIndex = (prevIndex + 1) % promotions.length;
-        flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+        // Use the improved scroll function
+        flatListRef.current?.scrollToIndex({ 
+          index: nextIndex, 
+          animated: true,
+          viewPosition: 0.5
+        });
         return nextIndex;
       });
-    }, 3000); // Change promotion every 3 seconds
+    }, 5000); // Change promotion every 5 seconds for even smoother animation
 
     return () => clearInterval(interval);
   }, [promotions.length, promotions]);
@@ -125,6 +130,15 @@ const HomeScreen: React.FC = () => {
     }
   };
 
+  // Function to handle smooth scrolling
+  const scrollToIndex = (index: number) => {
+    flatListRef.current?.scrollToIndex({
+      index,
+      animated: true,
+      viewPosition: 0.5 // Center the item
+    });
+  };
+
   return (
     <SafeAreaWrapper style={{ backgroundColor: theme.colors.background, flex: 1 }}>
       <UnifiedHeader
@@ -164,10 +178,21 @@ const HomeScreen: React.FC = () => {
                   setCurrentIndex(viewableItems[0].index || 0);
                 }
               }}
+              viewabilityConfig={{
+                itemVisiblePercentThreshold: 50 // Consider item visible when 50% is shown
+              }}
+              decelerationRate="fast" // Make scrolling smoother
+              snapToInterval={screenWidth - 40} // Snap to card width with gap
+              snapToAlignment="center" // Align to center
+              contentContainerStyle={{ paddingHorizontal: 10 }} // Add padding to sides
+              removeClippedSubviews={true} // Optimize performance
+              initialNumToRender={3} // Render 3 items initially
+              maxToRenderPerBatch={2} // Render 2 items per batch
+              windowSize={5} // Set window size for better performance
               renderItem={({ item: promotion, index }) => {
                 return (
                 <View style={styles.promotionSlide}>
-                  <View style={[styles.promotionContainer, { width: screenWidth - 32 }]}>
+                  <View style={[styles.promotionContainer, { width: screenWidth - 40, marginHorizontal: 10 }]}> {/* Increased width by reducing the subtraction value */}
                     <TouchableOpacity 
                       style={[styles.promotionCard, { backgroundColor: theme.colors.surface }]}
                       onPress={() => handlePromotionPress(promotion)}
@@ -295,15 +320,16 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   promotionCarouselContainer: {
     height: 180, // Decreased height from 200 to 180
-    marginBottom: 4, // Reduced from 8 to 4 to move the promotion section up slightly
+    marginBottom: 0, // Removed margin below the promotion section
   },
   promotionSlide: {
     justifyContent: 'center',
     alignItems: 'center',
+    marginHorizontal: 5, // Add margin to create gap between slides
   },
   promotionContainer: {
-    marginBottom: 4, // Reduced from 8 to 4 to move the promotion section up further
-    marginTop: 4, // Reduced from 10 to 0 to move the promotion section up further
+    marginBottom: 0, // Removed margin below the promotion container
+    marginTop: 0, // Removed margin above the promotion container
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 3,
@@ -316,6 +342,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fefefe',
     borderRadius: 12,
     overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   gradientBackground: {
     position: 'absolute',
