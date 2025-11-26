@@ -2,6 +2,9 @@
 import { useState, useEffect } from 'react';
 import { getProductsByServiceAndCategory, getAllProductsForService, getCategoriesByService } from '../../../services/firebase/firestore/productService';
 
+// Import the new function from HomeService
+import { HomeService } from '../../home/services/homeService';
+
 // Use the ProductData from productService
 import { ProductData, ProductCategory } from '../../../services/firebase/firestore/productService';
 
@@ -47,6 +50,44 @@ export const useProductsByCategory = (serviceId: 'fresh' | 'fmcg' | 'supplies', 
     };
     fetchProducts();
   }, [serviceId, categoryId, limit]);
+
+  return { products, loading, error };
+};
+
+// New hook for fetching products by restaurant and category
+export const useProductsByRestaurantAndCategory = (restaurantId: string, categoryId: string, limit: number = 20) => {
+  const [products, setProducts] = useState<ProductData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const data = await HomeService.getMenuItemsByRestaurantAndCategory(restaurantId, categoryId, limit);
+        // Convert MenuItem to ProductData format
+        const productData: ProductData[] = data.map(item => ({
+          id: item.menuItemId,
+          name: item.name,
+          price: item.price,
+          imageURL: item.mainImageURL || item.imageURL,
+          rating: item.rating,
+          isAvailable: item.isAvailable,
+          category: item.category,
+          restaurantId: item.restaurantId,
+        }));
+        setProducts(productData);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (restaurantId && categoryId) {
+      fetchProducts();
+    }
+  }, [restaurantId, categoryId, limit]);
 
   return { products, loading, error };
 };

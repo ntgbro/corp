@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { useThemeContext } from '../../contexts/ThemeContext';
+import { wrapPrimitiveChildren } from '../../utils/wrapPrimitiveChildren';
 
 export interface BottomNavBarProps {
   children: React.ReactNode;
@@ -24,7 +25,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
         style,
       ]}
     >
-      {children}
+      {wrapPrimitiveChildren(children)}
     </View>
   );
 };

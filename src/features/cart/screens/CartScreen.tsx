@@ -634,9 +634,6 @@ export const CartScreen = () => {
   };
 
   const renderCouponSection = () => {
-    console.log('Rendering coupon section, appliedCoupon:', appliedCoupon);
-    console.log('Applied coupon type:', typeof appliedCoupon);
-    console.log('Applied coupon keys:', appliedCoupon ? Object.keys(appliedCoupon) : 'null');
     return (
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeader}>
@@ -1118,8 +1115,8 @@ export const CartScreen = () => {
                   {renderCouponSection()}
                   {renderAddressSelection()}
                   {renderTimeSlotSelection()}
-                  {renderDeliveryInstructions()} // Add this
-                  {renderPaymentMethod()} // Add this
+                  {renderDeliveryInstructions()}
+                  {renderPaymentMethod()}
                   
                   <View style={[styles.summary, { backgroundColor: theme.colors.surface }]}>
                     <View style={styles.summaryRow}>

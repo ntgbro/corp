@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ViewStyle, Image } from 'react-native';
 import { Card } from '../common';
 import { useTheme } from '../../config/theme';
+import { safeWrapChildren } from '../../utils/wrapPrimitiveChildren';
 
 interface Category {
   id: string;
@@ -16,7 +17,7 @@ interface CategorySectionsProps {
   selectedCategory?: string;
   onCategoryPress?: (category: Category) => void;
   style?: ViewStyle;
-  variant?: 'horizontal' | 'grid' | 'grid4' | 'grid3' | 'direct'; // ✅ Added 'grid3' variant
+  variant?: 'horizontal' | 'grid' | 'grid4' | 'grid3' | 'direct';
   showIcons?: boolean;
 }
 
@@ -34,7 +35,6 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
     const isSelected = selectedCategory === category.id;
 
     if (variant === 'grid3') {
-      // 3-column grid with square cards
       return (
         <View key={category.id} style={styles.grid3ItemContainer}>
           <TouchableOpacity
@@ -49,7 +49,6 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
                 borderColor: isSelected ? theme.colors.primary : theme.colors.border,
               }
             ]}>
-              {/* Use category image if available, otherwise placeholder that occupies entire card */}
               {category.imageURL ? (
                 <Image
                   source={{ uri: category.imageURL }}
@@ -80,7 +79,6 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
             </View>
           </TouchableOpacity>
 
-          {/* Category Name Below Card */}
           <Text
             style={[
               styles.grid3CategoryName,
@@ -98,7 +96,6 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
     }
 
     if (variant === 'grid4') {
-      // 4-column grid with square cards and full image coverage
       return (
         <View key={category.id} style={styles.grid4ItemContainer}>
           <TouchableOpacity
@@ -107,24 +104,37 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
             style={styles.grid4CardTouchable}
           >
             <View style={styles.grid4Card}>
-              {/* Full-size image that covers the entire card */}
-              <Image
-                source={{
-                  uri: category.imageURL || category.icon || 'https://via.placeholder.com/150x150/FF6B6B/FFFFFF?text=' + encodeURIComponent(category.name.charAt(0))
-                }}
-                style={styles.grid4Image}
-                resizeMode="cover"
-              />
-              {/* Optional overlay for selection state */}
-              {selectedCategory === category.id && (
+              {(category.imageURL || category.icon) ? (
+                <Image
+                  source={{
+                    uri: category.imageURL || category.icon
+                  }}
+                  style={styles.grid4Image}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[styles.grid4Image, {
+                  backgroundColor: theme.colors.primary + '20',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }]}> 
+                  <Text style={{
+                    fontSize: 24,
+                    fontWeight: 'bold',
+                    color: theme.colors.primary,
+                  }}>
+                    {category.name.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              {selectedCategory === category.id ? (
                 <View style={styles.grid4Overlay}>
                   <Text style={styles.grid4OverlayText}>✓</Text>
                 </View>
-              )}
+              ) : null}
             </View>
           </TouchableOpacity>
 
-          {/* Category Name Below Card */}
           <Text
             style={[
               styles.grid4CategoryName,
@@ -142,7 +152,6 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
     }
 
     if (variant === 'grid') {
-      // Grid layout uses Card component
       return (
         <View key={category.id} style={styles.gridItemContainer}>
           <Card
@@ -161,7 +170,6 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
               height: '100%',
             }}
           >
-            {/* Use category image if available, otherwise placeholder that occupies entire card */}
             {category.imageURL ? (
               <Image
                 source={{ uri: category.imageURL }}
@@ -191,7 +199,6 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
             )}
           </Card>
 
-          {/* Category Name Below Card */}
           <Text
             style={[
               styles.categoryNameBelow,
@@ -209,7 +216,6 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
     }
 
     if (variant === 'direct') {
-      // Direct layout - simple TouchableOpacity with icon and text
       return (
         <TouchableOpacity
           key={category.id}
@@ -223,7 +229,6 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
           onPress={() => onCategoryPress?.(category)}
           activeOpacity={0.7}
         >
-          {/* Use category image if available, otherwise icon placeholder that occupies entire container */}
           <View style={styles.directIconContainer}>
             {category.imageURL ? (
               <Image
@@ -256,7 +261,6 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
             )}
           </View>
 
-          {/* Category name */}
           <Text
             style={[
               styles.directCategoryName,
@@ -273,125 +277,59 @@ export const CategorySections: React.FC<CategorySectionsProps> = ({
       );
     }
 
-    if (variant === 'horizontal') {
-      // Horizontal layout uses TouchableOpacity for backward compatibility
-      return (
-        <TouchableOpacity
-          key={category.id}
-          style={[
-            styles.categoryItem,
-            {
-              backgroundColor: isSelected ? theme.colors.primary : theme.colors.surface,
-              borderColor: isSelected ? theme.colors.primary : theme.colors.border,
-            },
-          ]}
-          onPress={() => onCategoryPress?.(category)}
-          activeOpacity={0.7}
-        >
-          {showIcons && (category.icon || category.imageURL) && (
-            category.imageURL ? (
-              <Image
-                source={{ uri: category.imageURL }}
-                style={styles.categoryImage}
-              />
-            ) : (
-              <View style={{
-                width: 16,
-                height: 16,
-                marginRight: 6,
-                backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
-                borderRadius: 8,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-                <Text style={[styles.categoryIcon, { 
-                  color: isSelected ? theme.colors.white : theme.colors.primary,
-                  fontSize: 12,
-                }]}>
-                  📦
-                </Text>
-              </View>
-            )
-          )}
-          <Text
-            style={[
-              styles.categoryName,
-              {
-                color: isSelected ? theme.colors.white : theme.colors.text,
-                fontWeight: isSelected ? '600' : '400',
-              },
-            ]}
-            numberOfLines={1}
-          >
-            {category.name}
-          </Text>
-        </TouchableOpacity>
-      );
-    }
-
-    // Default grid layout
+    // Horizontal variant (Default)
     return (
-      <View key={category.id} style={styles.gridItemContainer}>
-        <Card
-          variant="outlined"
-          padding="none"
-          shadow={true}
-          style={{
+      <TouchableOpacity
+        key={category.id}
+        style={[
+          styles.categoryItem,
+          {
             backgroundColor: isSelected ? theme.colors.primary : theme.colors.surface,
             borderColor: isSelected ? theme.colors.primary : theme.colors.border,
-            minHeight: 80,
-            justifyContent: 'center',
-            alignItems: 'center',
-            borderRadius: 16,
-            borderWidth: isSelected ? 2 : 1,
-            width: '100%',
-            height: '100%',
-          }}
-        >
-          {/* Use category image if available, otherwise placeholder that occupies entire card */}
-          {category.imageURL ? (
+          },
+        ]}
+        onPress={() => onCategoryPress?.(category)}
+        activeOpacity={0.7}
+      >
+        {/* FIX: Use Ternary Operator to prevent empty string crash */}
+        {showIcons && (category.icon || category.imageURL) ? (
+          category.imageURL ? (
             <Image
               source={{ uri: category.imageURL }}
-              style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: 16,
-              }}
-              resizeMode="cover"
+              style={styles.categoryImage}
             />
           ) : (
             <View style={{
-              width: '100%',
-              height: '100%',
-              borderRadius: 16,
+              width: 16,
+              height: 16,
+              marginRight: 6,
               backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
+              borderRadius: 8,
               justifyContent: 'center',
               alignItems: 'center',
             }}>
-              <Text style={{
-                fontSize: 20,
-                color: isSelected ? theme.colors.white : theme.colors.primary
-              }}>
+              <Text style={[styles.categoryIcon, { 
+                color: isSelected ? theme.colors.white : theme.colors.primary,
+                fontSize: 12,
+              }]}>
                 📦
               </Text>
             </View>
-          )}
-        </Card>
-
-        {/* Category Name Below Card */}
+          )
+        ) : null}
         <Text
           style={[
-            styles.categoryNameBelow,
+            styles.categoryName,
             {
-              color: isSelected ? theme.colors.primary : theme.colors.text,
+              color: isSelected ? theme.colors.white : theme.colors.text,
               fontWeight: isSelected ? '600' : '400',
             },
           ]}
-          numberOfLines={2}
+          numberOfLines={1}
         >
           {category.name}
         </Text>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -423,18 +361,15 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   horizontalContainer: {
-    // Removed paddingHorizontal for edge-to-edge layout
     gap: 12,
   },
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    // Removed paddingHorizontal for edge-to-edge layout
-    gap: 0, // No gap for perfect edge-to-edge alignment
+    gap: 0,
     justifyContent: 'space-between',
   },
   directContainer: {
-    // Removed paddingHorizontal for edge-to-edge layout
     gap: 8,
   },
   categoryItem: {
@@ -442,9 +377,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: 'row',
   },
   gridItem: {
-    width: '22%', // 4 columns with gaps (100% - 6% gaps) / 4 = 23.5% ≈ 22%
+    width: '22%',
     aspectRatio: 1,
     flexDirection: 'column',
     justifyContent: 'center',
@@ -453,7 +391,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   gridItemContainer: {
-    width: '23%', // 4 columns: (100% - 3*gap) / 4 = 23%
+    width: '23%',
     aspectRatio: 1,
     flexDirection: 'column',
     justifyContent: 'center',
@@ -461,9 +399,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     minHeight: 100,
   },
-  // New 3-column grid styles
   grid3ItemContainer: {
-    width: '33.33%', // 3 columns: exactly 33.33% each
+    width: '33.33%',
     marginBottom: 20,
     alignItems: 'center',
   },
@@ -481,17 +418,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   grid3CategoryName: {
-    fontSize: 14, // ✅ Increased font size from 12 to 14 for better readability
+    fontSize: 14,
     textAlign: 'center',
     marginTop: 8,
     fontWeight: '500',
   },
-  // New 4-column grid styles
   grid4ItemContainer: {
-    width: '25%', // 4 columns: exactly 25% each for perfect edge-to-edge fit
+    width: '25%',
     marginBottom: 20,
     alignItems: 'center',
-    aspectRatio: 1, // Ensure perfect square
+    aspectRatio: 1,
   },
   grid4CardTouchable: {
     width: '100%',
@@ -503,7 +439,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
-    backgroundColor: '#F5F5F5', // Light gray background
+    backgroundColor: '#F5F5F5',
   },
   grid4Image: {
     width: '100%',
@@ -542,21 +478,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  squarePlaceholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  placeholderBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   categoryNameBelow: {
     fontSize: 16,
     textAlign: 'center',
@@ -580,9 +501,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    // Removed paddingHorizontal for edge-to-edge layout
     marginVertical: 4,
-    // Removed marginHorizontal for edge-to-edge layout
     borderRadius: 12,
     borderWidth: 1,
     backgroundColor: 'transparent',

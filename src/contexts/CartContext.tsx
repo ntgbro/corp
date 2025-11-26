@@ -113,47 +113,47 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const calculateDiscount = (coupon: Coupon, subtotal: number, items: CartItem[] = []): number => {
-  console.log('Calculating discount for coupon:', coupon?.code, 'subtotal:', subtotal, 'items:', items.length);
-  console.log('Coupon details:', JSON.stringify(coupon, null, 2));
+  // console.log('Calculating discount for coupon:', coupon?.code, 'subtotal:', subtotal, 'items:', items.length);
+  // console.log('Coupon details:', JSON.stringify(coupon, null, 2));
   
   if (!coupon || !coupon.isActive) {
-    console.log('Coupon is invalid or inactive');
+    // console.log('Coupon is invalid or inactive');
     return 0;
   }
   
   // Check minimum order amount
   if (subtotal < (coupon.minOrderAmount || 0)) {
-    console.log('Subtotal is less than minimum order amount');
+    // console.log('Subtotal is less than minimum order amount');
     return 0;
   }
   
   // Check minimum order count (number of items)
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   if (totalItems < (coupon.minOrderCount || 0)) {
-    console.log('Total items is less than minimum order count');
+    // console.log('Total items is less than minimum order count');
     return 0;
   }
   
   // Check validity period
   const now = new Date();
   if (coupon.validFrom && new Date(coupon.validFrom) > now) {
-    console.log('Coupon is not yet valid');
+    // console.log('Coupon is not yet valid');
     return 0;
   }
   if ((coupon.validTill || coupon.validUntil) && new Date(coupon.validTill || coupon.validUntil!) < now) {
-    console.log('Coupon has expired');
+    // console.log('Coupon has expired');
     return 0;
   }
   
   // Check usage limits
   if (coupon.usageLimit?.perUserLimit && coupon.usedCount && coupon.usedCount >= coupon.usageLimit.perUserLimit) {
-    console.log('Coupon usage limit reached');
+    // console.log('Coupon usage limit reached');
     return 0;
   }
   
   // Check max uses
   if (coupon.maxUses && coupon.usedCount && coupon.usedCount >= coupon.maxUses) {
-    console.log('Coupon max uses reached');
+    // console.log('Coupon max uses reached');
     return 0;
   }
   
@@ -161,38 +161,38 @@ const calculateDiscount = (coupon: Coupon, subtotal: number, items: CartItem[] =
   
   // Use value field if discountValue is not available
   const discountValue = coupon.discountValue || coupon.value || 0;
-  console.log('Discount value:', discountValue);
+  // console.log('Discount value:', discountValue);
   
   // Determine discount type (handle both field names)
   const discountType = coupon.discountType || coupon.type || 'percentage';
-  console.log('Discount type:', discountType);
+  // console.log('Discount type:', discountType);
   
   if (discountType === 'percentage') {
     discount = (subtotal * discountValue) / 100;
-    console.log('Percentage discount calculated:', discount);
+    // console.log('Percentage discount calculated:', discount);
     if (coupon.maxDiscountAmount && discount > coupon.maxDiscountAmount) {
       discount = coupon.maxDiscountAmount;
-      console.log('Discount capped at max discount amount:', discount);
+      // console.log('Discount capped at max discount amount:', discount);
     }
   } else {
     // Fixed discount
     discount = Math.min(discountValue, subtotal);
-    console.log('Fixed discount calculated:', discount);
+    // console.log('Fixed discount calculated:', discount);
   }
   
-  console.log('Final discount:', discount);
+  // console.log('Final discount:', discount);
   return parseFloat(discount.toFixed(2));
 };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
-  console.log('Cart reducer called with action:', action.type);
+  // console.log('Cart reducer called with action:', action.type);
   
   const calculateState = (items: CartItem[], coupon: AppliedCoupon | null = state.appliedCoupon) => {
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    console.log('Calculating state - subtotal:', subtotal, 'coupon:', coupon);
+    // console.log('Calculating state - subtotal:', subtotal, 'coupon:', coupon);
     
     const discount = coupon ? calculateDiscount(coupon as unknown as Coupon, subtotal, items) : 0;
-    console.log('Calculated discount:', discount);
+    // console.log('Calculated discount:', discount);
     
     // Update the coupon with the calculated discount amount
     const updatedCoupon = coupon ? {
@@ -200,7 +200,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       discountAmount: discount
     } : null;
     
-    console.log('Updated coupon:', updatedCoupon);
+    // console.log('Updated coupon:', updatedCoupon);
     
     return {
       items,
@@ -208,7 +208,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       subtotal,
       discount,
       totalAmount: Math.max(0, subtotal - discount),
-      appliedCoupon: discount > 0 ? updatedCoupon : null // Only keep coupon if discount is applied
+      appliedCoupon: updatedCoupon // Always keep the coupon, even if discount is 0
     };
   };
 
@@ -245,19 +245,19 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 
     case 'SET_CART_ITEMS': {
       // Set cart items directly from Firebase
-      console.log('SET_CART_ITEMS action received with payload:', action.payload);
-      console.log('Current applied coupon:', state.appliedCoupon);
-      console.log('New applied coupon:', action.payload.appliedCoupon);
+      // console.log('SET_CART_ITEMS action received with payload:', action.payload);
+      // console.log('Current applied coupon:', state.appliedCoupon);
+      // console.log('New applied coupon:', action.payload.appliedCoupon);
       return calculateState(action.payload.items, action.payload.appliedCoupon || null);
     }
 
     case 'APPLY_COUPON': {
       const { payload: coupon } = action;
-      console.log('APPLY_COUPON action received with coupon:', coupon);
+      // console.log('APPLY_COUPON action received with coupon:', coupon);
       
       // Check if coupon has required fields
       if (!coupon.id || !coupon.code) {
-        console.warn('Coupon is missing required fields in APPLY_COUPON action - id:', coupon.id, 'code:', coupon.code);
+        // console.warn('Coupon is missing required fields in APPLY_COUPON action - id:', coupon.id, 'code:', coupon.code);
       }
       
       const appliedCoupon: AppliedCoupon = {
@@ -266,9 +266,9 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         discountAmount: 0 // Will be calculated in calculateState
       };
       
-      console.log('Applying coupon in reducer:', appliedCoupon);
+      // console.log('Applying coupon in reducer:', appliedCoupon);
       const result = calculateState([...state.items], appliedCoupon);
-      console.log('Calculated state after applying coupon:', result);
+      // console.log('Calculated state after applying coupon:', result);
       return result;
     }
 
@@ -307,8 +307,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
   const { user } = useAuth();
   
-  console.log('CartProvider state updated:', state);
-  console.log('CartProvider appliedCoupon:', state.appliedCoupon);
+  // console.log('CartProvider state updated:', state);
+  // console.log('CartProvider appliedCoupon:', state.appliedCoupon);
 
   const loadCartFromFirebase = useCallback(async () => {
     if (!user?.userId) return;
@@ -316,11 +316,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     try {
       // Get user's cart from Firebase
       const cart = await CartService.getCart(user.userId);
-      console.log('Loaded cart from Firebase:', cart);
+      // console.log('Loaded cart from Firebase:', cart);
       
       // If cart exists but is inactive, treat it as no cart
       if (cart && cart.status === 'inactive') {
-        console.log('Cart is inactive, clearing local state');
+        // console.log('Cart is inactive, clearing local state');
         dispatch({ type: 'CLEAR_CART' });
         return;
       }
@@ -328,7 +328,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       if (cart) {
         // Get cart items from Firebase
         const firebaseItems = await CartService.getCartItems(user.userId, cart.cartId);
-        console.log('Loaded cart items from Firebase:', firebaseItems);
+        // console.log('Loaded cart items from Firebase:', firebaseItems);
         
         // Convert Firebase items to local cart items with product images
         const localItems: CartItem[] = [];
@@ -401,14 +401,14 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         }
         
         // Log applied coupon information
-        console.log('Applied coupon from Firebase cart:', cart.appliedCoupon);
-        console.log('Applied coupon type:', typeof cart.appliedCoupon);
-        console.log('Applied coupon keys:', cart.appliedCoupon ? Object.keys(cart.appliedCoupon) : 'null');
+        // console.log('Applied coupon from Firebase cart:', cart.appliedCoupon);
+        // console.log('Applied coupon type:', typeof cart.appliedCoupon);
+        // console.log('Applied coupon keys:', cart.appliedCoupon ? Object.keys(cart.appliedCoupon) : 'null');
         
         // Check if appliedCoupon is actually null or an empty object
         let appliedCoupon = cart.appliedCoupon;
         if (appliedCoupon && typeof appliedCoupon === 'object' && Object.keys(appliedCoupon).length === 0) {
-          console.log('Applied coupon is an empty object, treating as null');
+          // console.log('Applied coupon is an empty object, treating as null');
           appliedCoupon = null;
         }
         
@@ -423,7 +423,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         
         // Only dispatch if there are actual changes
         if (itemsChanged || couponChanged) {
-          console.log('Cart data changed, updating state');
+          // console.log('Cart data changed, updating state');
           // Dispatch a special action to set the cart items directly
           dispatch({ 
             type: 'SET_CART_ITEMS', 
@@ -433,11 +433,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
             } 
           });
         } else {
-          console.log('Cart data unchanged, skipping state update');
+          // console.log('Cart data unchanged, skipping state update');
         }
       } else {
         // No cart found, clear the local state
-        console.log('No cart found, clearing local state');
+        // console.log('No cart found, clearing local state');
         dispatch({ type: 'CLEAR_CART' });
       }
     } catch (error) {
@@ -839,7 +839,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }, [user?.userId, state.items, state.subtotal, state.discount, state.totalAmount, state.appliedCoupon]);
 
   const value = useMemo(() => {
-    console.log('Creating CartContext value with appliedCoupon:', state.appliedCoupon);
+    // console.log('Creating CartContext value with appliedCoupon:', state.appliedCoupon);
     return {
       state,
       addToCart,

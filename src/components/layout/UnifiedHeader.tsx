@@ -11,6 +11,7 @@ import { useThemeContext } from '../../contexts/ThemeContext';
 import { useLocationContext } from '../../contexts/LocationContext';
 import LocationIcon from '../common/LocationIcon';
 import NotificationIcon from '../common/NotificationIcon';
+import { logPrimitiveChildren } from '../../utils/debugPrimitiveChildren';
 
 interface ScrollableLocationHeaderProps {
   showBackButton?: boolean;
@@ -32,29 +33,46 @@ export const ScrollableLocationHeader: React.FC<ScrollableLocationHeaderProps> =
   const { currentLocation, loading: locationLoading } = useLocationContext();
   const [isLocationIconActive, setIsLocationIconActive] = useState(false);
 
+  // quick runtime diagnostics in dev only
+  useEffect(() => {
+    if (__DEV__) {
+      logPrimitiveChildren(rightComponent, 'UnifiedHeader.rightComponent');
+    }
+  }, [rightComponent]);
+
   const handleLocationChangePress = () => {
     setIsLocationIconActive(true);
-    // Directly call location change without showing dialog
     if (onLocationChange) {
       onLocationChange();
     }
   };
 
-  // Format location address to show specific OSM components in two lines
+  // Defensive renderer: wrap primitive (string/number) children in <Text>
+  const renderNode = (node: React.ReactNode) => {
+    if (node === null || node === undefined) return null;
+    if (typeof node === 'string' || typeof node === 'number') {
+      return <Text style={{ color: theme.colors.text }}>{String(node)}</Text>;
+    }
+    if (Array.isArray(node)) {
+      return node.map((n, i) => <React.Fragment key={i}>{renderNode(n)}</React.Fragment>);
+    }
+    // Handle special cases for objects that might contain text
+    if (typeof node === 'object' && node !== null) {
+      // If it's already a valid React element, return as-is
+      if (React.isValidElement(node)) {
+        return node;
+      }
+    }
+    return node;
+  };
+
   const formatLocationAddress = (address: string): { line1: string, line2: string } => {
     if (!address) return { line1: 'Set Location', line2: '' };
-
-    // If address contains coordinates, return as-is
     if (address.includes('.') && address.includes(',')) {
       return { line1: address, line2: '' };
     }
-
     const parts = address.split(', ');
-
-    // Extract components for line 1 (street/road + house number)
     let line1 = '';
-    
-    // Find street/road name
     const roadIndex = parts.findIndex(part =>
       part.toLowerCase().includes('road') ||
       part.toLowerCase().includes('street') ||
@@ -63,16 +81,10 @@ export const ScrollableLocationHeader: React.FC<ScrollableLocationHeaderProps> =
       part.toLowerCase().includes('cross') ||
       part.toLowerCase().includes('main')
     );
-
-    // Add road name if found
     if (roadIndex !== -1) {
       line1 = parts[roadIndex];
     }
-
-    // Extract components for line 2 (area, city, state, postcode)
-    const essentialParts = [];
-
-    // Find neighbourhood/area
+    const essentialParts: string[] = [];
     const neighbourhoodIndex = parts.findIndex(part =>
       part.toLowerCase().includes('layout') ||
       part.toLowerCase().includes('nagar') ||
@@ -81,79 +93,51 @@ export const ScrollableLocationHeader: React.FC<ScrollableLocationHeaderProps> =
       part.toLowerCase().includes('area') ||
       part.toLowerCase().includes('kuvempu')
     );
-
-    // Find suburb/area
     const suburbIndex = parts.findIndex(part =>
       part.toLowerCase().includes('btm') ||
       part.toLowerCase().includes('stage') ||
       part.toLowerCase().includes('extension')
     );
-
-    // Find city
     const cityIndex = parts.findIndex(part =>
       part.toLowerCase().includes('bengaluru') ||
       part.toLowerCase().includes('bangalore')
     );
-
-    // Find state
     const stateIndex = parts.findIndex(part =>
       part.toLowerCase().includes('karnataka')
     );
-
-    // Find postal code (6-digit number)
     const postalIndex = parts.findIndex(part =>
-      /^\d{6}$/.test(part.trim()) // Exactly 6 digits
+      /^\d{6}$/.test(part.trim())
     );
-
-    // Add neighbourhood if found and different from road
     if (neighbourhoodIndex !== -1 && neighbourhoodIndex !== roadIndex) {
       essentialParts.push(parts[neighbourhoodIndex]);
     }
-
-    // Add suburb if found and different from neighbourhood
     if (suburbIndex !== -1 && suburbIndex !== neighbourhoodIndex && suburbIndex !== roadIndex) {
       essentialParts.push(parts[suburbIndex]);
     }
-
-    // Add city if found
     if (cityIndex !== -1) {
       essentialParts.push(parts[cityIndex]);
     }
-
-    // Add state if found
     if (stateIndex !== -1 && stateIndex !== cityIndex) {
       essentialParts.push(parts[stateIndex]);
     }
-
-    // Add postal code if found
     if (postalIndex !== -1) {
       essentialParts.push(parts[postalIndex]);
     }
-
-    // If no specific components found, use remaining parts
     if (essentialParts.length === 0) {
-      // Filter out parts already used in line1
       const remainingParts = parts.filter((_, index) => index !== roadIndex);
-      essentialParts.push(...remainingParts.slice(0, 3)); // Take up to 3 parts
+      essentialParts.push(...remainingParts.slice(0, 3));
     }
-
     const line2 = essentialParts.join(', ');
-
-    // If line1 is empty, use the first part of line2 for line1
     if (!line1 && essentialParts.length > 0) {
       line1 = essentialParts.shift() || '';
       return { line1, line2: essentialParts.join(', ') };
     }
-
-    // If both lines are empty, return the original address in line1
     if (!line1 && !line2) {
       return { line1: address, line2: '' };
     }
-
     return { line1, line2 };
   };
 
-  // Reset icon color when location data is fetched
   useEffect(() => {
     if (currentLocation && !locationLoading) {
       setIsLocationIconActive(false);
@@ -163,27 +147,22 @@ export const ScrollableLocationHeader: React.FC<ScrollableLocationHeaderProps> =
   return (
     <View style={[styles.header, { backgroundColor: theme.colors.primary }]}>
       <View style={styles.headerContent}>
-        {/* Back Button */}
         {showBackButton && (
           <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
             <Text style={{ fontSize: 18, color: theme.colors.white }}>←</Text>
           </TouchableOpacity>
         )}
 
-        {/* Spacer for center alignment */}
         <View style={styles.titleSpacer} />
 
-        {/* Right Component */}
         <View style={styles.rightContainer}>
-          {rightComponent}
+          {renderNode(rightComponent)}
         </View>
       </View>
 
-      {/* Location Section - This will scroll with content */}
       {showLocation && (
         <View style={styles.locationSection}>
           <View style={styles.locationInfo}>
-            {/* Simplified Address Display in Two Lines */}
             <View style={styles.addressTextContainer}>
               <Text style={styles.addressLine1} numberOfLines={1}>
                 {currentLocation?.address ? formatLocationAddress(currentLocation.address).line1 : 'Set Location'}
@@ -195,16 +174,15 @@ export const ScrollableLocationHeader: React.FC<ScrollableLocationHeaderProps> =
               ) : null}
             </View>
 
-            {/* Change Location Button - Simplified to direct action */}
             <TouchableOpacity
               onPress={handleLocationChangePress}
               style={styles.locationPinContainer}
               activeOpacity={1.0}
               disabled={locationLoading}
             >
-              <LocationIcon 
-                size={30} 
-                color={isLocationIconActive ? '#754C29' : 'black'} 
+              <LocationIcon
+                size={30}
+                color={isLocationIconActive ? '#754C29' : 'black'}
                 style={[
                   locationLoading && styles.locationPinLoading
                 ]}
@@ -239,7 +217,6 @@ export const FixedSearchHeader: React.FC<FixedSearchHeaderProps> = ({
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    // Don't trigger search on every keystroke
   };
 
   const handleSearchSubmit = () => {
@@ -247,7 +224,6 @@ export const FixedSearchHeader: React.FC<FixedSearchHeaderProps> = ({
       if (onSearch) {
         onSearch(searchQuery.trim());
       } else {
-        // Fallback to local implementation - navigate to SearchResults in Product stack
         (navigation as any).navigate('Product', {
           screen: 'SearchResults',
           params: { searchQuery: searchQuery.trim() }
@@ -257,21 +233,14 @@ export const FixedSearchHeader: React.FC<FixedSearchHeaderProps> = ({
   };
 
   const handleNotificationPress = () => {
-    // Clear any existing timeout
     if (notificationTimeoutRef.current) {
       clearTimeout(notificationTimeoutRef.current);
     }
-    
-    // Set the icon to active state
     setIsNotificationIconActive(true);
-    
-    // Reset the icon color after 2 seconds
     notificationTimeoutRef.current = setTimeout(() => {
       setIsNotificationIconActive(false);
       notificationTimeoutRef.current = null;
     }, 2000);
-    
-    // Navigate to Notifications screen directly using nested navigation through Profile tab
     if (onNotificationPress) {
       onNotificationPress();
     } else {
@@ -281,7 +250,6 @@ export const FixedSearchHeader: React.FC<FixedSearchHeaderProps> = ({
     }
   };
 
-  // Clean up timeout on unmount
   useEffect(() => {
     return () => {
       if (notificationTimeoutRef.current) {
@@ -290,7 +258,6 @@ export const FixedSearchHeader: React.FC<FixedSearchHeaderProps> = ({
     };
   }, []);
 
-  // Only render if search is enabled
   if (!showSearch) return null;
 
   return (
@@ -313,12 +280,11 @@ export const FixedSearchHeader: React.FC<FixedSearchHeaderProps> = ({
               <Text style={{ fontSize: 14, color: theme.colors.textSecondary }}>🔍</Text>
             </TouchableOpacity>
           </View>
-          {/* Notification Bell - OUTSIDE search container */}
           {showNotificationBell && (
             <TouchableOpacity onPress={handleNotificationPress} style={styles.notificationButton}>
-              <NotificationIcon 
-                size={24} 
-                color="white" 
+              <NotificationIcon
+                size={30}
+                color={isNotificationIconActive ? '#754C29' : 'black'}
               />
             </TouchableOpacity>
           )}
@@ -363,7 +329,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    // Don't trigger search on every keystroke
   };
 
   const handleSearchSubmit = () => {
@@ -371,8 +336,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       if (onSearch) {
         onSearch(searchQuery.trim());
       } else {
-        // Fallback to local implementation - navigate to SearchResults in Product stack
-        // Only log in development mode
         if (__DEV__) {
           console.log('[NAVIGATION] UnifiedHeader search submitted:', searchQuery);
         }
@@ -385,37 +348,27 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   };
 
   const handleLocationChangePress = () => {
-    // Only log in development mode
     if (__DEV__) {
       console.log('[NAVIGATION] UnifiedHeader location change pressed');
     }
     setIsLocationIconActive(true);
-    // Directly call location change without showing dialog
     if (onLocationChange) {
       onLocationChange();
     }
   };
 
   const handleNotificationPress = () => {
-    // Only log in development mode
     if (__DEV__) {
       console.log('[NAVIGATION] UnifiedHeader notification pressed');
     }
-    // Clear any existing timeout
     if (notificationTimeoutRef.current) {
       clearTimeout(notificationTimeoutRef.current);
     }
-    
-    // Set the icon to active state
     setIsNotificationIconActive(true);
-    
-    // Reset the icon color after 2 seconds
     notificationTimeoutRef.current = setTimeout(() => {
       setIsNotificationIconActive(false);
       notificationTimeoutRef.current = null;
     }, 2000);
-    
-    // Navigate to Notifications screen directly using nested navigation through Profile tab
     if (onNotificationPress) {
       onNotificationPress();
     } else {
@@ -425,7 +378,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     }
   };
 
-  // Clean up timeout on unmount
   useEffect(() => {
     return () => {
       if (notificationTimeoutRef.current) {
@@ -434,21 +386,13 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     };
   }, []);
 
-  // Format location address to show specific OSM components in two lines
   const formatLocationAddress = (address: string): { line1: string, line2: string } => {
     if (!address) return { line1: 'Set Location', line2: '' };
-
-    // If address contains coordinates, return as-is
     if (address.includes('.') && address.includes(',')) {
       return { line1: address, line2: '' };
     }
-
     const parts = address.split(', ');
-
-    // Extract components for line 1 (street/road + house number)
     let line1 = '';
-    
-    // Find street/road name
     const roadIndex = parts.findIndex(part =>
       part.toLowerCase().includes('road') ||
       part.toLowerCase().includes('street') ||
@@ -457,16 +401,10 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       part.toLowerCase().includes('cross') ||
       part.toLowerCase().includes('main')
     );
-
-    // Add road name if found
     if (roadIndex !== -1) {
       line1 = parts[roadIndex];
     }
-
-    // Extract components for line 2 (area, city, state, postcode)
-    const essentialParts = [];
-
-    // Find neighbourhood/area
+    const essentialParts: string[] = [];
     const neighbourhoodIndex = parts.findIndex(part =>
       part.toLowerCase().includes('layout') ||
       part.toLowerCase().includes('nagar') ||
@@ -475,86 +413,76 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       part.toLowerCase().includes('area') ||
       part.toLowerCase().includes('kuvempu')
     );
-
-    // Find suburb/area
     const suburbIndex = parts.findIndex(part =>
       part.toLowerCase().includes('btm') ||
       part.toLowerCase().includes('stage') ||
       part.toLowerCase().includes('extension')
     );
-
-    // Find city
     const cityIndex = parts.findIndex(part =>
       part.toLowerCase().includes('bengaluru') ||
       part.toLowerCase().includes('bangalore')
     );
-
-    // Find state
     const stateIndex = parts.findIndex(part =>
       part.toLowerCase().includes('karnataka')
     );
-
-    // Find postal code (6-digit number)
     const postalIndex = parts.findIndex(part =>
-      /^\d{6}$/.test(part.trim()) // Exactly 6 digits
+      /^\d{6}$/.test(part.trim())
     );
-
-    // Add neighbourhood if found and different from road
     if (neighbourhoodIndex !== -1 && neighbourhoodIndex !== roadIndex) {
       essentialParts.push(parts[neighbourhoodIndex]);
     }
-
-    // Add suburb if found and different from neighbourhood
     if (suburbIndex !== -1 && suburbIndex !== neighbourhoodIndex && suburbIndex !== roadIndex) {
       essentialParts.push(parts[suburbIndex]);
     }
-
-    // Add city if found
     if (cityIndex !== -1) {
       essentialParts.push(parts[cityIndex]);
     }
-
-    // Add state if found
     if (stateIndex !== -1 && stateIndex !== cityIndex) {
       essentialParts.push(parts[stateIndex]);
     }
-
-    // Add postal code if found
     if (postalIndex !== -1) {
       essentialParts.push(parts[postalIndex]);
     }
-
-    // If no specific components found, use remaining parts
     if (essentialParts.length === 0) {
-      // Filter out parts already used in line1
       const remainingParts = parts.filter((_, index) => index !== roadIndex);
-      essentialParts.push(...remainingParts.slice(0, 3)); // Take up to 3 parts
+      essentialParts.push(...remainingParts.slice(0, 3));
     }
-
     const line2 = essentialParts.join(', ');
-
-    // If line1 is empty, use the first part of line2 for line1
     if (!line1 && essentialParts.length > 0) {
       line1 = essentialParts.shift() || '';
       return { line1, line2: essentialParts.join(', ') };
     }
-
-    // If both lines are empty, return the original address in line1
     if (!line1 && !line2) {
       return { line1: address, line2: '' };
     }
-
     return { line1, line2 };
   };
 
-  // Reset icon color when location data is fetched
   useEffect(() => {
     if (currentLocation && !locationLoading) {
       setIsLocationIconActive(false);
     }
   }, [currentLocation, locationLoading]);
 
-  // Use useEffect to control debug logging - only log when relevant props change
+  // Defensive renderer for rightComponent in this header as well
+  const renderNode = (node: React.ReactNode) => {
+    if (node === null || node === undefined) return null;
+    if (typeof node === 'string' || typeof node === 'number') {
+      return <Text style={{ color: theme.colors.text }}>{String(node)}</Text>;
+    }
+    if (Array.isArray(node)) {
+      return node.map((n, i) => <React.Fragment key={i}>{renderNode(n)}</React.Fragment>);
+    }
+    // Handle special cases for objects that might contain text
+    if (typeof node === 'object' && node !== null) {
+      // If it's already a valid React element, return as-is
+      if (React.isValidElement(node)) {
+        return node;
+      }
+    }
+    return node;
+  };
+
   useEffect(() => {
     console.log('[NAVIGATION] UnifiedHeader rendered with props:', {
       title,
@@ -568,43 +496,36 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   return (
     <View style={[styles.header, { backgroundColor: '#F5DEB3' }]}>
       <View style={styles.headerContent}>
-        {/* Back Button */}
         {showBackButton && (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => {
-              // Only log in development mode
               if (__DEV__) {
                 console.log('[NAVIGATION] UnifiedHeader back button pressed');
               }
               if (onBackPress) {
                 onBackPress();
               }
-            }} 
+            }}
             style={styles.backButton}
           >
             <Text style={{ fontSize: 18, color: theme.colors.text }}>←</Text>
           </TouchableOpacity>
         )}
 
-        {/* Spacer for center alignment when no title */}
         {!title && <View style={styles.titleSpacer} />}
 
-        {/* Title */}
         {title && (
           <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
         )}
 
-        {/* Right Component */}
         <View style={styles.rightContainer}>
-          {rightComponent}
+          {renderNode(rightComponent)}
         </View>
       </View>
 
-      {/* Location Section - Only render if showLocation is true */}
       {showLocation && (
         <View style={styles.locationSection}>
           <View style={styles.locationInfo}>
-            {/* Simplified Address Display in Two Lines - Removed card styling and changed font color to black */}
             <View style={styles.addressTextContainerNoCard}>
               <Text style={styles.addressLine1NoCard} numberOfLines={1}>
                 {currentLocation?.address ? formatLocationAddress(currentLocation.address).line1 : 'Set Location'}
@@ -616,16 +537,15 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               ) : null}
             </View>
 
-            {/* Change Location Button - Simplified to direct action */}
             <TouchableOpacity
               onPress={handleLocationChangePress}
               style={styles.locationPinContainer}
               activeOpacity={1.0}
               disabled={locationLoading}
             >
-              <LocationIcon 
-                size={30} 
-                color={isLocationIconActive ? '#754C29' : 'black'} 
+              <LocationIcon
+                size={30}
+                color={isLocationIconActive ? '#754C29' : 'black'}
                 style={[
                   locationLoading && styles.locationPinLoading
                 ]}
@@ -633,12 +553,9 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
             </TouchableOpacity>
 
           </View>
-
-          {/* Removed loading text section */}
         </View>
       )}
 
-      {/* Search Section with Notification Bell - Only render if showSearch is true */}
       {showSearch && (
         <View style={styles.searchSection}>
           <View style={styles.searchRow}>
@@ -658,12 +575,11 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 <Text style={{ fontSize: 14, color: theme.colors.textSecondary }}>🔍</Text>
               </TouchableOpacity>
             </View>
-            {/* Notification Bell - OUTSIDE search container */}
             {showNotificationBell && (
               <TouchableOpacity onPress={handleNotificationPress} style={styles.notificationButton}>
-                <NotificationIcon 
-                  size={30} 
-                  color={isNotificationIconActive ? '#754C29' : 'black'} 
+                <NotificationIcon
+                  size={30}
+                  color={isNotificationIconActive ? '#754C29' : 'black'}
                 />
               </TouchableOpacity>
             )}
@@ -701,7 +617,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 3, // Reduced from 6 to 3 to decrease gap with content below
+    marginBottom: 3,
   },
   backButton: {
     padding: 4,
@@ -729,7 +645,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 3, // Reduced from 6 to 3 to decrease gap with content below
+    marginBottom: 3,
     minHeight: 40,
   },
   locationInfo: {
@@ -759,7 +675,7 @@ const styles = StyleSheet.create({
   addressTextNoCard: {
     fontSize: 14,
     fontWeight: '500',
-    color: 'black', // ✅ Changed font color from white to black
+    color: 'black',
     lineHeight: 18,
     textAlign: 'left',
     flex: 1,
@@ -780,19 +696,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 40,
     minHeight: 40,
-    backgroundColor: 'transparent', // Prevent any background changes
+    backgroundColor: 'transparent',
   },
   locationPinText: {
     fontSize: 30,
     color: 'white',
     textAlign: 'center',
     textAlignVertical: 'center',
-    includeFontPadding: false, // Prevent font padding issues
-    textShadowColor: 'transparent', // Prevent text shadow effects
+    includeFontPadding: false,
+    textShadowColor: 'transparent',
   },
   locationPinLoading: {
-    transform: [{ scale: 1.2 }], // Slightly larger when loading
-    // Removed opacity to ensure full color intensity
+    transform: [{ scale: 1.2 }],
   },
   searchSection: {
     marginBottom: 4,

@@ -18,9 +18,17 @@ export const Tooltip: React.FC<TooltipProps> = ({
   const theme = useTheme();
   const [visible, setVisible] = useState(false);
 
-  const getTooltipStyle = () => {
-    const baseStyle = {
-      position: 'absolute' as const,
+  const renderTrigger = () => {
+    // If children is a primitive, wrap in Text to avoid "Text strings must be rendered within a <Text> component"
+    if (typeof children === 'string' || typeof children === 'number') {
+      return <Text>{children}</Text>;
+    }
+    return children;
+  };
+
+  const getTooltipStyle = (): ViewStyle => {
+    const baseStyle: ViewStyle = {
+      position: 'absolute',
       backgroundColor: theme.colors.text,
       paddingHorizontal: 8,
       paddingVertical: 4,
@@ -28,7 +36,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
       zIndex: 1000,
     };
 
-    const positions = {
+    const positions: Record<string, ViewStyle> = {
       top: {
         ...baseStyle,
         bottom: '100%',
@@ -68,7 +76,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
         onPress={() => setVisible(!visible)}
         style={styles.trigger}
       >
-        {children}
+        {renderTrigger()}
       </TouchableOpacity>
 
       {visible && (
