@@ -37,8 +37,6 @@ const ProductDetailsScreen: React.FC = () => {
     const fetchProductDetails = async () => {
       try {
         setLoading(true);
-        
-        // Try to fetch as restaurant menu item first
         const menuItemData = await HomeService.getMenuItemById(menuItemId);
         if (menuItemData) {
           setProduct(menuItemData);
@@ -48,8 +46,6 @@ const ProductDetailsScreen: React.FC = () => {
           }
           return;
         }
-        
-        // If not found as menu item, try as warehouse product
         const productData = await HomeService.getProductById(menuItemId);
         if (productData) {
           setProduct(productData);
@@ -59,7 +55,6 @@ const ProductDetailsScreen: React.FC = () => {
           }
           return;
         }
-        
         setError('Product not found');
       } catch (err: any) {
         console.error('Error fetching product details:', err);
@@ -84,11 +79,8 @@ const ProductDetailsScreen: React.FC = () => {
         image: product.mainImageURL || product.imageURL || 'https://via.placeholder.com/150',
         chefId: product.restaurantId || product.warehouseId || '',
         chefName: entity?.name || (product.restaurantId ? 'Restaurant' : 'Warehouse'),
-        // Set serviceId based on product type
-        serviceId: product.restaurantId ? 'fresh' : 'fmcg', // Default service IDs
-        // Set warehouseId specifically for warehouse products
+        serviceId: product.restaurantId ? 'fresh' : 'fmcg',
         warehouseId: product.warehouseId || '',
-        // Set restaurantId specifically for restaurant products
         restaurantId: product.restaurantId || '',
       });
     }
@@ -117,21 +109,22 @@ const ProductDetailsScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.container}>
         <Image source={{ uri: product.mainImageURL || product.imageURL }} style={styles.image} />
         <View style={styles.details}>
-          <Typography variant="h2" color="text" style={{ textAlign: 'center', marginBottom: 5 }}> {/* Reduced from 10 to 5 for less padding */}
+          <Typography variant="h2" color="text" style={{ textAlign: 'center', marginBottom: 5 }}>
             {product.name}
           </Typography>
-          <Typography variant="body1" color="secondary" style={{ textAlign: 'center', marginBottom: 5 }}> {/* Reduced from 10 to 5 for less padding */}
+          <Typography variant="body1" color="secondary" style={{ textAlign: 'center', marginBottom: 5 }}>
             {product.description}
           </Typography>
           <View style={styles.priceContainer}>
-            <Typography variant="h2" color="primary" style={{ marginRight: 10, color: '#3b82f6' }}> {/* Changed from h3 to h2 for larger size */}
+            <Typography variant="h2" color="primary" style={{ marginRight: 10, color: '#3b82f6' }}>
               ₹{product.price}
             </Typography>
             <AddToCartButton onPress={handleAddToCart} size={50} />
           </View>
+          
+          {/* SAFE RENDERING START */}
           <View style={styles.table}>
-            {/* Show entity-specific information */}
-            {entity && (
+            {entity ? (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   From
@@ -140,10 +133,9 @@ const ProductDetailsScreen: React.FC = () => {
                   {entity.name}
                 </Typography>
               </View>
-            )}
+            ) : null}
             
-            {/* Show product-specific information */}
-            {product.isVeg !== undefined && (
+            {product.isVeg !== undefined ? (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Type
@@ -156,8 +148,9 @@ const ProductDetailsScreen: React.FC = () => {
                   {product.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
                 </Typography>
               </View>
-            )}
-            {product.cuisine && (
+            ) : null}
+
+            {product.cuisine ? (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Cuisine
@@ -166,8 +159,9 @@ const ProductDetailsScreen: React.FC = () => {
                   {product.cuisine}
                 </Typography>
               </View>
-            )}
-            {product.prepTime && (
+            ) : null}
+
+            {product.prepTime ? (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Prep Time
@@ -176,8 +170,9 @@ const ProductDetailsScreen: React.FC = () => {
                   {product.prepTime}
                 </Typography>
               </View>
-            )}
-            {product.portionSize && (
+            ) : null}
+
+            {product.portionSize ? (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Portion Size
@@ -186,8 +181,9 @@ const ProductDetailsScreen: React.FC = () => {
                   {product.portionSize}
                 </Typography>
               </View>
-            )}
-            {product.spiceLevel && (
+            ) : null}
+
+            {product.spiceLevel ? (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Spice Level
@@ -196,8 +192,9 @@ const ProductDetailsScreen: React.FC = () => {
                   {product.spiceLevel}
                 </Typography>
               </View>
-            )}
-            {product.rating && (
+            ) : null}
+
+            {(product.rating !== undefined && product.rating !== null) ? (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Rating
@@ -206,8 +203,9 @@ const ProductDetailsScreen: React.FC = () => {
                   {product.rating}
                 </Typography>
               </View>
-            )}
-            {product.ingredients && product.ingredients.length > 0 && (
+            ) : null}
+
+            {product.ingredients && product.ingredients.length > 0 ? (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Ingredients
@@ -216,8 +214,9 @@ const ProductDetailsScreen: React.FC = () => {
                   {product.ingredients.join(', ')}
                 </Typography>
               </View>
-            )}
-            {product.allergens && product.allergens.length > 0 && (
+            ) : null}
+
+            {product.allergens && product.allergens.length > 0 ? (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Allergens
@@ -226,8 +225,9 @@ const ProductDetailsScreen: React.FC = () => {
                   {product.allergens.join(', ')}
                 </Typography>
               </View>
-            )}
-            {product.tags && product.tags.length > 0 && (
+            ) : null}
+
+            {product.tags && product.tags.length > 0 ? (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Tags
@@ -236,8 +236,9 @@ const ProductDetailsScreen: React.FC = () => {
                   {product.tags.join(', ')}
                 </Typography>
               </View>
-            )}
-            {product.gst !== undefined && (
+            ) : null}
+
+            {product.gst !== undefined ? (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   GST
@@ -246,8 +247,9 @@ const ProductDetailsScreen: React.FC = () => {
                   {product.gst}%
                 </Typography>
               </View>
-            )}
-            {product.status && (
+            ) : null}
+
+            {product.status ? (
               <View style={styles.tableRow}>
                 <Typography variant="body1" color="text" style={[styles.tableLabel]}>
                   Status
@@ -256,9 +258,10 @@ const ProductDetailsScreen: React.FC = () => {
                   {product.status}
                 </Typography>
               </View>
-            )}
+            ) : null}
           </View>
-          {product.galleryURLs && product.galleryURLs.length > 0 && (
+          {/* SAFE RENDERING END */}
+          {Array.isArray(product.galleryURLs) && product.galleryURLs.length > 0 ? (
             <View style={styles.section}>
               <FlatList
                 data={product.galleryURLs.filter((url: any) => 
@@ -271,20 +274,19 @@ const ProductDetailsScreen: React.FC = () => {
                 )}
               />
             </View>
-          )}
-          {entity && (
+          ) : null}
+
+          {entity ? (
             <TouchableOpacity onPress={() => {
               if (product.restaurantId) {
-                // Navigate directly to RestaurantDetails through the Home stack
                 (navigation as any).navigate('RestaurantDetails', { restaurantId: product.restaurantId });
               }
-              // For warehouses, we might want to navigate to a warehouse details screen if one exists
             }}>
               <Typography variant="body1" color="primary" style={[styles.restaurant]}>
                 From: {entity.name}
               </Typography>
             </TouchableOpacity>
-          )}
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaWrapper>
@@ -299,7 +301,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
-    marginBottom: 5 // Reduced from 10 to 5 to move section upward
+    marginBottom: 5 
   },
   table: {
     marginBottom: 20,

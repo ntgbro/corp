@@ -205,13 +205,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   // Debug log to see what product data is being passed
   React.useEffect(() => {
-    console.log('ProductCard: received product data', {
-      productId: product.id,
-      productName: product.name,
-      isAvailable: product.isAvailable,
-      hasImage: !!(product.image || product.imageURL),
-      onAddToCart: !!onAddToCart
-    });
+    // console.log('ProductCard: received product data', {
+    //   productId: product.id,
+    //   productName: product.name,
+    //   isAvailable: product.isAvailable,
+    //   hasImage: !!(product.image || product.imageURL),
+    //   onAddToCart: !!onAddToCart
+    // });
   }, [product, onAddToCart]);
 
   return (

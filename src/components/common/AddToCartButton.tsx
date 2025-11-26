@@ -1,6 +1,5 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { useThemeContext } from '../../contexts/ThemeContext';
 
 interface AddToCartButtonProps {
   onPress: () => void;
@@ -9,8 +8,6 @@ interface AddToCartButtonProps {
 }
 
 const AddToCartButton: React.FC<AddToCartButtonProps> = ({ onPress, disabled = false, size = 40 }) => {
-  const { theme } = useThemeContext();
-
   return (
     <TouchableOpacity
       style={[

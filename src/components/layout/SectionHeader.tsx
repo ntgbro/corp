@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import Typography from '../common/Typography';
 import { SPACING, BORDERS } from '../../constants/ui';
@@ -19,6 +19,14 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
 }) => {
   const { theme } = useThemeContext();
 
+  const renderAction = () => {
+    if (!action) return null;
+    if (typeof action === 'string' || typeof action === 'number') {
+      return <Text>{action}</Text>;
+    }
+    return action;
+  };
+
   return (
     <View style={[styles.container, style]}>
       <View style={styles.textContainer}>
@@ -31,7 +39,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
           </Typography>
         )}
       </View>
-      {action && <View style={styles.action}>{action}</View>}
+      {action && <View style={styles.action}>{renderAction()}</View>}
     </View>
   );
 };

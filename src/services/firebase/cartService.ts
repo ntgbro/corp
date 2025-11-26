@@ -54,19 +54,19 @@ export class CartService {
         const cartData = cartDoc.data() as any; // Cast to any to avoid type issues
         
         // Log the applied coupon data for debugging
-        console.log('Applied coupon data from Firebase:', cartData.appliedCoupon);
-        console.log('Applied coupon type:', typeof cartData.appliedCoupon);
-        console.log('Applied coupon keys:', cartData.appliedCoupon ? Object.keys(cartData.appliedCoupon) : 'null');
+        // console.log('Applied coupon data from Firebase:', cartData.appliedCoupon);
+        // console.log('Applied coupon type:', typeof cartData.appliedCoupon);
+        // console.log('Applied coupon keys:', cartData.appliedCoupon ? Object.keys(cartData.appliedCoupon) : 'null');
         
         // Check if appliedCoupon is actually null or an empty object
         if (cartData.appliedCoupon && typeof cartData.appliedCoupon === 'object' && Object.keys(cartData.appliedCoupon).length === 0) {
-          console.log('Applied coupon is an empty object, treating as null');
+          // console.log('Applied coupon is an empty object, treating as null');
           cartData.appliedCoupon = null;
         }
         
         // Check if appliedCoupon is actually null or undefined
         if (cartData.appliedCoupon === undefined) {
-          console.log('Applied coupon is undefined, treating as null');
+          // console.log('Applied coupon is undefined, treating as null');
           cartData.appliedCoupon = null;
         }
         

@@ -11,7 +11,7 @@ import { SafeAreaWrapper } from '../../../components/layout';
 import { PRODUCT_CARD_DIMENSIONS } from '../../../components/layout/ProductCardStyles';
 import { SPACING, BORDERS, SHADOWS } from '../../../constants/ui';
 import { useThemeContext } from '../../../contexts/ThemeContext';
-import { useProductsByCategory, useProductSearch } from '../hooks/useProducts';
+import { useProductsByCategory, useProductSearch, useProductsByRestaurantAndCategory } from '../hooks/useProducts';
 import { ProductGrid } from '../../../components/layout';
 import Typography from '../../../components/common/Typography';
 import { useCart } from '../../../contexts/CartContext';
@@ -36,24 +36,36 @@ const ProductScreen: React.FC = () => {
   const { theme } = useThemeContext();
   const { addToCart } = useCart();
   
-  console.log('[NAVIGATION] ProductScreen rendered with params:', route.params);
+  // console.log('[NAVIGATION] ProductScreen rendered with params:', route.params);
 
   // Use appropriate hook based on whether we have a search query
   const { products: searchProducts, loading: searchLoading, error: searchError } = useProductSearch(searchQuery || '', service);
+  
+  // Use the new hook when we have both restaurantId and category
+  const { products: restaurantProducts, loading: restaurantLoading, error: restaurantError } = useProductsByRestaurantAndCategory(restaurantId || '', category, 50);
+  
+  // Use the existing hook for category-based fetching (when no restaurantId)
   const { products: categoryProducts, loading: categoryLoading, error: categoryError } = useProductsByCategory(service, category, restaurantId || warehouseId ? 100 : 50);
 
   // Determine which products to display based on searchQuery and entityId
   const products = searchQuery 
     ? searchProducts 
     : (restaurantId || warehouseId)
-      ? categoryProducts.filter(product => 
-          (restaurantId && product.restaurantId === restaurantId) || 
-          (warehouseId && product.warehouseId === warehouseId)
-        )
+      ? (restaurantId 
+          ? restaurantProducts  // Use restaurant-specific products when restaurantId is provided
+          : categoryProducts.filter(product => 
+              (restaurantId && product.restaurantId === restaurantId) || 
+              (warehouseId && product.warehouseId === warehouseId)
+            ))
       : categoryProducts;
 
-  const loading = searchQuery ? searchLoading : categoryLoading;
-  const error = searchQuery ? searchError : categoryError;
+  const loading = searchQuery ? searchLoading : 
+    (restaurantId ? restaurantLoading : 
+      (warehouseId ? categoryLoading : categoryLoading));
+      
+  const error = searchQuery ? searchError : 
+    (restaurantId ? restaurantError : 
+      (warehouseId ? categoryError : categoryError));
 
   const [entity, setEntity] = React.useState<any>(null);
 
@@ -65,7 +77,6 @@ const ProductScreen: React.FC = () => {
   }, [restaurantId, warehouseId]);
 
   const handleProductPress = (product: any) => {
-    console.log('[NAVIGATION] Product pressed in ProductScreen:', product);
     (navigation as any).navigate('Product', { screen: 'ProductDetails', params: { menuItemId: product.id } });
   };
 
@@ -89,7 +100,6 @@ const ProductScreen: React.FC = () => {
 
   const handleRefresh = () => {
     // Refresh will be handled by the hooks
-    console.log('[NAVIGATION] Refreshing products in ProductScreen');
   };
 
   // Determine the header title based on parameters
@@ -108,7 +118,7 @@ const ProductScreen: React.FC = () => {
   };
 
   if (loading) {
-    console.log('[NAVIGATION] ProductScreen loading');
+    // console.log('[NAVIGATION] ProductScreen loading');
     return (
       <SafeAreaWrapper style={{ backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -120,7 +130,7 @@ const ProductScreen: React.FC = () => {
   }
 
   if (error) {
-    console.log('[NAVIGATION] ProductScreen error:', error);
+    // console.log('[NAVIGATION] ProductScreen error:', error);
     return (
       <SafeAreaWrapper style={{ backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }}>
         <Typography variant="body1" color="error">
@@ -130,7 +140,7 @@ const ProductScreen: React.FC = () => {
     );
   }
 
-  console.log('[NAVIGATION] ProductScreen rendering content with products:', products.length);
+  // console.log('[NAVIGATION] ProductScreen rendering content with products:', products.length);
   
   return (
     <SafeAreaWrapper style={{ backgroundColor: theme.colors.background }}>

@@ -31,7 +31,6 @@ export const OrdersStackNavigator: React.FC = () => {
             backgroundColor: '#F5DEB3',
             borderBottomLeftRadius: 20,
             borderBottomRightRadius: 20,
-            overflow: 'hidden',
           },
           headerTitleStyle: {
             color: '#000000',

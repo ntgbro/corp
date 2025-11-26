@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { useTheme } from '../../config';
+import { wrapPrimitiveChildren, safeWrapChildren } from '../../utils/wrapPrimitiveChildren';
 
 export interface AccordionProps {
   title: string;
@@ -48,7 +49,7 @@ export const Accordion: React.FC<AccordionProps> = ({
 
       {isExpanded && (
         <View style={[styles.content, { borderBottomColor: theme.colors.border }]}>
-          {children}
+          {safeWrapChildren(children)}
         </View>
       )}
     </View>

@@ -40,13 +40,13 @@ const RestaurantDetailsScreen: React.FC = () => {
   };
 
   const handleSeeAllPress = (category: string) => {
-    // Navigate to products page with the specific category only (without restaurantId)
-    // to show all items for this category across all restaurants
+    // Navigate to products page with the specific category AND restaurantId
+    // to show items for this category only for this restaurant
     (navigation as any).navigate('Product', {
       screen: 'Products',
       params: {
         category,
-        // Removed restaurantId to avoid showing specific restaurant information
+        restaurantId: restaurant?.restaurantId, // ✅ ADD THIS line
       }
     });
   };
@@ -90,7 +90,7 @@ const RestaurantDetailsScreen: React.FC = () => {
     );
   }
 
-  console.log('RestaurantDetailsScreen rendering with restaurant:', restaurant);
+  // console.log('RestaurantDetailsScreen rendering with restaurant:', restaurant);
 
   // Group menu items by category
   const groupedItems = menuItems.reduce((acc: Record<string, typeof menuItems>, item: any) => {
@@ -115,12 +115,12 @@ const RestaurantDetailsScreen: React.FC = () => {
   const renderCategory = ({ item: category }: { item: string }) => (
     <View style={styles.section}>
       <View style={styles.categoryHeader}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{category}</Text>
+        <Typography variant="h6" color="text" style={styles.sectionTitle}>{category}</Typography>
         <TouchableOpacity
           style={[styles.seeAllButton, { backgroundColor: '#f1ede9' }]}
           onPress={() => handleSeeAllPress(category)}
         >
-          <Text style={[styles.seeAllText, { color: theme.colors.primary }]}>See All</Text>
+          <Typography variant="body2" color="primary" style={styles.seeAllText}>See All</Typography>
         </TouchableOpacity>
       </View>
       <FlatList

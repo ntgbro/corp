@@ -33,9 +33,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, width = 160
             e.stopPropagation();
             toggleFavorite();
           }}
-        >
-          
-        </TouchableOpacity>
+        />
       </View>
       <Text style={{ color: theme.colors.text, fontSize: 16, fontWeight: 'bold' }}>{product.name}</Text>
       <Text style={{ color: theme.colors.textSecondary }}>{product.description}</Text>
