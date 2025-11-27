@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 /**
  * Debug utility to help identify "Text strings must be rendered within a <Text> component" errors
- * This component can be used to wrap suspicious areas of your app to catch and display errors
+ * This updated version always renders children so UI doesn't disappear, and shows
+ * a visible overlay + console warnings when primitive children are detected.
  */
 
 interface DebugTextRendererProps {
@@ -12,158 +13,161 @@ interface DebugTextRendererProps {
   label?: string;
 }
 
-export const DebugTextRenderer: React.FC<DebugTextRendererProps> = ({ 
-  children, 
+type PrimitiveInfo = {
+  path: string;
+  value: string | number;
+};
+
+const findPrimitiveChildren = (node: React.ReactNode, path = '<root>', results: PrimitiveInfo[] = []) => {
+  if (node === null || node === undefined || typeof node === 'boolean') return results;
+
+  if (typeof node === 'string' || typeof node === 'number') {
+    results.push({ path, value: node });
+    return results;
+  }
+
+  if (Array.isArray(node)) {
+    node.forEach((child, i) => findPrimitiveChildren(child, `${path}[${i}]`, results));
+    return results;
+  }
+
+  if (React.isValidElement(node)) {
+    // @ts-ignore - inspect children prop of valid React element
+    const display = (node.type && ((node.type as any).displayName || (node.type as any).name)) || (node as any).type || 'Element';
+    findPrimitiveChildren((node as any).props?.children, `${path} > ${String(display)}`, results);
+    return results;
+  }
+
+  // non-element object (rare): nothing to do
+  return results;
+};
+
+export const DebugTextRenderer: React.FC<DebugTextRendererProps> = ({
+  children,
   debug = false,
-  label = 'DebugTextRenderer'
+  label = 'DebugTextRenderer',
 }) => {
-  const [error, setError] = useState<string | null>(null);
-
-  // Function to validate that all children are properly wrapped
-  const validateChildren = (nodes: React.ReactNode): boolean => {
-    try {
-      if (nodes === null || nodes === undefined) return true;
-
-      if (typeof nodes === 'string' || typeof nodes === 'number') {
-        // This would cause the error - strings must be wrapped in Text
-        if (debug) {
-          console.warn(`[${label}] Found unwrapped text:`, nodes);
-        }
-        return false;
-      }
-
-      if (Array.isArray(nodes)) {
-        return nodes.every(child => validateChildren(child));
-      }
-
-      // For React elements, check their children recursively
-      if (React.isValidElement(nodes)) {
-        const element = nodes as React.ReactElement<any>;
-        if (element.props && element.props.children) {
-          return validateChildren(element.props.children);
-        }
-      }
-
-      return true;
-    } catch (err) {
-      console.error(`[${label}] Error validating children:`, err);
-      return false;
-    }
-  };
+  const [primitives, setPrimitives] = useState<PrimitiveInfo[] | null>(null);
 
   useEffect(() => {
-    if (debug) {
-      const isValid = validateChildren(children);
-      if (!isValid) {
-        setError('Invalid text rendering detected - check console for details');
-      } else {
-        setError(null);
-      }
+    if (!debug) {
+      setPrimitives(null);
+      return;
     }
+
+    try {
+      const found = findPrimitiveChildren(children, label);
+      if (found.length > 0) {
+        // log a helpful warning with stack to find the render site
+        // eslint-disable-next-line no-console
+        console.warn(`[${label}] Found unwrapped primitive children:`, found);
+        // eslint-disable-next-line no-console
+        console.warn(new Error(`[${label}] primitive children stack`).stack);
+        setPrimitives(found);
+      } else {
+        setPrimitives(null);
+      }
+    } catch (err) {
+      // If the detector itself errors, don't block rendering
+      // eslint-disable-next-line no-console
+      console.warn(`[${label}] debug validator error:`, err);
+      setPrimitives(null);
+    }
+    // Only run when children or debug flag changes
   }, [children, debug, label]);
 
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorTitle}>DebugTextRenderer Error:</Text>
-        <Text style={styles.errorText}>{error}</Text>
-        <Text style={styles.errorHint}>
-          Wrap all text strings in {'<Text>'} components to fix this error
-        </Text>
-      </View>
-    );
-  }
-
-  // In debug mode, wrap children with validation
-  if (debug) {
-    return (
-      <View style={styles.debugContainer}>
-        <Text style={styles.debugLabel}>[{label}]</Text>
+  // Render overlay/error box when primitives found, but always render children
+  return (
+    <>
+      {/*
+        If debug is enabled show a subtle debug border around children.
+        We always render children so the app doesn't blank.
+      */}
+      <View style={debug ? styles.debugWrapper : undefined}>
         {children}
       </View>
-    );
-  }
 
-  // Normal rendering
-  return <>{children}</>;
+      {debug && primitives && primitives.length > 0 && (
+        <View pointerEvents="box-none" style={styles.overlayContainer}>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorTitle}>[{label}] Unwrapped text detected</Text>
+            <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+              {primitives.map((p, i) => (
+                <View key={i} style={styles.primitiveRow}>
+                  <Text style={styles.primitivePath}>{p.path}</Text>
+                  <Text style={styles.primitiveValue}>{String(p.value)}</Text>
+                </View>
+              ))}
+            </ScrollView>
+            <Text style={styles.errorHint}>
+              Wrap these values in {'<Text>'} components or use safeWrapChildren/safeRenderContent utilities.
+            </Text>
+          </View>
+        </View>
+      )}
+    </>
+  );
 };
 
 const styles = StyleSheet.create({
-  errorContainer: {
-    padding: 16,
-    backgroundColor: '#ffebee',
-    borderColor: '#f44336',
-    borderWidth: 1,
-    borderRadius: 4,
-    margin: 8,
-  },
-  errorTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#f44336',
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#f44336',
-    marginBottom: 8,
-  },
-  errorHint: {
-    fontSize: 12,
-    color: '#f44336',
-    fontStyle: 'italic',
-  },
-  debugContainer: {
+  debugWrapper: {
     borderWidth: 1,
     borderColor: '#2196f3',
     borderRadius: 4,
     margin: 2,
-    padding: 4,
   },
-  debugLabel: {
-    fontSize: 10,
-    color: '#2196f3',
-    fontWeight: 'bold',
+  overlayContainer: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    right: 10,
+    // allow it to float above app content
+    zIndex: 9999,
+  },
+  errorContainer: {
+    padding: 10,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderColor: '#f44336',
+    borderWidth: 1,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  errorTitle: {
+    fontSize: 14,
+    color: '#b71c1c',
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  scroll: {
+    maxHeight: 160,
+    marginBottom: 6,
+  },
+  scrollContent: {
+    paddingBottom: 6,
+  },
+  primitiveRow: {
+    marginBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingBottom: 6,
+  },
+  primitivePath: {
+    fontSize: 11,
+    color: '#333',
+    fontWeight: '600',
+  },
+  primitiveValue: {
+    fontSize: 12,
+    color: '#000',
+  },
+  errorHint: {
+    fontSize: 12,
+    color: '#b71c1c',
+    marginTop: 6,
   },
 });
 
-/**
- * HOC (Higher Order Component) version for debugging class components
- */
-export const withDebugTextRenderer = <P extends object>(
-  WrappedComponent: React.ComponentType<P>,
-  label?: string
-) => {
-  return (props: P) => (
-    <DebugTextRenderer debug label={label || WrappedComponent.name}>
-      <WrappedComponent {...props} />
-    </DebugTextRenderer>
-  );
-};
-
-/**
- * Utility function to safely wrap content that might contain unwrapped text
- */
-export const safeWrapContent = (content: React.ReactNode): React.ReactNode => {
-  // If it's already a valid React element, return as-is
-  if (React.isValidElement(content)) {
-    return content;
-  }
-
-  // If it's a string or number, wrap it in Text
-  if (typeof content === 'string' || typeof content === 'number') {
-    return <Text>{content}</Text>;
-  }
-
-  // If it's an array, process each item
-  if (Array.isArray(content)) {
-    return content.map((item, index) => (
-      <React.Fragment key={index}>
-        {safeWrapContent(item)}
-      </React.Fragment>
-    ));
-  }
-
-  // For other types, return as-is
-  return content;
-};
+export default DebugTextRenderer;

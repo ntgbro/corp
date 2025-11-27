@@ -60,7 +60,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   // Check if product is in wishlist
   const isFavorited = isInWishlist(product.id);
 
-  const Container = onPress ? TouchableOpacity : View;
+  const Container = View;
 
   const getSizeStyles = () => {
     // Check if width is provided via style prop (from FlatList grid)
@@ -216,7 +216,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <Container
-      onPress={onPress}
       style={[
         ProductCardStyles.cardContainer,
         {
@@ -228,7 +227,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       ]}
     >
       {/* Product Image */}
-      <View style={ProductCardStyles.imageContainer}>
+      <TouchableOpacity 
+        activeOpacity={0.9} 
+        onPress={onPress}
+        disabled={!onPress} // Disable if no onPress provided
+        style={ProductCardStyles.imageContainer}
+      >
         {product.image || product.imageURL ? (
           <Image
             source={{ uri: product.image || product.imageURL }}
@@ -242,12 +246,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </Text>
           </View>
         )}
+        
+        {/* Keep buttons inside or outside depending on if you want them clickable without triggering navigation. 
+            Usually, favorite button sits ON TOP of the image, so we might need to stop propagation or move it out 
+            if pressing it triggers navigation. Since FavoriteButton handles its own press, it usually blocks propagation automatically. 
+        */}
         <FavoriteButton
           isFavorited={isFavorited}
           onPress={handleToggleFavorite}
           size={20}
           style={styles.favoriteButton}
         />
+        
         {/* Availability Badge */}
         {!product.isAvailable && (
           <View style={[styles.badge, styles.unavailableBadge, { backgroundColor: theme.colors.error }]}>
@@ -256,9 +266,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </Text>
           </View>
         )}
-      </View>
+      </TouchableOpacity>
 
-      {/* Product Info */}
+      {/* Product Info - NOW UNCLICKABLE (View) */}
       <View style={ProductCardStyles.infoContainer}>
         {/* Product Name */}
         <Text

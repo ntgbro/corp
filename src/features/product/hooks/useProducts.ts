@@ -67,6 +67,7 @@ export const useProductsByRestaurantAndCategory = (restaurantId: string, categor
         const data = await HomeService.getMenuItemsByRestaurantAndCategory(restaurantId, categoryId, limit);
         // Convert MenuItem to ProductData format
         const productData: ProductData[] = data.map(item => ({
+          ...item, // <-- THIS LINE IS CRITICAL. It preserves all the "hidden" details.
           id: item.menuItemId,
           name: item.name,
           price: item.price,

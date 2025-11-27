@@ -11,6 +11,8 @@ import { useCart } from '../contexts/CartContext';
 import { SettingsNavigator } from '../features/settings';
 import { HomeIcon, CategoryIcon, CartIcon, OrderIcon, ProfileIcon } from '../components/common'; // Import the new SVG icons
 import CategoriesScreen from '../features/product/screens/CategoriesScreen';
+// Import the new CategoriesStackNavigator
+import CategoriesStackNavigator from './CategoriesStackNavigator';
 
 // Placeholder Screen Components (to avoid inline functions)
 
@@ -193,7 +195,7 @@ export const MainTabNavigator: React.FC = () => {
       />
       <Tab.Screen
         name="Categories"
-        component={CategoriesScreen}
+        component={CategoriesStackNavigator} // ✅ Use the Stack, not the Screen
         options={{
           tabBarLabel: ({ focused }) => focused ? 'Categories' : '',
         }}

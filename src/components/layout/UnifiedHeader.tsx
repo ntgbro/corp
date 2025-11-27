@@ -780,4 +780,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default UnifiedHeader;
+export default React.memo(UnifiedHeader);

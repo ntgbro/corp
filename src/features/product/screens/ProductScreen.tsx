@@ -23,6 +23,7 @@ interface RouteParams {
   warehouseId?: string;
   service?: 'fresh' | 'fmcg' | 'supplies';
   searchQuery?: string;
+  initialEntityData?: any;
 }
 
 const ProductScreen: React.FC = () => {
@@ -33,6 +34,7 @@ const ProductScreen: React.FC = () => {
   const warehouseId = (route.params as RouteParams)?.warehouseId;
   const service = (route.params as RouteParams)?.service || 'fresh';
   const searchQuery = (route.params as RouteParams)?.searchQuery;
+  const initialEntityData = (route.params as RouteParams)?.initialEntityData;
   const { theme } = useThemeContext();
   const { addToCart } = useCart();
   
@@ -67,17 +69,23 @@ const ProductScreen: React.FC = () => {
     (restaurantId ? restaurantError : 
       (warehouseId ? categoryError : categoryError));
 
-  const [entity, setEntity] = React.useState<any>(null);
+  const [entity, setEntity] = React.useState<any>(initialEntityData || null);
 
   React.useEffect(() => {
-    if (restaurantId) {
+    if (restaurantId && !entity) {
       HomeService.getRestaurantById(restaurantId).then(setEntity).catch(console.error);
     }
     // For warehouseId, we would need a similar service call
-  }, [restaurantId, warehouseId]);
+  }, [restaurantId, warehouseId, entity]);
 
   const handleProductPress = (product: any) => {
-    (navigation as any).navigate('Product', { screen: 'ProductDetails', params: { menuItemId: product.id } });
+    // ✅ Remove nested navigation ('Product', {screen...})
+    // ✅ Navigate directly to 'ProductDetails' which exists in BOTH Stacks now
+    (navigation as any).navigate('ProductDetails', { 
+      menuItemId: product.id, 
+      initialProductData: product, // Optimization
+      initialEntityData: entity    // Optimization
+    });
   };
 
   const handleAddToCart = async (product: any) => {
