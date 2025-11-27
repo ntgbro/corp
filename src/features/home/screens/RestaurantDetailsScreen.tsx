@@ -36,18 +36,29 @@ const RestaurantDetailsScreen: React.FC = () => {
   const handleMenuItemPress = (menuItemId: string) => {
     console.log('Navigator state:', navigation.getState());
     console.log('Attempting to navigate to ProductDetails with menuItemId:', menuItemId);
-    (navigation as any).navigate('Product', { screen: 'ProductDetails', params: { menuItemId } });
+    
+    // Find the full item object from your state
+    const selectedItem = menuItems.find(item => item.menuItemId === menuItemId);
+    
+    // 🔴 OLD (Caused the issue):
+    // (navigation as any).navigate('Product', { screen: 'ProductDetails', params: { ... } });
+
+    // ✅ NEW (Fixes the issue):
+    // Navigate directly. Since 'ProductDetails' is now in HomeStack, 
+    // it will push ON TOP of RestaurantDetails.
+    (navigation as any).navigate('ProductDetails', { 
+      menuItemId,
+      initialProductData: selectedItem,
+      initialEntityData: restaurant
+    });
   };
 
   const handleSeeAllPress = (category: string) => {
-    // Navigate to products page with the specific category AND restaurantId
-    // to show items for this category only for this restaurant
-    (navigation as any).navigate('Product', {
-      screen: 'Products',
-      params: {
-        category,
-        restaurantId: restaurant?.restaurantId, // ✅ ADD THIS line
-      }
+    // ✅ Change 'Product' (Global Stack) to 'Products' (Local Stack Screen)
+    (navigation as any).navigate('Products', {
+      category,
+      restaurantId: restaurant?.restaurantId,
+      initialEntityData: restaurant // Optimization
     });
   };
 

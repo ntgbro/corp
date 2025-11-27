@@ -19,6 +19,8 @@ import { useCart } from '../../../contexts/CartContext';
 
 interface RouteParams {
   menuItemId: string;
+  initialProductData?: any; // ✅ New param
+  initialEntityData?: any;  // ✅ New param
 }
 
 const ProductDetailsScreen: React.FC = () => {
@@ -26,15 +28,24 @@ const ProductDetailsScreen: React.FC = () => {
   const navigation = useNavigation();
   const { theme } = useThemeContext();
   const { addToCart } = useCart();
-  const { menuItemId } = route.params as RouteParams;
+  const { menuItemId, initialProductData, initialEntityData } = route.params as RouteParams;
 
-  const [product, setProduct] = React.useState<any | null>(null);
-  const [entity, setEntity] = React.useState<any | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  // Initialize state with the passed data immediately
+  const [product, setProduct] = React.useState<any | null>(initialProductData || null);
+  const [entity, setEntity] = React.useState<any | null>(initialEntityData || null);
+  
+  // Don't show loading spinner if we already have the data
+  const [loading, setLoading] = React.useState(!initialProductData);
   const [error, setError] = React.useState<string | null>(null);
 
   useEffect(() => {
     const fetchProductDetails = async () => {
+      // ✅ If we already have the product and the entity, STOP. Do not fetch.
+      if (product && (entity || !product.restaurantId)) {
+        setLoading(false);
+        return;
+      }
+      
       try {
         setLoading(true);
         const menuItemData = await HomeService.getMenuItemById(menuItemId);
@@ -67,7 +78,7 @@ const ProductDetailsScreen: React.FC = () => {
     if (menuItemId) {
       fetchProductDetails();
     }
-  }, [menuItemId]);
+  }, [menuItemId, product, entity]);
 
   const handleAddToCart = async () => {
     if (product) {

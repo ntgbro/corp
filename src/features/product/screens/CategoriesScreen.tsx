@@ -29,9 +29,9 @@ const CategoriesScreen: React.FC = () => {
     // For both FMCG and Fresh categories, navigate directly to ProductScreen (Products route)
     // without passing restaurantId or warehouseId to avoid showing specific entity names
     console.log('[NAVIGATION] Navigating to Product/Products for category');
-    (navigation as any).navigate('Product', {
-      screen: 'Products',
-      params: { category: category.id, service }
+    (navigation as any).navigate('Products', { 
+      category: category.name || category.id,
+      service: service
     });
   };
 
