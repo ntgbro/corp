@@ -19,6 +19,7 @@ export interface CartItem {
   serviceId: string; // Made this required
   restaurantId: string; // Made this required
   warehouseId: string; // Made this required
+  category?: string; // Add category field
 }
 
 interface CartState {
@@ -116,8 +117,8 @@ const calculateDiscount = (coupon: Coupon, subtotal: number, items: CartItem[] =
   // console.log('Calculating discount for coupon:', coupon?.code, 'subtotal:', subtotal, 'items:', items.length);
   // console.log('Coupon details:', JSON.stringify(coupon, null, 2));
   
-  if (!coupon || !coupon.isActive) {
-    // console.log('Coupon is invalid or inactive');
+  if (!coupon) {
+    // console.log('No coupon provided');
     return 0;
   }
   
@@ -131,29 +132,6 @@ const calculateDiscount = (coupon: Coupon, subtotal: number, items: CartItem[] =
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   if (totalItems < (coupon.minOrderCount || 0)) {
     // console.log('Total items is less than minimum order count');
-    return 0;
-  }
-  
-  // Check validity period
-  const now = new Date();
-  if (coupon.validFrom && new Date(coupon.validFrom) > now) {
-    // console.log('Coupon is not yet valid');
-    return 0;
-  }
-  if ((coupon.validTill || coupon.validUntil) && new Date(coupon.validTill || coupon.validUntil!) < now) {
-    // console.log('Coupon has expired');
-    return 0;
-  }
-  
-  // Check usage limits
-  if (coupon.usageLimit?.perUserLimit && coupon.usedCount && coupon.usedCount >= coupon.usageLimit.perUserLimit) {
-    // console.log('Coupon usage limit reached');
-    return 0;
-  }
-  
-  // Check max uses
-  if (coupon.maxUses && coupon.usedCount && coupon.usedCount >= coupon.maxUses) {
-    // console.log('Coupon max uses reached');
     return 0;
   }
   
@@ -260,8 +238,21 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         // console.warn('Coupon is missing required fields in APPLY_COUPON action - id:', coupon.id, 'code:', coupon.code);
       }
       
+      // ✅ Only store essential coupon information to avoid data duplication
+      // As per project specification: "When applying a coupon, only store the coupon ID in the appliedCoupon object."
       const appliedCoupon: AppliedCoupon = {
-        ...coupon,
+        id: coupon.id || coupon.couponId || '',
+        code: coupon.code || '',
+        name: coupon.name || '',
+        title: coupon.title || coupon.code || '',
+        description: coupon.description || '',
+        isStackable: coupon.isStackable || false,
+        minOrderAmount: coupon.minOrderAmount || 0,
+        minOrderCount: coupon.minOrderCount || 0,
+        discountType: coupon.discountType || coupon.type || 'percentage',
+        discountValue: coupon.discountValue !== undefined ? coupon.discountValue : (coupon.value || 0),
+        maxDiscountAmount: coupon.maxDiscountAmount || undefined,
+        // Timestamp when applied
         appliedAt: new Date(),
         discountAmount: 0 // Will be calculated in calculateState
       };
@@ -335,8 +326,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         for (const firebaseItem of firebaseItems) {
           // Get product details to fetch the image URL
           // Use either productId or menuItemId depending on which one is populated
-          const productIdToUse = firebaseItem.productId || firebaseItem.menuItemId;
-          const productDetails = await CartService.getProductDetails(productIdToUse);
+          const productIdToUse = firebaseItem.productId || firebaseItem.menuItemId || '';
+          const productDetails = await CartService.getProductDetails(productIdToUse || '');
           
           // Determine chefId and related IDs based on available fields
           let chefId = '';
@@ -387,7 +378,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
           
           localItems.push({
             id: firebaseItem.itemId, // Use the Firebase document ID as the local item ID
-            productId: productIdToUse,
+            productId: productIdToUse || '',
             name: firebaseItem.name,
             price: firebaseItem.price,
             quantity: firebaseItem.quantity,
@@ -396,7 +387,9 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
             chefName: '', // We'll need to get this from the product data
             serviceId: serviceId,
             restaurantId: restaurantId,
-            warehouseId: warehouseId
+            warehouseId: warehouseId,
+            // Include the actual category from product details if available
+            category: productDetails?.category
           });
         }
         

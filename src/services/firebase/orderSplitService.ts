@@ -78,9 +78,6 @@ export class OrderSplitService {
       // Create status history record in subcollection
       await this.createStatusHistory(orderId, orderData);
       
-      // Add to user's order history
-      await this.addToUserOrderHistory(orderData.userId || orderData.customerId, orderData, orderId);
-      
       // Deactivate user's cart
       await this.deactivateUserCart(orderData.userId || orderData.customerId);
       
@@ -109,9 +106,6 @@ export class OrderSplitService {
     
     // Deactivate user's cart
     await this.deactivateUserCart(orderData.userId || orderData.customerId);
-    
-    // Add to user order history
-    await this.addToUserOrderHistory(orderData.userId || orderData.customerId, orderData, orderId);
     
     return orderId;
   }
@@ -272,18 +266,15 @@ export class OrderSplitService {
    */
   static async createOrderItems(orderId: string, orderData: any): Promise<void> {
     if (orderData.items && Array.isArray(orderData.items)) {
-      // Determine order type based on the first item
-      // If the first item has restaurantId, it's a restaurant order
-      // If the first item has warehouseId, it's a warehouse order
-      const firstItem = orderData.items[0];
-      const isRestaurantOrder = firstItem.restaurantId && firstItem.restaurantId !== '';
-      const itemType = isRestaurantOrder ? 'menu_item' : 'product';
-      
       for (const item of orderData.items) {
         const orderItemRef = doc(collection(db, 'orders', orderId, 'order_items'));
         
+        // Determine if this is a restaurant item or warehouse item based on the item itself
+        const isRestaurantItem = item.restaurantId && item.restaurantId !== '';
+        const isWarehouseItem = item.warehouseId && item.warehouseId !== '';
+        const itemType = isRestaurantItem ? 'menu_item' : 'product';
+        
         // Get item-specific data
-        const chefId = item.chefId || '';
         const restaurantId = item.restaurantId || '';
         const warehouseId = item.warehouseId || '';
         const serviceId = item.serviceId || '';
@@ -292,36 +283,54 @@ export class OrderSplitService {
         let menuItemId = '';
         let productId = '';
         
-        // For restaurant orders, use the productId as menuItemId
-        // For warehouse orders, use the productId as productId
-        if (itemType === 'menu_item') {
+        // For restaurant items, use the productId as menuItemId
+        // For warehouse items, use the productId as productId
+        if (isRestaurantItem) {
           menuItemId = item.productId || '';
         } else {
           productId = item.productId || '';
         }
         
+        // Build the order item data with only relevant fields
         const orderItemData: OrderItemData = {
-          category: item.category || "Main",
-          chefId: chefId,
-          cuisine: item.cuisine || "Indian",
+          // Use actual category from item if available and not 'Main', otherwise default to 'General'
+          category: (item.category && item.category !== 'Main') ? item.category : 'General',
+          // Only include chefId for restaurant items
+          ...(isRestaurantItem && { chefId: restaurantId }),
+          // Only include cuisine for restaurant items
+          ...(isRestaurantItem && { cuisine: item.cuisine || 'Indian' }),
           customizations: item.customizations || [],
           links: {
-            menuItemId: menuItemId,
-            productId: productId,
-            restaurantId: restaurantId,
-            warehouseId: warehouseId,
+            // Only populate relevant link fields based on item type
+            ...(isRestaurantItem && { menuItemId }),
+            ...(isWarehouseItem && { productId }),
+            ...(isRestaurantItem && { restaurantId }),
+            ...(isWarehouseItem && { warehouseId }),
             serviceId: serviceId,
           },
           name: item.name,
-          prepTime: item.prepTime || "15 mins",
+          // Only include prepTime for restaurant items
+          ...(isRestaurantItem && { prepTime: item.prepTime || '15 mins' }),
           quantity: item.quantity,
-          status: "pending",
+          status: 'pending',
           totalPrice: item.price * item.quantity,
           type: itemType,
           unitPrice: item.price,
           // Include customerId for security rules
           customerId: orderData.customerId,
         };
+        
+        // Remove any undefined or empty string fields to reduce redundancy
+        Object.keys(orderItemData).forEach(key => {
+          if (orderItemData[key as keyof OrderItemData] === '' || orderItemData[key as keyof OrderItemData] === undefined) {
+            delete (orderItemData as any)[key];
+          }
+        });
+        
+        // Remove empty links object
+        if (orderItemData.links && Object.keys(orderItemData.links).length === 0) {
+          delete (orderItemData as any).links;
+        }
         
         await setDoc(orderItemRef, orderItemData);
       }

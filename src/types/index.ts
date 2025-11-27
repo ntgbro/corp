@@ -169,6 +169,8 @@ export interface Review {
   updatedAt: any;
 }
 
+// Local representation of cart items - all fields are populated for ease of use
+// When stored in Firebase, only relevant fields are stored to reduce data size
 export interface CartItem {
   id: string;
   productId: string;

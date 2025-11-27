@@ -38,8 +38,6 @@ users/{userId}/cart/{cartId}
 users/{userId}/cart/{cartId}/cart_items/{itemId}
 - itemId: string
 - userId: string
-- productId: string
-- menuItemId: string
 - name: string
 - price: number
 - quantity: number
@@ -47,6 +45,17 @@ users/{userId}/cart/{cartId}/cart_items/{itemId}
 - customizations: array
 - notes: string
 - addedAt: timestamp
+- serviceId: string
+
+// Only one of the following sets will be populated based on item type:
+
+// For Restaurant Items:
+- menuItemId: string     // The menu item ID
+- restaurantId: string   // The restaurant ID
+
+// For Warehouse Items:
+- productId: string      // The product ID
+- warehouseId: string    // The warehouse ID
 ```
 
 ## Synchronization Flow
