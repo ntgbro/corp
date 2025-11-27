@@ -139,8 +139,6 @@ Complete Commented Guide
 ```json
 {
   "itemId": "string",
-  "menuItemId": "string",
-  "productId": "string",
   "name": "string",
   "price": "number",
   "quantity": "number",
@@ -152,7 +150,18 @@ Complete Commented Guide
     }
   ],
   "notes": "string",
-  "addedAt": "timestamp"
+  "addedAt": "timestamp",
+  "serviceId": "string",
+  
+  "// Only one of the following sets will be populated based on item type:",
+  
+  "// For Restaurant Items:",
+  "menuItemId": "string",     "// The menu item ID",
+  "restaurantId": "string",   "// The restaurant ID",
+  
+  "// For Warehouse Items:",
+  "productId": "string",      "// The product ID",
+  "warehouseId": "string"    "// The warehouse ID"
 }
 ```
 

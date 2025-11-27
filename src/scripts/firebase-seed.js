@@ -279,20 +279,37 @@ async function seedUsers() {
   };
   const cartRef = await addSubDocument(userRef, 'cart', cartData);
 
-  // CART_ITEMS Subcollection
-  const cartItemData = {
-    itemId: 'item123',
-    menuItemId: 'menu123',
-    productId: 'product123',
+  // CART_ITEMS Subcollection - Restaurant Item Example
+  const restaurantCartItemData = {
+    itemId: 'rest_item123',
     name: 'Pizza',
     price: 10,
     quantity: 2,
     totalPrice: 20,
     customizations: [{ name: 'Extra Cheese', price: 2 }],
     notes: 'No onions',
-    addedAt: admin.firestore.Timestamp.now()
+    addedAt: admin.firestore.Timestamp.now(),
+    serviceId: 'service123',
+    menuItemId: 'menu123',
+    restaurantId: 'restaurant123'
   };
-  await addSubDocument(cartRef, 'cart_items', cartItemData);
+  await addSubDocument(cartRef, 'cart_items', restaurantCartItemData);
+  
+  // CART_ITEMS Subcollection - Warehouse Item Example
+  const warehouseCartItemData = {
+    itemId: 'ware_item123',
+    name: 'Notebook',
+    price: 50,
+    quantity: 1,
+    totalPrice: 50,
+    customizations: [],
+    notes: '',
+    addedAt: admin.firestore.Timestamp.now(),
+    serviceId: 'fmcg',
+    productId: 'product123',
+    warehouseId: 'warehouse123'
+  };
+  await addSubDocument(cartRef, 'cart_items', warehouseCartItemData);
 
   // WISHLIST Subcollection
   const wishlistData = {
