@@ -46,7 +46,7 @@ export const MainOrdersScreen = () => {
 
   // Group orders by status
   const presentOrders = orders.filter((order: any) => 
-    ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'].includes(order.status.toLowerCase())
+    ['pending', 'confirmed', 'preparing', 'ready', 'assigned', 'out_for_delivery'].includes(order.status.toLowerCase())
   );
   
   const deliveredOrders = orders.filter((order: any) => 

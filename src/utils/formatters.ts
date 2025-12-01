@@ -310,6 +310,7 @@ export function formatOrderStatus(status: string): string {
     'confirmed': 'Confirmed',
     'preparing': 'Preparing',
     'ready': 'Ready for Pickup',
+    'assigned': 'Partner Assigned',
     'picked_up': 'Picked Up',
     'out_for_delivery': 'Out for Delivery',
     'delivered': 'Delivered',
