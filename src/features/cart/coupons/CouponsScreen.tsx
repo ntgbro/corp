@@ -16,6 +16,7 @@ import { useCart } from '../../../contexts/CartContext';
 import { Coupon } from '../../../types/coupon';
 import { UserProfile } from '../../../types/user';
 import Clipboard from '@react-native-clipboard/clipboard';
+import { collection, query, where, getDocs } from '@react-native-firebase/firestore';
 
 const CouponsScreen = () => {
   const { colors } = useTheme();
@@ -38,12 +39,16 @@ const CouponsScreen = () => {
       const now = new Date();
       
       console.log('Fetching coupons from Firestore...');
-      const querySnapshot = await db.collection('coupons').where('isActive', '==', true).get();
+      
+      // ✅ NEW MODULAR SYNTAX
+      const couponsRef = collection(db, 'coupons');
+      const q = query(couponsRef, where('isActive', '==', true));
+      const querySnapshot = await getDocs(q);
       
       console.log(`Found ${querySnapshot.size} coupon documents`);
 
       const validCoupons = querySnapshot.docs
-        .map(doc => {
+        .map((doc: any) => {
           const data = doc.data();
           console.log('Coupon data:', doc.id, data);
           return {
@@ -53,7 +58,7 @@ const CouponsScreen = () => {
             validTill: data.validTill?.toDate ? data.validTill.toDate() : (data.validUntil?.toDate ? data.validUntil.toDate() : data.validTill || data.validUntil)
           } as Coupon;
         })
-        .filter(coupon => {
+        .filter((coupon: Coupon) => {
           // Log all date information for debugging
           console.log('Coupon date info:', {
             code: coupon.code,

@@ -51,6 +51,7 @@ export const OrderDetailsScreen = () => {
       case 'confirmed':
       case 'preparing':
       case 'ready':
+      case 'assigned':
         return theme.colors.warning;
       case 'cancelled':
         return theme.colors.error;

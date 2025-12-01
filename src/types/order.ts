@@ -4,7 +4,7 @@ export interface Order {
   userId: string;
   restaurantId: string;
   totalAmount: number;
-  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'assigned' | 'out_for_delivery' | 'delivered' | 'cancelled';
   orderDate: Date;
   deliveryAddress: string;
   paymentMethod: string;
@@ -34,7 +34,7 @@ export interface Payment {
   transactionId?: string;
 }
 
-export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
+export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'assigned' | 'out_for_delivery' | 'delivered' | 'cancelled';
 
 export interface OrderQuery {
   status?: OrderStatus;

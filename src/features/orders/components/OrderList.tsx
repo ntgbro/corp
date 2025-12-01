@@ -26,6 +26,7 @@ const ORDER_STATUS_FLOW = [
   'confirmed',
   'preparing',
   'ready',
+  'assigned',
   'out_for_delivery',
   'delivered'
 ];
@@ -51,6 +52,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) =>
       case 'confirmed':
       case 'preparing':
       case 'ready':
+      case 'assigned':
         return theme.colors.warning;
       case 'cancelled':
         return theme.colors.error;
@@ -112,6 +114,9 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) =>
           const isActive = index === currentIndex;
           const isLast = index === ORDER_STATUS_FLOW.length - 1;
 
+          // Check if we should show partner details at this step
+          const showPartnerHere = isActive && (status === 'assigned' || status === 'out_for_delivery');
+
           return (
             <View key={status} style={styles.timelineItem}>
               <View style={styles.timelineLeft}>
@@ -151,19 +156,22 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) =>
                 ]}>
                   {getStatusText(status)}
                 </Text>
+                
+                {/* ✅ ADDED: Show Delivery Partner details here */}
+                {showPartnerHere && deliveryPartnerName && (
+                  <View style={styles.deliveryPartnerInfo}>
+                    <Text style={[styles.deliveryPartnerText, {color: theme.colors.text}]}>Agent: {deliveryPartnerName}</Text>
+                    {deliveryPartnerPhone && (
+                      <Text style={[styles.deliveryPartnerPhone, {color: theme.colors.textSecondary}]}>📞 {deliveryPartnerPhone}</Text>
+                    )}
+                  </View>
+                )}
                 {isActive && status === 'out_for_delivery' && otp && (
                   <View style={[styles.otpBadge, { backgroundColor: theme.colors.primary }]}>
                     <Text style={styles.otpBadgeText}>OTP: {otp}</Text>
                   </View>
                 )}
-                {isActive && status === 'out_for_delivery' && deliveryPartnerName && (
-                  <View style={styles.deliveryPartnerInfo}>
-                    <Text style={styles.deliveryPartnerText}>Delivery Partner: {deliveryPartnerName}</Text>
-                    {deliveryPartnerPhone && (
-                      <Text style={styles.deliveryPartnerText}>Phone: {deliveryPartnerPhone}</Text>
-                    )}
-                  </View>
-                )}
+
                 {isActive && (
                   <View style={[styles.activeBadge, { backgroundColor: theme.colors.primary }]}>
                     <Text style={styles.activeBadgeText}>Active</Text>
@@ -403,22 +411,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   deliveryPartnerText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 2,
-  },
-  activeBadge: {
-    alignSelf: 'flex-start',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    marginTop: 4,
-  },
-  activeBadgeText: {
-    color: '#fff',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
+  deliveryPartnerPhone: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+
   buttonContainer: {
     marginTop: 20,
     marginBottom: 10,

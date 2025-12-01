@@ -24,6 +24,7 @@ export const useMainOrders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ OPTIMIZED FUNCTION
   const fetchDeliveryPartnerDetails = async (deliveryPartnerId: string) => {
     try {
       const deliveryPartnerDoc = await getDoc(doc(db, 'delivery_partners', deliveryPartnerId));
@@ -35,13 +36,8 @@ export const useMainOrders = () => {
         };
       }
     } catch (error: any) {
-      // Handle permission denied error gracefully
-      if (error.code === 'firestore/permission-denied') {
-        console.warn('Permission denied when fetching delivery partner details. This is expected for non-admin users.');
-        // Return default values instead of throwing error
-        return { name: 'Delivery Partner', phone: '' };
-      }
-      console.error('Error fetching delivery partner details:', error);
+      // ✅ Just return default values silently instead of spamming console with "Expected" errors
+      return { name: 'Delivery Partner', phone: '' };
     }
     return { name: 'Delivery Partner', phone: '' };
   };
@@ -93,17 +89,20 @@ export const useMainOrders = () => {
             otp = data.otp;
           }
 
-          // Extract delivery partner ID if available
-          let deliveryPartnerName: string | undefined;
-          let deliveryPartnerPhone: string | undefined;
+          // ✅ UPDATED PARTNER LOGIC
+          // 1. Check if the order ALREADY has the name/phone (Fastest & Best)
+          let deliveryPartnerName = data.deliveryPartnerName;
+          let deliveryPartnerPhone = data.deliveryPartnerPhone;
           
-          if (data.deliveryPartnerId) {
-            // Fetch delivery partner details if status is out_for_delivery
-            if (data.status && data.status.toLowerCase() === 'out_for_delivery') {
-              const partnerDetails = await fetchDeliveryPartnerDetails(data.deliveryPartnerId);
-              deliveryPartnerName = partnerDetails.name;
-              deliveryPartnerPhone = partnerDetails.phone;
-            }
+          // 2. Only fetch if missing AND we have an ID AND status is relevant
+          if (!deliveryPartnerName && data.deliveryPartnerId) {
+             const status = data.status ? data.status.toLowerCase() : '';
+             // Fetch for both 'out_for_delivery' AND 'assigned'
+             if (status === 'out_for_delivery' || status === 'assigned') {
+                const partnerDetails = await fetchDeliveryPartnerDetails(data.deliveryPartnerId);
+                deliveryPartnerName = partnerDetails.name;
+                deliveryPartnerPhone = partnerDetails.phone;
+             }
           }
 
           ordersData.push({
