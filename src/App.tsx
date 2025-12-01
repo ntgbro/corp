@@ -5,6 +5,7 @@ import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { AppNavigator } from './navigation';
+import SplashScreen from './features/splash/SplashScreen';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useThemeContext } from './contexts/ThemeContext';
 import { store, persistor } from './store';
@@ -49,8 +50,9 @@ const validateGoogleSignInConfig = async () => {
 
 const AppContent: React.FC = () => {
   const { theme } = useThemeContext();
-  const [appReady, setAppReady] = useState(false);
+  const [appReady, setAppReady] = useState(true); // Set to true immediately
   const [appError, setAppError] = useState<string | null>(null);
+  const [showSplash, setShowSplash] = useState(true);
 
   // Create navigation theme based on current theme
   const navigationTheme = {
@@ -104,11 +106,8 @@ const AppContent: React.FC = () => {
           console.log('Google Sign-In not configured - skipping configuration');
         }
         
-        // Add any initialization logic here
-        // For now, just add a small delay to simulate loading
-        setTimeout(() => {
-          setAppReady(true);
-        }, 1000);
+        // App is ready immediately, no delay needed
+        setAppReady(true);
       } catch (error) {
         console.error('App initialization error:', error);
         setAppError('Failed to initialize app');
@@ -119,19 +118,24 @@ const AppContent: React.FC = () => {
     initializeApp();
   }, []);
 
-  // Loading screen
-  if (!appReady) {
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-          Loading Corpease...
-        </Text>
-        <Text style={[styles.loadingSubtext, { color: theme.colors.textSecondary }]}>
-          Setting up your experience
-        </Text>
-      </View>
-    );
+  // Temporarily disable automatic navigation from splash screen
+  // Uncomment the following useEffect when you want to re-enable automatic navigation
+  
+  useEffect(() => {
+    if (appReady) {
+      const timer = setTimeout(() => {
+        setShowSplash(false);
+      }, 3000); // Adjust timing to match your splash screen animation
+
+      return () => clearTimeout(timer);
+    }
+  }, [appReady]);
+
+  // Removed the loading screen check since appReady is now true immediately
+
+  // Show splash screen (will stay visible until manually navigated away)
+  if (showSplash) {
+    return <SplashScreen />;
   }
 
   // Error screen
@@ -182,23 +186,7 @@ const App: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  loadingSubtext: {
-    fontSize: 14,
-    marginTop: 8,
-    textAlign: 'center',
-  },
+  // Removed loadingContainer styles since we're not using the loading screen
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
