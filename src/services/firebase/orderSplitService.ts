@@ -152,25 +152,38 @@ export class OrderSplitService {
       };
     }
     
+    // Format estimatedDeliveryTime from actualDeliveryTime
+    let estimatedDeliveryTime = orderData.estimatedDeliveryTime || "30 mins";
+    const actualDeliveryTime = orderData.selectedTimeSlot || orderData.actualDeliveryTime;
+    
+    if (actualDeliveryTime) {
+      // If it's an object with day and time
+      if (actualDeliveryTime.day && actualDeliveryTime.time) {
+        estimatedDeliveryTime = `${actualDeliveryTime.day}, ${actualDeliveryTime.time}`;
+      }
+      // If it just has a time property
+      else if (actualDeliveryTime.time) {
+        estimatedDeliveryTime = actualDeliveryTime.time;
+      }
+    }
+    
     // Extract only the fields needed for the main order document
     const orderMainData = {
-      actualDeliveryTime: orderData.selectedTimeSlot || orderData.actualDeliveryTime || "25 mins",
+      actualDeliveryTime: actualDeliveryTime || "25 mins",
       appliedCoupons: orderData.appliedCoupons || [],
       cancellationReason: "None",
       createdAt: new Date(orderData.createdAt),
       deliveryAddress: deliveryAddress,
       deliveryCharges: orderData.deliveryCharges || 0,
-      deliveryPartnerId: "", // Add this field
       deliveryType: orderData.deliveryType || "delivery",
       discount: orderData.discount || 0,
-      estimatedDeliveryTime: orderData.estimatedDeliveryTime || "30 mins",
+      estimatedDeliveryTime: estimatedDeliveryTime,
       finalAmount: orderData.finalAmount || 0,
       instructions: orderData.instructions || "",
       orderId: orderId,
       paymentMethod: orderData.paymentMethod || "UPI",
       paymentStatus: orderData.paymentStatus || "pending",
       refundAmount: 0, // Add this field
-      restaurantId: orderData.restaurantId || "",
       scheduledFor: new Date(orderData.scheduledFor),
       status: orderData.status || "pending",
       taxes: orderData.taxes || 0,
@@ -272,6 +285,7 @@ export class OrderSplitService {
         // Determine if this is a restaurant item or warehouse item based on the item itself
         const isRestaurantItem = item.restaurantId && item.restaurantId !== '';
         const isWarehouseItem = item.warehouseId && item.warehouseId !== '';
+        const isFreshServeService = item.serviceId === 'anaJiWM2bcrlRfqsGlVU'; // Fresh serve service ID
         const itemType = isRestaurantItem ? 'menu_item' : 'product';
         
         // Get item-specific data
@@ -295,8 +309,8 @@ export class OrderSplitService {
         const orderItemData: OrderItemData = {
           // Use actual category from item if available and not 'Main', otherwise default to 'General'
           category: (item.category && item.category !== 'Main') ? item.category : 'General',
-          // Only include chefId for restaurant items
-          ...(isRestaurantItem && { chefId: restaurantId }),
+          // Only include chefId for restaurant items, but exclude for fresh serve service
+          ...(!isFreshServeService && isRestaurantItem && { chefId: restaurantId }),
           // Only include cuisine for restaurant items
           ...(isRestaurantItem && { cuisine: item.cuisine || 'Indian' }),
           customizations: item.customizations || [],

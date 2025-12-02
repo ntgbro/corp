@@ -40,6 +40,7 @@ const SplashScreen: React.FC = () => {
   const logo6Opacity = useRef(new Animated.Value(0)).current;
   
   const logosOpacity = [logo1Opacity, logo2Opacity, logo3Opacity, logo4Opacity, logo5Opacity, logo6Opacity];
+  const logoComponents = [Logo1, Logo2, Logo3, Logo4, Logo5, Logo6];
 
   useEffect(() => {
     Animated.timing(centerOpacity, {
@@ -69,18 +70,21 @@ const SplashScreen: React.FC = () => {
       <Animated.View style={[styles.centerLogo, { opacity: centerOpacity }]}>
         <CenterText width={148} height={148} />
       </Animated.View>
-      {[Logo1, Logo2, Logo3, Logo4, Logo5, Logo6].map((LogoComponent, idx) => (
-        <Animated.View key={idx} style={[getPosition(idx), { opacity: logosOpacity[idx] }]}>
-          {/* Increase size for Logo1 (idx=0) and Logo4 (idx=3) */}
-          {idx === 0 ? (
-            <LogoComponent width={172} height={172} /> // Logo1 - increased size
-          ) : idx === 3 ? (
-            <LogoComponent width={172} height={172} /> // Logo4 - increased size
-          ) : (
-            <LogoComponent width={150} height={150} /> // Other logos - original size
-          )}
-        </Animated.View>
-      ))}
+      {logoComponents.map((LogoComponent, idx) => {
+        const LogoElement = LogoComponent;
+        return (
+          <Animated.View key={`logo-${idx}`} style={[getPosition(idx), { opacity: logosOpacity[idx] }]}>
+            {/* Increase size for Logo1 (idx=0) and Logo4 (idx=3) */}
+            {idx === 0 ? (
+              <LogoElement width={172} height={172} /> // Logo1 - increased size
+            ) : idx === 3 ? (
+              <LogoElement width={172} height={172} /> // Logo4 - increased size
+            ) : (
+              <LogoElement width={150} height={150} /> // Other logos - original size
+            )}
+          </Animated.View>
+        );
+      })}
     </View>
   );
 };

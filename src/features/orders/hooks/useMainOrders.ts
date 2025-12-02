@@ -89,20 +89,25 @@ export const useMainOrders = () => {
             otp = data.otp;
           }
 
-          // ✅ UPDATED PARTNER LOGIC
-          // 1. Check if the order ALREADY has the name/phone (Fastest & Best)
-          let deliveryPartnerName = data.deliveryPartnerName;
-          let deliveryPartnerPhone = data.deliveryPartnerPhone;
+          // Extract delivery partner information from the nested deliveryPartner object
+          let deliveryPartnerName = '';
+          let deliveryPartnerPhone = '';
           
-          // 2. Only fetch if missing AND we have an ID AND status is relevant
-          if (!deliveryPartnerName && data.deliveryPartnerId) {
-             const status = data.status ? data.status.toLowerCase() : '';
-             // Fetch for both 'out_for_delivery' AND 'assigned'
-             if (status === 'out_for_delivery' || status === 'assigned') {
-                const partnerDetails = await fetchDeliveryPartnerDetails(data.deliveryPartnerId);
-                deliveryPartnerName = partnerDetails.name;
-                deliveryPartnerPhone = partnerDetails.phone;
-             }
+          // Check if deliveryPartner data exists in the order
+          if (data.deliveryPartner && typeof data.deliveryPartner === 'object') {
+            deliveryPartnerName = data.deliveryPartner.name || '';
+            deliveryPartnerPhone = data.deliveryPartner.phone || '';
+          }
+          
+          // Fallback: If no deliveryPartner data but we have deliveryPartnerId, fetch from delivery_partners collection
+          if ((!deliveryPartnerName || !deliveryPartnerPhone) && data.deliveryPartnerId) {
+            const status = data.status ? data.status.toLowerCase() : '';
+            // Fetch for both 'out_for_delivery' AND 'assigned'
+            if (status === 'out_for_delivery' || status === 'assigned') {
+              const partnerDetails = await fetchDeliveryPartnerDetails(data.deliveryPartnerId);
+              deliveryPartnerName = deliveryPartnerName || partnerDetails.name;
+              deliveryPartnerPhone = deliveryPartnerPhone || partnerDetails.phone;
+            }
           }
 
           ordersData.push({

@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeContext } from '../../../contexts/ThemeContext';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { useOrderDetails } from '../hooks/useOrderDetails';
-import { OrderItem, PaymentDetails, StatusHistory } from '../hooks/useOrderDetails';
+// Removed 'StatusHistory' from imports as it is no longer used
+import { OrderItem, PaymentDetails } from '../hooks/useOrderDetails';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type OrderDetailsRouteProp = RouteProp<{
@@ -17,7 +18,24 @@ export const OrderDetailsScreen = () => {
   const navigation = useNavigation();
   const { orderId } = route.params || {};
   
+  // Note: Since you mentioned you don't want to pull data from the status_history collection anymore,
+  // ensure you also update your 'useOrderDetails' hook to stop fetching that field to save database reads.
   const { orderDetails, loading, error } = useOrderDetails(orderId || null);
+
+  // --- HELPER: Parse Address Data ---
+  const getParsedAddress = (data: any) => {
+    try {
+      if (!data) return null;
+      // If it's a string (JSON), parse it. If it's already an object, return it.
+      return typeof data === 'string' ? JSON.parse(data) : data;
+    } catch (e) {
+      console.log('Error parsing address:', e);
+      return null;
+    }
+  };
+
+  const deliveryAddress = orderDetails ? getParsedAddress(orderDetails.deliveryAddress) : null;
+  // ----------------------------------
 
   // Format price
   const formatPrice = (price: number) => {
@@ -51,7 +69,6 @@ export const OrderDetailsScreen = () => {
       case 'confirmed':
       case 'preparing':
       case 'ready':
-      case 'assigned':
         return theme.colors.warning;
       case 'cancelled':
         return theme.colors.error;
@@ -195,7 +212,7 @@ export const OrderDetailsScreen = () => {
           {orderDetails.items.map((item: OrderItem) => (
             <View key={item.id} style={styles.itemContainer}>
               <View style={styles.itemHeader}>
-                <Text style={[styles.itemName, { color: theme.colors.text }]}>
+                <Text style={[styles.itemName, { color: theme.colors.text, flex: 1, marginRight: 12 }]}>
                   {item.name}
                 </Text>
                 <Text style={[styles.itemPrice, { color: theme.colors.text }]}>
@@ -227,20 +244,37 @@ export const OrderDetailsScreen = () => {
             Delivery Information
           </Text>
           
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>
-              Delivery Address:
+          <View style={styles.addressBlock}>
+            <Text style={[styles.infoLabel, { color: theme.colors.textSecondary, marginBottom: 8 }]}>
+              Delivery Address
             </Text>
-            <Text style={[styles.infoValue, { color: theme.colors.text }]}>
-              {typeof orderDetails.deliveryAddress === 'string' 
-                ? orderDetails.deliveryAddress 
-                : JSON.stringify(orderDetails.deliveryAddress)}
-            </Text>
+            
+            {deliveryAddress ? (
+              <View style={{ marginTop: 4 }}>
+                <Text style={[styles.contactName, { color: theme.colors.text }]}>
+                  {deliveryAddress.contactName || "Customer"}
+                </Text>
+                <Text style={[styles.addressText, { color: theme.colors.textSecondary }]}>
+                   {deliveryAddress.line2 ? `${deliveryAddress.line2}, ` : ''}
+                   {deliveryAddress.line1}
+                </Text>
+                <Text style={[styles.addressText, { color: theme.colors.textSecondary, marginBottom: 6 }]}>
+                  {deliveryAddress.city} - {deliveryAddress.pincode}
+                </Text>
+                <Text style={[styles.phoneText, { color: theme.colors.text }]}>
+                  Phone: {deliveryAddress.contactPhone}
+                </Text>
+              </View>
+            ) : (
+               <Text style={[styles.addressText, { color: theme.colors.text }]}>
+                  Address details unavailable
+               </Text>
+            )}
           </View>
           
           <View style={styles.infoRow}>
             <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>
-              Estimated Delivery:
+              Estimated Delivery
             </Text>
             <Text style={[styles.infoValue, { color: theme.colors.text }]}>
               {orderDetails.estimatedDeliveryTime}
@@ -256,7 +290,7 @@ export const OrderDetailsScreen = () => {
           
           <View style={styles.infoRow}>
             <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>
-              Payment Method:
+              Payment Method
             </Text>
             <Text style={[styles.infoValue, { color: theme.colors.text }]}>
               {orderDetails.paymentMethod}
@@ -265,7 +299,7 @@ export const OrderDetailsScreen = () => {
           
           <View style={styles.infoRow}>
             <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>
-              Payment Status:
+              Payment Status
             </Text>
             <Text style={[styles.infoValue, { color: theme.colors.text }]}>
               {orderDetails.paymentStatus}
@@ -275,7 +309,7 @@ export const OrderDetailsScreen = () => {
           {orderDetails.payment.length > 0 && orderDetails.payment[0].transactionId && (
             <View style={styles.infoRow}>
               <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>
-                Transaction ID:
+                Transaction ID
               </Text>
               <Text style={[styles.infoValue, { color: theme.colors.text }]}>
                 {orderDetails.payment[0].transactionId}
@@ -284,30 +318,7 @@ export const OrderDetailsScreen = () => {
           )}
         </View>
 
-        {/* Status History */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-            Status History
-          </Text>
-          
-          {orderDetails.statusHistory && orderDetails.statusHistory.map((history: StatusHistory, index: number) => (
-            <View key={index} style={styles.historyItem}>
-              <View style={styles.historyHeader}>
-                <Text style={[styles.historyStatus, { color: getStatusColor(history.status) }]}>
-                  {history.status.charAt(0).toUpperCase() + history.status.slice(1).replace(/_/g, ' ')}
-                </Text>
-                <Text style={[styles.historyDate, { color: theme.colors.textSecondary }]}>
-                  {formatDate(history.timestamp)}
-                </Text>
-              </View>
-              {history.notes && (
-                <Text style={[styles.historyNote, { color: theme.colors.textSecondary }]}>
-                  {history.notes}
-                </Text>
-              )}
-            </View>
-          ))}
-        </View>
+        {/* Status History Removed */}
       </ScrollView>
     </SafeAreaView>
   );
@@ -323,12 +334,20 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 24,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   orderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    alignItems: 'flex-start',
+    marginBottom: 4,
   },
   orderInfo: {
     flex: 1,
@@ -336,7 +355,7 @@ const styles = StyleSheet.create({
   orderId: {
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   statusContainer: {
     flexDirection: 'row',
@@ -345,37 +364,42 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 14,
     fontWeight: '600',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 12,
     backgroundColor: 'rgba(0,0,0,0.05)',
+    overflow: 'hidden',
   },
   orderDate: {
-    fontSize: 14,
+    fontSize: 13,
     textAlign: 'right',
+    marginTop: 4,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    paddingBottom: 8,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   summaryLabel: {
-    fontSize: 16,
+    fontSize: 15,
   },
   summaryValue: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
   },
   totalRow: {
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
-    marginTop: 8,
+    marginTop: 12,
     paddingTop: 12,
   },
   totalLabel: {
@@ -388,23 +412,27 @@ const styles = StyleSheet.create({
   },
   itemContainer: {
     padding: 12,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f9fafb',
     borderRadius: 8,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 4,
   },
   itemName: {
     fontSize: 16,
     fontWeight: '600',
+    lineHeight: 22,
   },
   itemPrice: {
     fontSize: 16,
     fontWeight: '600',
+    lineHeight: 22,
   },
   itemQuantity: {
     fontSize: 14,
@@ -412,55 +440,64 @@ const styles = StyleSheet.create({
   },
   customizationsContainer: {
     marginTop: 4,
+    paddingTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
   },
   customizationsTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     marginBottom: 2,
   },
   customizationItem: {
     fontSize: 13,
-    marginLeft: 8,
+    marginLeft: 4,
+    lineHeight: 18,
+  },
+  addressBlock: {
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  contactName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    textTransform: 'capitalize',
+  },
+  addressText: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 2,
+  },
+  phoneText: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginTop: 2,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'flex-start', // Changed from 'center' to 'flex-start' so text aligns at the top
     paddingVertical: 8,
   },
   infoLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
-    flex: 1,
+    color: '#666',
+    marginRight: 10, // Add some space so they don't touch
+    marginTop: 2,    // Tiny adjustment to align text baseline
   },
   infoValue: {
-    fontSize: 16,
-    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
     textAlign: 'right',
+    flex: 1,         // THIS IS KEY: It forces the text to wrap inside the box
+    flexWrap: 'wrap',
+    color: '#000',   // Ensure text is black/visible
   },
-  historyItem: {
-    padding: 12,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  historyHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  historyStatus: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  historyDate: {
-    fontSize: 14,
-  },
-  historyNote: {
-    fontSize: 14,
-    fontStyle: 'italic',
-  },
+  // Removed history styles as they are no longer used
   errorText: {
     fontSize: 16,
     textAlign: 'center',
