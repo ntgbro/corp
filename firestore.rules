@@ -214,6 +214,10 @@ service cloud.firestore {
         allow create, update, delete: if isAuthenticated() &&
           get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.ownerId == request.auth.uid;
         allow create, update, delete: if isAdmin();
+        
+        // Allow customers to update rating fields only
+        allow update: if isAuthenticated() && 
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'ratingCount']);
       }
 
       // INVENTORY
@@ -275,6 +279,10 @@ service cloud.firestore {
       allow create, update, delete: if isAuthenticated() &&
         get(/databases/$(database)/documents/restaurants/$(path[1])).data.ownerId == request.auth.uid;
       allow create, update, delete: if isAdmin();
+      
+      // Allow customers to update rating fields only
+      allow update: if isAuthenticated() && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'ratingCount']);
     }
 
     // SERVICES (NEW) - used for service selection in forms
