@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeContext } from '../../../contexts/ThemeContext';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
@@ -7,6 +7,8 @@ import { useOrderDetails } from '../hooks/useOrderDetails';
 // Removed 'StatusHistory' from imports as it is no longer used
 import { OrderItem, PaymentDetails } from '../hooks/useOrderDetails';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { StarRating } from '../../../components/common/StarRating'; // Adjust path as needed
+import { RestaurantService } from '../../../services/firebase/restaurantService'; // Adjust path
 
 type OrderDetailsRouteProp = RouteProp<{
   OrderDetails: { orderId: string };
@@ -31,6 +33,58 @@ export const OrderDetailsScreen = () => {
     } catch (e) {
       console.log('Error parsing address:', e);
       return null;
+    }
+  };
+
+  // 1. Add state to track which items have been rated locally in this session
+  const [ratedItems, setRatedItems] = React.useState<Record<string, number>>({});
+
+  // 2. Handler for rating
+  const handleRateItem = async (item: any, rating: number) => {
+    // Only proceed if it's a menu item and has the necessary IDs
+    // Check if the item has links with restaurantId and menuItemId
+    if (item.type !== 'menu_item' || !item.links?.restaurantId || !item.links?.menuItemId) {
+      console.warn('Cannot rate: Missing restaurantId or menuItemId');
+      Alert.alert('Error', 'Cannot rate this item: Missing restaurant or menu item information.');
+      return;
+    }
+
+    // Check if item is already rated in database or current session
+    if (item.isRated || ratedItems[item.id]) {
+      Alert.alert('Info', 'You have already rated this item.');
+      return;
+    }
+
+    try {
+      // 1. Update the Global Average (Restaurant Collection)
+      await RestaurantService.rateMenuItem(
+        item.links.restaurantId,
+        item.links.menuItemId,
+        rating
+      );
+
+      // 2. Update the Personal Order Record (Order Collection) - THIS FIXES THE GLITCH
+      // We pass 'orderDetails?.id' and the specific 'item.id' (the document ID of the item in the order)
+      if (orderDetails?.id) {
+        await RestaurantService.saveUserRatingToOrder(
+          orderDetails.id, 
+          item.id, // This is the specific doc ID in orders/../order_items/
+          rating
+        );
+      }
+
+      // 3. Update local state for immediate feedback
+      setRatedItems(prev => ({ ...prev, [item.id]: rating }));
+      
+      Alert.alert('Success', 'Thanks for your rating!');
+    } catch (error: any) {
+      console.error('Error rating item:', error);
+      // Provide more specific error message for permission issues
+      if (error?.message?.includes('permission')) {
+        Alert.alert('Error', error.message);
+      } else {
+        Alert.alert('Error', 'Failed to submit rating. Please try again.');
+      }
     }
   };
 
@@ -232,6 +286,30 @@ export const OrderDetailsScreen = () => {
                       • {customization.name} (+{formatPrice(customization.price)})
                     </Text>
                   ))}
+                </View>
+              )}
+              {/* --- NEW RATING SECTION --- */}
+              {/* Only show if delivered and item is a restaurant menu item */}
+              {orderDetails.status === 'delivered' && item.type === 'menu_item' && (
+                <View style={styles.ratingContainer}>
+                  <Text style={[styles.ratingLabel, { color: theme.colors.textSecondary }]}> 
+                    {(item.isRated || ratedItems[item.id]) ? "You rated:" : "Rate this item:"}
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                    <StarRating
+                      rating={(item.userRating || ratedItems[item.id]) || 0}
+                      maxRating={5}
+                      size="medium"
+                      // If already rated in database or this session, make it readonly
+                      readonly={!!(item.isRated || ratedItems[item.id])}
+                      onRatingChange={(rating) => handleRateItem(item, rating)}
+                    />
+                    {(item.isRated || ratedItems[item.id]) && (
+                      <Text style={[styles.ratingThanks, { color: theme.colors.success, marginLeft: 12 }]}> 
+                        Thank you!
+                      </Text>
+                    )}
+                  </View>
                 </View>
               )}
             </View>
@@ -511,5 +589,24 @@ const styles = StyleSheet.create({
   retryText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  ratingContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+  },
+  ratingLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  ratingThanks: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#4CAF50',
+    marginLeft: 8,
   },
 });

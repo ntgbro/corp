@@ -18,6 +18,12 @@ export interface OrderItem {
   prepTime: string;
   status: string;
   type: string;
+  links?: {
+    restaurantId?: string;
+    menuItemId?: string;
+  };
+  userRating?: number;
+  isRated?: boolean;
 }
 
 export interface PaymentDetails {
@@ -116,6 +122,9 @@ export const useOrderDetails = (orderId: string | null) => {
             prepTime: data.prepTime,
             status: data.status,
             type: data.type,
+            links: data.links,
+            userRating: data.userRating,
+            isRated: data.isRated,
           });
         });
 
