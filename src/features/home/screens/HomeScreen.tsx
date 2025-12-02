@@ -167,7 +167,6 @@ const HomeScreen: React.FC = () => {
               ref={flatListRef}
               data={promotions}
               horizontal
-              pagingEnabled
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => item.promotionId}
               onScrollToIndexFailed={(info) => {
@@ -182,7 +181,7 @@ const HomeScreen: React.FC = () => {
                 itemVisiblePercentThreshold: 50 // Consider item visible when 50% is shown
               }}
               decelerationRate="fast" // Make scrolling smoother
-              snapToInterval={screenWidth - 40} // Snap to card width with gap
+              snapToInterval={screenWidth - 10} // Snap to exact card width + margins
               snapToAlignment="center" // Align to center
               contentContainerStyle={{ paddingHorizontal: 10 }} // Add padding to sides
               removeClippedSubviews={true} // Optimize performance
@@ -298,7 +297,7 @@ const HomeScreen: React.FC = () => {
         {/* Restaurants Section */}
         <View style={styles.sectionContainer}>
           <View style={styles.titleContainer}>
-            <Typography variant="h5" color="text">Featured Restaurants</Typography>
+            <Typography variant="h5" color="text">Our Restaurants</Typography>
           </View>
           {restaurantsLoading ? (
             <ActivityIndicator />
@@ -420,15 +419,11 @@ const styles = StyleSheet.create({
     marginBottom: 0,
     // Removed paddingHorizontal for edge-to-edge layout
     paddingVertical: 1,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb', // Light border
     backgroundColor: '#fefefe',   // Warm White
   },
   titleContainer: {
     // Removed paddingHorizontal for edge-to-edge layout
     paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb', // Light border
     marginBottom: 6, // Reduced from 12 to 6 to move the featured restaurants section up
     backgroundColor: '#fefefe',   // Warm White
   },
