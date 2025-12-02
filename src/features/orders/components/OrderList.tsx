@@ -26,7 +26,7 @@ const ORDER_STATUS_FLOW = [
   'confirmed',
   'preparing',
   'ready',
-  'assigned',
+  'assigned', // Ensure this is in the flow
   'out_for_delivery',
   'delivered'
 ];
@@ -49,10 +49,11 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) =>
         return theme.colors.success;
       case 'out_for_delivery':
         return theme.colors.primary;
+      case 'assigned':
+        return '#8A2BE2'; // Purple
       case 'confirmed':
       case 'preparing':
       case 'ready':
-      case 'assigned':
         return theme.colors.warning;
       case 'cancelled':
         return theme.colors.error;
@@ -91,6 +92,12 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) =>
               {getStatusText(item.status)}
             </Text>
           </View>
+          {/* Show OTP badge directly on the order item when status is out for delivery */}
+          {item.status.toLowerCase() === 'out_for_delivery' && item.otp && (
+            <View style={[styles.otpBadge, { backgroundColor: theme.colors.primary, marginTop: 8 }]}>
+              <Text style={styles.otpBadgeText}>OTP: {item.otp}</Text>
+            </View>
+          )}
         </View>
         <TouchableOpacity
           style={styles.detailsButton}
@@ -114,8 +121,9 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) =>
           const isActive = index === currentIndex;
           const isLast = index === ORDER_STATUS_FLOW.length - 1;
 
-          // Check if we should show partner details at this step
-          const showPartnerHere = isActive && (status === 'assigned' || status === 'out_for_delivery');
+          // Determine if we should show partner info for this step
+          // We show it if this step is active AND the status is relevant
+          const showPartnerInfo = isActive && (status === 'assigned' || status === 'out_for_delivery');
 
           return (
             <View key={status} style={styles.timelineItem}>
@@ -156,25 +164,32 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onOrderPress }) =>
                 ]}>
                   {getStatusText(status)}
                 </Text>
-                
-                {/* ✅ ADDED: Show Delivery Partner details here */}
-                {showPartnerHere && deliveryPartnerName && (
-                  <View style={styles.deliveryPartnerInfo}>
-                    <Text style={[styles.deliveryPartnerText, {color: theme.colors.text}]}>Agent: {deliveryPartnerName}</Text>
-                    {deliveryPartnerPhone && (
-                      <Text style={[styles.deliveryPartnerPhone, {color: theme.colors.textSecondary}]}>📞 {deliveryPartnerPhone}</Text>
-                    )}
-                  </View>
-                )}
+
+                {/* OTP Badge - Only for Out For Delivery */}
                 {isActive && status === 'out_for_delivery' && otp && (
                   <View style={[styles.otpBadge, { backgroundColor: theme.colors.primary }]}>
                     <Text style={styles.otpBadgeText}>OTP: {otp}</Text>
                   </View>
                 )}
 
-                {isActive && (
+                {/* Delivery Partner Info - For Assigned OR Out For Delivery */}
+                {showPartnerInfo && deliveryPartnerName && (
+                  <View style={styles.deliveryPartnerInfo}>
+                    <Text style={[styles.deliveryPartnerText, { color: theme.colors.text }]}>
+                      Agent: {deliveryPartnerName}
+                    </Text>
+                    {deliveryPartnerPhone && (
+                      <Text style={[styles.deliveryPartnerText, { color: theme.colors.textSecondary, fontSize: 12 }]}>
+                         Phone: {deliveryPartnerPhone}
+                      </Text>
+                    )}
+                  </View>
+                )}
+
+                {/* Generic Active Badge if no specific info is shown */}
+                {isActive && !showPartnerInfo && (
                   <View style={[styles.activeBadge, { backgroundColor: theme.colors.primary }]}>
-                    <Text style={styles.activeBadgeText}>Active</Text>
+                    <Text style={styles.activeBadgeText}>Current Status</Text>
                   </View>
                 )}
               </View>
@@ -408,17 +423,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   deliveryPartnerInfo: {
-    marginTop: 8,
+    marginTop: 4,
+    padding: 8,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    borderRadius: 8,
   },
   deliveryPartnerText: {
     fontSize: 13,
     fontWeight: '600',
+    marginBottom: 2,
   },
-  deliveryPartnerPhone: {
+  activeBadge: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  activeBadgeText: {
+    color: '#fff',
     fontSize: 12,
-    marginTop: 2,
+    fontWeight: '600',
   },
-
   buttonContainer: {
     marginTop: 20,
     marginBottom: 10,
