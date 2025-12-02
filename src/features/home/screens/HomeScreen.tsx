@@ -252,6 +252,18 @@ const HomeScreen: React.FC = () => {
                 );
               }}
             />
+            {/* Carousel Indicator Line */}
+            <View style={styles.indicatorContainer}>
+              {promotions.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.indicatorDot,
+                    index === currentIndex && styles.activeIndicatorDot
+                  ]}
+                />
+              ))}
+            </View>
           </View>
         )}
 
@@ -422,6 +434,22 @@ const styles = StyleSheet.create({
   },
   section: {
     flex: 1,
+  },
+  indicatorContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  indicatorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ccc',
+    marginHorizontal: 4,
+  },
+  activeIndicatorDot: {
+    backgroundColor: '#000',
   },
 });
 
