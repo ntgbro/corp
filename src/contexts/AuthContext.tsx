@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, ReactNode } from 'react';
 import { collection, doc, getDoc, setDoc, GeoPoint } from '@react-native-firebase/firestore';
 import { auth } from '../config/firebase';
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from '@react-native-firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile } from '@react-native-firebase/auth';
 import { db } from '../config/firebase';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store';
@@ -55,46 +55,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             try {
               dispatch(setError(null));
               if (firebaseUser) {
-                // Get user profile from Firestore
-                const userDocRef = doc(collection(db, 'users'), firebaseUser.uid);
-                const userDocSnap = await getDoc(userDocRef);
-                let userData: Omit<UserProfile, 'isPhoneVerified'> | null = userDocSnap.exists() ? userDocSnap.data() as Omit<UserProfile, 'isPhoneVerified'> : null;
-
-                if (!userData) {
-                  // Create user profile if it doesn't exist
-                  userData = {
-                    userId: firebaseUser.uid,
-                    phone: firebaseUser.phoneNumber || '',
-                    displayName: firebaseUser.displayName || '',
-                    email: firebaseUser.email || '',
-                    profilePhotoURL: firebaseUser.photoURL || '',
-                    role: 'customer',
-                    status: 'active',
-                    preferences: { cuisines: [], foodTypes: [], notifications: { orderUpdates: true, promotions: true, offers: true } },
-                    loyaltyPoints: 0,
-                    totalOrders: 0,
-                    joinedAt: new Date(),
-                  };
-                  await setDoc(userDocRef, userData);
-                  
-                  // Create default notifications subcollection
-                  await initializeUserSubcollections(firebaseUser.uid);
+                // Check if email is verified
+                if (!firebaseUser.emailVerified) {
+                  // Sign out the user since email is not verified
+                  await signOut(auth);
+                  dispatch(setUser(null));
+                  dispatch(setTokens({ jwtToken: '', refreshToken: '', tokenExpiry: 0 }));
                 } else {
-                  // Convert Firestore Timestamps to serializable dates
-                  userData = convertUserForRedux(userData);
+                  // Get user profile from Firestore
+                  const userDocRef = doc(collection(db, 'users'), firebaseUser.uid);
+                  const userDocSnap = await getDoc(userDocRef);
+                  let userData: Omit<UserProfile, 'isPhoneVerified'> | null = userDocSnap.exists() ? userDocSnap.data() as Omit<UserProfile, 'isPhoneVerified'> : null;
+
+                  if (!userData) {
+                    // Create user profile if it doesn't exist
+                    userData = {
+                      userId: firebaseUser.uid,
+                      phone: firebaseUser.phoneNumber || '',
+                      displayName: firebaseUser.displayName || '',
+                      email: firebaseUser.email || '',
+                      profilePhotoURL: firebaseUser.photoURL || '',
+                      role: 'customer',
+                      status: 'active',
+                      preferences: { cuisines: [], foodTypes: [], notifications: { orderUpdates: true, promotions: true, offers: true } },
+                      loyaltyPoints: 0,
+                      totalOrders: 0,
+                      joinedAt: new Date(),
+                    };
+                    await setDoc(userDocRef, userData);
+                    
+                    // Create default notifications subcollection
+                    await initializeUserSubcollections(firebaseUser.uid);
+                  } else {
+                    // Convert Firestore Timestamps to serializable dates
+                    userData = convertUserForRedux(userData);
+                  }
+
+                  // Generate JWT token
+                  const jwtToken = await generateJWTToken(firebaseUser.uid, userData);
+                  const tokenExpiry = Math.floor(Date.now() / 1000) + (24 * 60 * 60);
+
+                  // Update Redux state
+                  dispatch(setUser({ ...userData, isPhoneVerified: !!firebaseUser.phoneNumber }));
+                  dispatch(setTokens({
+                    jwtToken,
+                    refreshToken: `refresh_${firebaseUser.uid}_${Date.now()}`,
+                    tokenExpiry,
+                  }));
                 }
-
-                // Generate JWT token
-                const jwtToken = await generateJWTToken(firebaseUser.uid, userData);
-                const tokenExpiry = Math.floor(Date.now() / 1000) + (24 * 60 * 60);
-
-                // Update Redux state
-                dispatch(setUser({ ...userData, isPhoneVerified: !!firebaseUser.phoneNumber }));
-                dispatch(setTokens({
-                  jwtToken,
-                  refreshToken: `refresh_${firebaseUser.uid}_${Date.now()}`,
-                  tokenExpiry,
-                }));
               } else {
                 // Clear Redux state when no user
                 dispatch(setUser(null));
@@ -160,6 +168,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (!firebaseUser) {
         throw new Error('Login failed');
+      }
+
+      // Check if email is verified
+      if (!firebaseUser.emailVerified) {
+        // Sign out the user since email is not verified
+        await signOut(auth);
+        return { error: 'EMAIL_NOT_VERIFIED' };
       }
 
       // Get or create user profile
@@ -229,7 +244,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Update Firebase user profile with displayName
       if (displayName) {
-        await firebaseUser.updateProfile({ displayName });
+        await updateProfile(firebaseUser, { displayName });
       }
 
       // Create user profile with proper displayName

@@ -51,8 +51,36 @@ const SignupScreen: React.FC = () => {
   const handleSignup = async (email: string, password: string, name: string) => {
     const result = await signup(email, password, name);
     if (result.user) {
-      Alert.alert('Success', 'Account created successfully!');
-      // Navigation will be handled by AuthContext
+      if (result.error) {
+        // Show error but still navigate to verification screen
+        Alert.alert(
+          'Account Created with Warning',
+          `Account created successfully, but we encountered an issue sending the verification email: ${result.error}. You will be directed to the verification screen where you can request the email again.`,
+          [
+            {
+              text: 'Continue',
+              onPress: () => {
+                // Navigate to email verification screen
+                navigation.navigate('EmailVerification' as any, { email });
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Account Created',
+          'Please check your email (and spam/junk folder) for a verification email from Firebase. Click the verification link to activate your account.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Navigate to email verification screen
+                navigation.navigate('EmailVerification' as any, { email });
+              }
+            }
+          ]
+        );
+      }
     } else {
       Alert.alert('Signup Failed', result.error || 'Failed to create account');
     }
