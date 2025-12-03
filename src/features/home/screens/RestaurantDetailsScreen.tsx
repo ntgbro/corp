@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Image,
   Dimensions,
+  Linking,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { SafeAreaWrapper } from '../../../components/layout';
@@ -60,6 +61,26 @@ const RestaurantDetailsScreen: React.FC = () => {
       restaurantId: restaurant?.restaurantId,
       initialEntityData: restaurant // Optimization
     });
+  };
+
+  const handleAddressPress = () => {
+    if (restaurant?.address?.geoPoint) {
+      const { lat, lng } = restaurant.address.geoPoint;
+      const url = `https://maps.google.com/?q=${lat},${lng}`;
+      
+      Linking.openURL(url).catch((err) => {
+        console.error('Failed to open map:', err);
+        // Optionally show an alert or toast message
+      });
+    } else if (restaurant?.address) {
+      // Fallback to address if geoPoint is not available
+      const addressQuery = `${restaurant.address.line1}, ${restaurant.address.city}, ${restaurant.address.state} ${restaurant.address.pincode}`;
+      const url = `https://maps.google.com/?q=${encodeURIComponent(addressQuery)}`;
+      
+      Linking.openURL(url).catch((err) => {
+        console.error('Failed to open map:', err);
+      });
+    }
   };
 
   const handleAddToCart = async (menuItem: any) => {
@@ -192,26 +213,21 @@ const RestaurantDetailsScreen: React.FC = () => {
           <Typography variant="h4" color="text" style={styles.name}>
             {restaurant.name}
           </Typography>
-          <View style={styles.ratingContainer}>
-            <Typography variant="body1" color="primary" style={styles.rating}>
-              ⭐ {restaurant.avgRating || 'N/A'}
-            </Typography>
-            <Typography variant="body2" color="secondary" style={styles.reviewCount}>
-              ({restaurant.totalRatings || 0} reviews)
-            </Typography>
-          </View>
           <Typography variant="body1" color="secondary" style={styles.description}>
             {restaurant.description}
           </Typography>
 
           {/* Restaurant Details Grid */}
           <View style={styles.detailsGrid}>
-            <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
+            <TouchableOpacity 
+              style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}
+              onPress={handleAddressPress}
+            >
               <Typography variant="caption" color="secondary" style={styles.detailLabel}>📍 Address</Typography>
               <Typography variant="body2" color="text" style={styles.detailValue}>
                 {restaurant.address ? `${restaurant.address.line1}, ${restaurant.address.city}` : 'Not available'}
               </Typography>
-            </View>
+            </TouchableOpacity>
 
             <View style={[styles.detailItem, { backgroundColor: '#FBF5EB' }]}>
               <Typography variant="caption" color="secondary" style={styles.detailLabel}>📞 Phone</Typography>

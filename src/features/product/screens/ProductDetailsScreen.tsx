@@ -16,6 +16,7 @@ import { MenuItem, Restaurant } from '../../../types/firestore';
 import AddToCartButton from '../../../components/common/AddToCartButton';
 import Typography from '../../../components/common/Typography';
 import { useCart } from '../../../contexts/CartContext';
+import StarRating from '../../../components/common/StarRating';
 
 interface RouteParams {
   menuItemId: string;
@@ -132,6 +133,17 @@ const ProductDetailsScreen: React.FC = () => {
             </Typography>
             <AddToCartButton onPress={handleAddToCart} size={50} />
           </View>
+          {product.rating !== undefined && product.rating !== null && (
+            <View style={styles.ratingContainer}>
+              <StarRating 
+                rating={product.rating} 
+                readonly={true} 
+                size="large" 
+                maxRating={5} 
+                style={{ transform: [{ scale: 1.2 }] }}
+              />
+            </View>
+          )}
           
           {/* SAFE RENDERING START */}
           <View style={styles.table}>
@@ -350,6 +362,10 @@ const styles = StyleSheet.create({
   section: { marginBottom: 15, alignItems: 'center' },
   galleryImage: { width: 100, height: 100, borderRadius: 8, marginRight: 10 },
   restaurant: { fontSize: 16, textDecorationLine: 'underline' },
+  ratingContainer: { 
+    marginVertical: 2,
+    alignItems: 'center'
+  },
 });
 
 export default ProductDetailsScreen;

@@ -29,9 +29,6 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant, onPress, wi
       <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: 'bold', marginBottom: 6 }} numberOfLines={1} ellipsizeMode="tail">
         {restaurant.name}
       </Text>
-      <Text style={{ color: theme.colors.textSecondary, fontSize: 12, marginBottom: 4 }}>
-        ⭐ {restaurant.avgRating || 'N/A'} • {restaurant.cuisines?.join(', ') || 'Various'}
-      </Text>
       <Text style={{ color: theme.colors.textSecondary, fontSize: 12, marginBottom: 8 }} numberOfLines={4} ellipsizeMode="tail">
         📍 {restaurant.address?.line1 || ''} {restaurant.address?.city || 'City'}
       </Text>
