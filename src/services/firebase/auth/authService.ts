@@ -39,7 +39,7 @@
 // keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android
 //
 // For more details, see Firebase documentation and Google Sign-In setup guides.
-import { getAuth, signInWithPhoneNumber, signOut as firebaseSignOut, PhoneAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithCredential } from '@react-native-firebase/auth';
+import { getAuth, signInWithPhoneNumber, signOut as firebaseSignOut, PhoneAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithCredential, sendEmailVerification, updateProfile } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import type { 
   FirebaseAuthTypes,
@@ -248,6 +248,14 @@ export const authService = {
   loginWithEmail: async (email: string, password: string): Promise<AuthResult> => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Check if email is verified
+      if (userCredential.user && !userCredential.user.emailVerified) {
+        // Sign out the user since email is not verified
+        await firebaseSignOut(auth);
+        return { user: null, error: 'EMAIL_NOT_VERIFIED' };
+      }
+      
       return { user: userCredential.user };
     } catch (error: any) {
       // Add proper error checking
@@ -271,7 +279,19 @@ export const authService = {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       // Update user profile with name
-      await userCredential.user.updateProfile({ displayName: name });
+      await updateProfile(userCredential.user, { displayName: name });
+      
+      // Send email verification
+      try {
+        console.log('Attempting to send email verification to:', userCredential.user.email);
+        await sendEmailVerification(userCredential.user);
+        console.log('Email verification sent successfully to:', userCredential.user.email);
+      } catch (verificationError) {
+        console.error('Failed to send email verification:', verificationError);
+        // Don't fail the signup if email verification fails, but inform the user
+        return { user: userCredential.user, error: 'Failed to send verification email. Please try again later.' };
+      }
+      
       return { user: userCredential.user };
     } catch (error: any) {
       // Add proper error checking

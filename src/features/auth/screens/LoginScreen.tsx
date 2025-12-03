@@ -53,6 +53,25 @@ const LoginScreen: React.FC = () => {
     const result = await login(email, password);
     if (result.user) {
       // Navigation will be handled by AuthContext
+    } else if (result.error === 'EMAIL_NOT_VERIFIED') {
+      // Show alert with guidance then navigate to email verification screen
+      Alert.alert(
+        'Email Not Verified',
+        'Please check your email (and spam/junk folder) for a verification email from Firebase. Click the verification link to activate your account. If you cannot find the email, we can resend it.',
+        [
+          {
+            text: 'Resend Email',
+            onPress: () => {
+              // Navigate to email verification screen
+              navigation.navigate('EmailVerification' as any, { email });
+            }
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          }
+        ]
+      );
     } else {
       Alert.alert('Login Failed', result.error || 'Invalid credentials');
     }

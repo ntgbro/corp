@@ -421,8 +421,9 @@ export const CartScreen = () => {
         console.log('Order created with ID:', orderId);
 
         // Step 2: Generate PhonePe payment request
+        // FIX: Do not add +20 here. finalAmount already includes delivery charges.
         const paymentData = await initiatePhonePePayment(
-          orderData.finalAmount + 20,
+          orderData.finalAmount,
           orderId,
           orderData.customerId
         );

@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut as firebaseSignOut } from '@react-native-firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut as firebaseSignOut, updateProfile } from '@react-native-firebase/auth';
 import { collection, doc, getDoc, setDoc } from '@react-native-firebase/firestore';
 import { auth, db } from '../../config/firebase';
 import { generateJWTToken, validateJWTToken, refreshJWTToken } from '../../store/middleware/authMiddleware';
@@ -111,7 +111,7 @@ export const registerUser = createAsyncThunk(
 
       // Update Firebase user profile with displayName
       if (displayName) {
-        await firebaseUser.updateProfile({ displayName });
+        await updateProfile(firebaseUser, { displayName });
       }
 
       // Create user profile in Firestore
