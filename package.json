@@ -47,7 +47,6 @@
     "install": "^0.13.0",
     "list": "^2.0.19",
     "lottie-react-native": "^7.3.4",
-    "razorpay": "^2.9.6",
     "react": "19.1.0",
     "react-native": "0.81.4",
     "react-native-device-info": "^15.0.1",
