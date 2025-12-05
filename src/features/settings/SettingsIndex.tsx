@@ -58,7 +58,6 @@ export const SettingsIndex = () => {
   const { profile, loading: profileLoading, fetchProfile } = useProfile();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
-
   // Refresh profile data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
@@ -499,5 +498,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
 export default SettingsIndex;

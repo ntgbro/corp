@@ -576,6 +576,65 @@ service cloud.firestore {
     match /invoices/{invoiceId} {
       allow read, write, create, delete: if isAdmin();
     }
+    
+    // SUPPORT TICKETS COLLECTION
+    match /support_tickets/{ticketId} {
+      // Users can read their own tickets
+      // Admins can read all tickets
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        request.auth.uid == resource.data.userId
+      );
+      
+      // Users can create tickets
+      // Admins can create tickets
+      allow create: if isAuthenticated() && (
+        isAdmin() ||
+        request.resource.data.userId == request.auth.uid
+      );
+      
+      // Users can update their own tickets (limited fields)
+      // Admins can update any ticket
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        (request.auth.uid == resource.data.userId && 
+         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['ticketId', 'userId', 'createdAt']))
+      );
+      
+      // Only admins can delete tickets
+      allow delete: if isAdmin();
+      
+      // TICKET MESSAGES SUBCOLLECTION
+      match /messages/{messageId} {
+        // Users can read messages on their own tickets
+        // Admins can read all messages
+        allow read: if isAuthenticated() && (
+          isAdmin() ||
+          request.auth.uid == get(/databases/$(database)/documents/support_tickets/$(ticketId)).data.userId
+        );
+        
+        // Users can create messages on their own tickets
+        // Admins can create messages
+        allow create: if isAuthenticated() && (
+          isAdmin() ||
+          (request.auth.uid == get(/databases/$(database)/documents/support_tickets/$(ticketId)).data.userId &&
+           request.resource.data.senderId == request.auth.uid &&
+           request.resource.data.senderType == 'user')
+        );
+        
+        // Admins can create messages as support/admin
+        allow create: if isAuthenticated() && isAdmin() && (
+          request.resource.data.senderType == 'admin' ||
+          request.resource.data.senderType == 'support'
+        );
+        
+        // Messages cannot be updated
+        allow update: if false;
+        
+        // Only admins can delete messages
+        allow delete: if isAdmin();
+      }
+    }
 
 
     // DEFAULT DENY

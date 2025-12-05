@@ -1,8 +1,14 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { loginWithEmail, registerUser, resetPassword, logoutUser, refreshAuthToken } from './authThunks';
+import { User } from '../../types/firestore';
+
+interface AuthUser extends User {
+  isPhoneVerified: boolean;
+  emailVerified?: boolean;
+}
 
 interface AuthState {
-  user: any | null; // Using any for now since UserProfile type might not be available
+  user: AuthUser | null;
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
@@ -27,7 +33,7 @@ export const authSlice = createSlice({
   name: 'auth',
   initialState: initialAuthState,
   reducers: {
-    setUser: (state, action: PayloadAction<any | null>) => {
+    setUser: (state, action: PayloadAction<AuthUser | null>) => {
       state.user = action.payload;
       state.isAuthenticated = !!action.payload;
       state.loading = false;
@@ -57,7 +63,7 @@ export const authSlice = createSlice({
     setInitialized: (state, action: PayloadAction<boolean>) => {
       state.isInitialized = action.payload;
     },
-    updateUser: (state, action: PayloadAction<any>) => {
+    updateUser: (state, action: PayloadAction<Partial<AuthUser>>) => {
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
       }

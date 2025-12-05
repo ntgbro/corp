@@ -182,3 +182,32 @@ export interface Payment {
   status: 'pending' | 'completed' | 'failed';
   transactionId?: string;
 }
+
+// Support Ticket Interfaces
+export interface SupportTicket {
+  ticketId: string;
+  userId: string;
+  deliveryPartnerId?: string;
+  orderId?: string;
+  category: string;
+  priority: 'low' | 'medium' | 'high';
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  title: string;
+  description: string;
+  attachmentURLs: string[];
+  assignedTo?: string;
+  resolution?: string;
+  createdAt: any;
+  updatedAt: any;
+  resolvedAt?: any;
+}
+
+export interface TicketMessage {
+  messageId: string;
+  senderId: string;
+  senderType: 'user' | 'admin' | 'support';
+  message: string;
+  attachmentURLs: string[];
+  timestamp: any;
+  isRead: boolean;
+}

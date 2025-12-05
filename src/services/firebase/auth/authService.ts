@@ -65,6 +65,7 @@ let currentConfirmation: FirebaseConfirmationResult | null = null;
 export interface AuthResult {
   user: FirebaseUser | null;
   error?: string;
+  needsEmailVerification?: boolean;
 }
 
 export interface GoogleSignInResult {
@@ -275,25 +276,47 @@ export const authService = {
    * @param name - User name
    * @returns Promise<AuthResult>
    */
-  signupWithEmail: async (email: string, password: string, name: string): Promise<AuthResult> => {
+  signupWithEmail: async (email: string, password: string, name: string): Promise<AuthResult & { needsEmailVerification?: boolean }> => {
     try {
+      console.log('Creating user with email:', email);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Update user profile with name
-      await updateProfile(userCredential.user, { displayName: name });
+      console.log('User created successfully:', userCredential.user.uid);
       
-      // Send email verification
+      // Update user profile with name
+      console.log('Updating user profile with name:', name);
+      await updateProfile(userCredential.user, { displayName: name });
+      console.log('User profile updated successfully');
+      
+      // Send verification email
       try {
-        console.log('Attempting to send email verification to:', userCredential.user.email);
+        console.log('Sending verification email to:', userCredential.user.email);
+        console.log('User email verified status before sending:', userCredential.user.emailVerified);
         await sendEmailVerification(userCredential.user);
-        console.log('Email verification sent successfully to:', userCredential.user.email);
-      } catch (verificationError) {
-        console.error('Failed to send email verification:', verificationError);
-        // Don't fail the signup if email verification fails, but inform the user
-        return { user: userCredential.user, error: 'Failed to send verification email. Please try again later.' };
+        console.log('Verification email sent to:', userCredential.user.email);
+      } catch (emailError: any) {
+        console.error('Failed to send verification email:', emailError);
+        // Log detailed error information
+        console.error('Verification error details:', {
+          code: emailError?.code,
+          message: emailError?.message,
+          stack: emailError?.stack,
+          name: emailError?.name
+        });
+        
+        // Don't block signup if email fails, but log it
+        // Return consistent result structure
+        return { 
+          user: userCredential.user, // Keep user signed in so they can navigate to verification screen
+          needsEmailVerification: true,
+          error: emailError.message || 'Failed to send verification email' 
+        };
       }
       
-      return { user: userCredential.user };
+      // Don't sign out the user immediately after registration
+      // Let the AppNavigator handle routing based on email verification status
+      return { user: userCredential.user, needsEmailVerification: true };
     } catch (error: any) {
+      console.error('Signup error:', error);
       // Add proper error checking
       if (error && typeof error === 'object' && error.message) {
         return { user: null, error: error.message };

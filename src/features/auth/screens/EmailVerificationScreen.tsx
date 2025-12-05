@@ -19,7 +19,8 @@ import { Button, Typography, Spacer } from '../../../components/common';
 import { useThemeContext } from '../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../components/layout';
 import { auth } from '../../../config/firebase';
-import { sendEmailVerification } from '@react-native-firebase/auth';
+import { sendEmailVerification, onAuthStateChanged } from '@react-native-firebase/auth';
+import { useAuth } from '../../../contexts/AuthContext';
 
 type EmailVerificationScreenRouteProp = RouteProp<AuthStackParamList, 'EmailVerification'>;
 type EmailVerificationScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'EmailVerification'>;
@@ -29,10 +30,12 @@ const EmailVerificationScreen: React.FC = () => {
   const navigation = useNavigation<EmailVerificationScreenNavigationProp>();
   const { theme } = useThemeContext();
   const email = route.params?.email || '';
+  const { checkEmailVerification } = useAuth();
   
   const [timeLeft, setTimeLeft] = useState<number>(60);
   const [canResend, setCanResend] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [authListenerUnsubscribe, setAuthListenerUnsubscribe] = useState<(() => void) | null>(null);
   
   // Animation values
   const logoOpacity = new Animated.Value(0);
@@ -54,12 +57,89 @@ const EmailVerificationScreen: React.FC = () => {
       }),
     ]).start();
     
-    // Send verification email on mount
-    console.log('EmailVerificationScreen mounted, sending verification email');
-    // Add a delay to ensure user is fully created and auth state is stable
-    setTimeout(() => {
-      sendVerificationEmail();
-    }, 3000);
+    // Set up auth state listener to automatically detect when email is verified
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Use our new function to check email verification status
+        const isVerified = await checkEmailVerification();
+        if (isVerified) {
+          console.log('User email verified detected automatically');
+          // Email is now verified, show success message and redirect to login
+          Alert.alert('Success', 'Your email has been verified successfully!', [
+            {
+              text: 'OK',
+              onPress: () => {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Login' }],
+                });
+              }
+            }
+          ]);
+        }
+      }
+    });
+    
+    setAuthListenerUnsubscribe(() => unsubscribe);
+    
+    // Send verification email on mount, but only if there's a current user
+    console.log('EmailVerificationScreen mounted');
+    if (auth.currentUser) {
+      console.log('Current user exists, checking if already verified');
+      // Check if user is already verified using our new function
+      checkEmailVerification().then(isVerified => {
+        if (isVerified) {
+          console.log('User already verified, redirecting to login');
+          // User is already verified, redirect to login
+          setTimeout(() => {
+            Alert.alert('Success', 'Your email has been verified successfully!', [
+              {
+                text: 'OK',
+                onPress: () => {
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                  });
+                }
+              }
+            ]);
+          }, 500);
+        } else {
+          console.log('Sending verification email');
+          // Add a small delay to ensure user is fully created and auth state is stable
+          setTimeout(() => {
+            sendVerificationEmail();
+          }, 1000);
+        }
+      });
+    } else {
+      console.log('No current user, skipping automatic email send');
+      // If there's no current user but we have an email param, 
+      // show a message asking the user to log in
+      if (email) {
+        setTimeout(() => {
+          Alert.alert(
+            'Login Required', 
+            'To verify your email address, please log in first with your email and password. After logging in, you\'ll be able to complete the verification process.',
+            [
+              {
+                text: 'Go to Login',
+                onPress: () => {
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                  });
+                }
+              },
+              {
+                text: 'Later',
+                style: 'cancel'
+              }
+            ]
+          );
+        }, 1500);
+      }
+    }
     
     // Set up timer for resend button
     const timer = setInterval(() => {
@@ -73,27 +153,58 @@ const EmailVerificationScreen: React.FC = () => {
       });
     }, 1000);
     
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      if (authListenerUnsubscribe) {
+        authListenerUnsubscribe();
+      }
+    };
   }, []);
 
   const sendVerificationEmail = async () => {
     try {
       if (auth.currentUser) {
         console.log('Attempting to send verification email to:', auth.currentUser.email);
+        console.log('Current user UID:', auth.currentUser.uid);
+        console.log('Current user email verified status:', auth.currentUser.emailVerified);
+        
         await sendEmailVerification(auth.currentUser);
-        console.log('Verification email sent successfully to:', auth.currentUser.email);
-        Alert.alert('Verification Email Sent', `We've sent a verification email to ${email}. Please check your inbox and spam/junk folder. The email may take a few minutes to arrive.\n\nIf you don't receive the email:\n1. Check your spam/junk folder\n2. Try resending the email\n3. Verify the email address is correct\n4. Contact support if issues persist`);
+        console.log('Verification email sent to:', auth.currentUser.email);
+        Alert.alert('Verification Email Sent', `We've sent a verification email to ${auth.currentUser.email}. Please check your inbox and spam/junk folder. The email may take a few minutes to arrive.\n\nIf you don't receive the email:\n1. Check your spam/junk folder\n2. Try resending the email\n3. Verify the email address is correct\n4. Contact support if issues persist`);
+      } else if (email) {
+        // If there's no current user but we have an email from params,
+        // inform the user they need to log in first
+        Alert.alert('Login Required', 'To send a verification email, please log in first. You will then be redirected to this page to verify your email.');
+      } else {
+        // No user and no email in params
+        Alert.alert('Error', 'Unable to send verification email. No user is currently signed in.');
       }
     } catch (error: any) {
       console.error('Error sending verification email:', error);
+      // Log more detailed error information
+      console.error('Verification error details:', {
+        code: error?.code,
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name
+      });
+      
       const errorMessage = error?.message || 'Failed to send verification email. Please try again.';
       
       // Provide more detailed error information
       let detailedErrorMessage = errorMessage;
-      if (errorMessage.includes('TOO_MANY_ATTEMPTS')) {
-        detailedErrorMessage = 'Too many verification requests. Please wait a few minutes before trying again.';
+      if (errorMessage.includes('TOO_MANY_ATTEMPTS') || errorMessage.includes('too-many-requests')) {
+        detailedErrorMessage = 'Too many verification requests. Please wait a few minutes before trying again. This is a temporary security measure by Firebase to prevent abuse.';
       } else if (errorMessage.includes('network') || errorMessage.includes('Network')) {
         detailedErrorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (errorMessage.includes('auth/no-current-user')) {
+        detailedErrorMessage = 'No user is currently signed in. Please log in first.';
+      } else if (errorMessage.includes('auth/unauthorized-domain')) {
+        detailedErrorMessage = 'Email verification is not properly configured. Please contact support.';
+      } else if (errorMessage.includes('auth/invalid-email')) {
+        detailedErrorMessage = 'The email address is invalid. Please check the email address and try again.';
+      } else if (errorMessage.includes('auth/user-disabled')) {
+        detailedErrorMessage = 'This account has been disabled. Please contact support.';
       }
       
       Alert.alert('Error Sending Email', `${detailedErrorMessage}\n\nPlease try again or contact support if the issue persists.`);
@@ -125,32 +236,45 @@ const EmailVerificationScreen: React.FC = () => {
     setIsVerifying(true);
     try {
       if (auth.currentUser) {
-        // Reload user to get updated email verification status
-        await auth.currentUser.reload();
+        // Use our new function to check email verification status
+        const isVerified = await checkEmailVerification();
         
-        if (auth.currentUser.emailVerified) {
-          Alert.alert('Success', 'Your email has been verified successfully!');
-          // Navigate to login screen
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          });
+        if (isVerified) {
+          Alert.alert('Success', 'Your email has been verified successfully!', [
+            {
+              text: 'OK',
+              onPress: () => {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Login' }],
+                });
+              }
+            }
+          ]);
         } else {
-          // Wait a bit more and try again
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          await auth.currentUser.reload();
-          
-          if (auth.currentUser.emailVerified) {
-            Alert.alert('Success', 'Your email has been verified successfully!');
-            // Navigate to login screen
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
-          } else {
-            Alert.alert('Not Verified', 'Your email is not verified yet. Please check your inbox and spam/junk folder for the verification email and click the link. Emails may take a few minutes to arrive.\n\nIf you have clicked the link and are still seeing this message:\n1. Try refreshing this page\n2. Check if the link opened in a different browser\n3. Try resending the verification email\n4. Contact support if issues persist');
-          }
+          Alert.alert('Not Verified', 'Your email is not verified yet. Please check your inbox and spam/junk folder for the verification email and click the link. Emails may take a few minutes to arrive.\n\nIf you have clicked the link and are still seeing this message:\n1. Try refreshing this page\n2. Check if the link opened in a different browser\n3. Try resending the verification email\n4. Contact support if issues persist');
         }
+      } else {
+        // No current user, prompt user to log in first
+        Alert.alert(
+          'Login Required', 
+          'Please log in with your email and password first. After logging in, you will be able to verify your email address.',
+          [
+            {
+              text: 'Go to Login',
+              onPress: () => {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Login' }],
+                });
+              }
+            },
+            {
+              text: 'Cancel',
+              style: 'cancel'
+            }
+          ]
+        );
       }
     } catch (error) {
       console.error('Error checking verification status:', error);
@@ -209,9 +333,15 @@ const EmailVerificationScreen: React.FC = () => {
               </Animated.View>
               
               <Text style={styles.title}>Verify Your Email</Text>
-              <Text style={styles.subtitle}>
-                We've sent a verification email to {email}. Please check your inbox and spam/junk folder for an email from Firebase. Click the verification link in the email to continue.
-              </Text>
+              {auth.currentUser ? (
+                <Text style={styles.subtitle}>
+                  We've sent a verification email to {email}. Please check your inbox and spam/junk folder for an email from Firebase. Click the verification link in the email to continue.
+                </Text>
+              ) : (
+                <Text style={styles.subtitle}>
+                  Please log in with your email and password to verify your account. A verification email was sent to {email}.
+                </Text>
+              )}
             </View>
 
             {/* Content card */}
@@ -221,30 +351,40 @@ const EmailVerificationScreen: React.FC = () => {
                   <Text style={styles.iconText}>📧</Text>
                 </View>
                 
-                <Text style={styles.instructionText}>
-                  Didn't receive the email? Check your spam/junk folder first, then click the button below to resend. Emails may take a few minutes to arrive.
-                </Text>
+                {auth.currentUser ? (
+                  <Text style={styles.instructionText}>
+                    Didn't receive the email? Check your spam/junk folder first, then click the button below to resend. Emails may take a few minutes to arrive.
+                  </Text>
+                ) : (
+                  <Text style={styles.instructionText}>
+                    To complete the verification process, please log in with your email and password. After logging in, you'll be able to verify your email address.
+                  </Text>
+                )}
                 
                 <View style={styles.buttonContainer}>
-                  <Button
-                    title={canResend ? "Resend Verification Email" : `Resend Email (${timeLeft}s)`}
-                    onPress={handleResendEmail}
-                    disabled={!canResend}
-                    variant="primary"
-                    fullWidth
-                    style={styles.resendButton}
-                  />
+                  {auth.currentUser ? (
+                    <>
+                      <Button
+                        title={canResend ? "Resend Verification Email" : `Resend Email (${timeLeft}s)`}
+                        onPress={handleResendEmail}
+                        disabled={!canResend}
+                        variant="primary"
+                        fullWidth
+                        style={styles.resendButton}
+                      />
+                      
+                      <Button
+                        title="Open Email App"
+                        onPress={handleOpenEmailApp}
+                        variant="outline"
+                        fullWidth
+                        style={styles.emailAppButton}
+                      />
+                    </>
+                  ) : null}
                   
                   <Button
-                    title="Open Email App"
-                    onPress={handleOpenEmailApp}
-                    variant="outline"
-                    fullWidth
-                    style={styles.emailAppButton}
-                  />
-                  
-                  <Button
-                    title={isVerifying ? "Verifying..." : "I've Verified My Email"}
+                    title={isVerifying ? "Verifying..." : auth.currentUser ? "I've Verified My Email" : "Log In to Verify Email"}
                     onPress={handleCheckVerification}
                     loading={isVerifying}
                     variant="primary"
