@@ -33,7 +33,7 @@ export const ENVIRONMENT = {
 
   // Third-party Services
   PAYMENT_GATEWAY: {
-    ENABLED: false, // Set to true when payment integration is ready
+    ENABLED: false, // Payment gateway is disabled but code is kept for future use
     TEST_MODE: __DEV__,
     PUBLIC_KEY: __DEV__
       ? 'pk_test_your_test_key'

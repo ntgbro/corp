@@ -12,7 +12,7 @@ import appReducer from './slices/appStore';
 import userReducer from './slices/userSlice';
 
 // Import middleware
-import { analyticsMiddleware } from './middleware/analyticsMiddleware';
+// import { analyticsMiddleware } from './middleware/analyticsMiddleware';
 import { authMiddleware } from './middleware/authMiddleware';
 
 // Combine all reducers
@@ -69,7 +69,7 @@ export const store = configureStore({
         warnAfter: 128,
       },
     })
-      .concat(analyticsMiddleware)
+      // .concat(analyticsMiddleware)
       .concat(authMiddleware),
   devTools: __DEV__, // Enable Redux DevTools in development
 });
@@ -101,7 +101,7 @@ export const storeConfig = {
     reduxDevTools: __DEV__,
     persistence: true,
     middleware: {
-      analytics: true,
+      // analytics: true,
       auth: true,
       error: true,
       persistence: true,

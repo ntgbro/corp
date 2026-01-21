@@ -19,23 +19,15 @@ const AppNavigator: React.FC = () => {
   }
 
   // Check if user exists and is email verified
-  // If user exists but is not verified, show AuthNavigator instead
-  // Exception: Allow users to access AuthNavigator even if they're not verified
-  // so they can complete the email verification process
-  if (user) {
+  if (user && user.emailVerified) {
     // If user is verified, show main app
-    if (user.emailVerified) {
-      console.log('AppNavigator: Showing MainNavigator (user verified)');
-      return <MainNavigator />;
-    }
-    // If user is not verified, still show AuthNavigator to allow verification
-    // The EmailVerification screen will be accessible through the AuthNavigator
-    console.log('AppNavigator: Showing AuthNavigator (user not verified)');
-    return <AuthNavigator />;
+    console.log('AppNavigator: Showing MainNavigator (user verified)');
+    return <MainNavigator />;
   }
   
-  // No user, show AuthNavigator
-  console.log('AppNavigator: Showing AuthNavigator (no user)');
+  // For all other cases (no user or user not verified), show AuthNavigator
+  // This allows users to login, signup, and verify their email
+  console.log('AppNavigator: Showing AuthNavigator');
   return <AuthNavigator />;
 };
 

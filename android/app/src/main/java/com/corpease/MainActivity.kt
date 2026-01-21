@@ -7,6 +7,7 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnable
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.zoontek.rnbootsplash.RNBootSplash
 
 class MainActivity : ReactActivity() {
 
@@ -27,6 +28,8 @@ class MainActivity : ReactActivity() {
    * Enable Firebase Phone Auth test mode for development
    */
   override fun onCreate(savedInstanceState: Bundle?) {
+    RNBootSplash.init(this, R.style.BootTheme) // Initialize the splash screen
+    
     super.onCreate(savedInstanceState)
 
     // Initialize Firebase if not already initialized
