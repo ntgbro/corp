@@ -244,10 +244,9 @@ const EmailVerificationScreen: React.FC = () => {
             {
               text: 'OK',
               onPress: () => {
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'Login' }],
-                });
+                // Instead of resetting to Login, we should let the AuthContext handle the state
+                // The AppNavigator will automatically redirect to MainNavigator since user is verified
+                navigation.goBack();
               }
             }
           ]);

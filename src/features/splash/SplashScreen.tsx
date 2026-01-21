@@ -62,9 +62,6 @@ const SplashScreen: React.FC = () => {
     });
   }, []);
 
-  // Removed automatic navigation to allow for manual changes
-  // The SplashScreen will now stay visible until manually navigated away
-
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.centerLogo, { opacity: centerOpacity }]}>

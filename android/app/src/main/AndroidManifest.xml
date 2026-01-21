@@ -1,110 +1,113 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.corpease">
-
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
-    
-    <!-- PhonePe SDK permissions -->
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
-    <!-- Location permissions for enhanced geolocation service -->
+    <queries>
+        <package android:name="com.phonepe.app" />
+        <package android:name="com.phonepe.app.preprod" />
+
+        <package android:name="com.google.android.apps.nbu.paisa.user" />
+
+        <package android:name="net.one97.paytm" />
+
+        <package android:name="in.org.npci.upiapp" />
+
+        <package android:name="com.dreamplug.androidapp" />
+
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="upi" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+        </intent>
+    </queries>
+
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
-      android:name=".MainApplication"
-      android:label="@string/app_name"
-      android:icon="@mipmap/ic_launcher"
-      android:roundIcon="@mipmap/ic_launcher_round"
-      android:allowBackup="false"
-      android:theme="@style/AppTheme"
-      android:usesCleartextTraffic="${usesCleartextTraffic}"
-      android:supportsRtl="true">
-      <!-- Firebase configuration -->
-      <meta-data
-          android:name="com.google.firebase.auth.USE_EMULATOR"
-          android:value="false" />
-          
-      <meta-data
-          android:name="com.google.firebase.auth.package"
-          android:value="com.corpease" />
-      
-      <!-- Google Play services version -->
-      <meta-data
-          android:name="com.google.android.gms.version"
-          android:value="@integer/google_play_services_version" />
-      
-      <!-- Add the Firebase configuration -->
-      <meta-data
-          android:name="com.google.firebase.auth.USE_EMULATOR"
-          android:value="false" />
-          
-      <!-- reCAPTCHA configuration -->
-      <meta-data
-          android:name="com.google.android.gms.ads.APPLICATION_ID"
-          android:value="ca-app-pub-3940256099942544~3347511713" />
-          
-      <!-- Add reCAPTCHA activity -->
-      <activity
-          android:name="com.google.android.gms.auth.api.phone.ui.UserConsentPromptActivity"
-          android:exported="true"
-          android:theme="@android:style/Theme.Translucent.NoTitleBar"
-          android:windowSoftInputMode="stateAlwaysHidden" />
-          
-      <activity
-          android:name="com.google.android.gms.auth.api.phone.ui.BrowserSignInActivity"
-          android:exported="true"
-          android:launchMode="singleTop"
-          android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-          
-      <!-- Add this inside your <application> tag -->
-      <meta-data
-          android:name="com.google.firebase.auth.USE_EMULATOR"
-          android:value="false" />
-          
-      <meta-data
-          android:name="firebase_analytics_collection_enabled"
-          android:value="true" />
-          
-      <meta-data
-          android:name="firebase_crashlytics_collection_enabled"
-          android:value="true" />
-          
-      <!-- PhonePe SDK activities -->
-      <activity
-        android:name="com.phonepe.intent.sdk.v2.PhonePePaymentActivity"
-        android:exported="true"
-        android:launchMode="singleTop"
-        android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-      
-      <activity
-        android:name="com.phonepe.intent.sdk.v2.RedirectActivity"
-        android:exported="true"
-        android:launchMode="singleTop"
-        android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-      
-      <activity
-        android:name=".MainActivity"
+        android:name=".MainApplication"
         android:label="@string/app_name"
-        android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
-        android:launchMode="singleTask"
-        android:windowSoftInputMode="adjustResize"
-        android:exported="true">
-        <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.LAUNCHER" />
-        </intent-filter>
-        <!-- PhonePe callback URL scheme -->
-        <intent-filter>
-            <action android:name="android.intent.action.VIEW" />
-            <category android:name="android.intent.category.DEFAULT" />
-            <category android:name="android.intent.category.BROWSABLE" />
-            <data android:scheme="ppemerchantsdkv3" />
-        </intent-filter>
-      </activity>
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:allowBackup="false"
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="${usesCleartextTraffic}"
+        android:supportsRtl="true">
+        <meta-data
+            android:name="com.google.firebase.auth.USE_EMULATOR"
+            android:value="false" />
+
+        <meta-data
+            android:name="com.google.firebase.auth.package"
+            android:value="com.corpease" />
+
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+
+        <meta-data
+            android:name="com.google.firebase.auth.USE_EMULATOR"
+            android:value="false" />
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
+
+        <activity
+            android:name="com.google.android.gms.auth.api.phone.ui.UserConsentPromptActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:windowSoftInputMode="stateAlwaysHidden" />
+
+        <activity
+            android:name="com.google.android.gms.auth.api.phone.ui.BrowserSignInActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <meta-data
+            android:name="com.google.firebase.auth.USE_EMULATOR"
+            android:value="false" />
+
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="true" />
+
+        <activity
+            android:name="com.phonepe.intent.sdk.v2.PhonePePaymentActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <activity
+            android:name="com.phonepe.intent.sdk.v2.RedirectActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize"
+            android:exported="true"
+            android:theme="@style/BootTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="ppemerchantsdkv3" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

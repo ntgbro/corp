@@ -254,7 +254,7 @@ export const CartScreen = () => {
   
   // State for additional order information
   const [deliveryInstructions, setDeliveryInstructions] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('UPI');
+  const [paymentMethod, setPaymentMethod] = useState('Cash on Delivery');
   
   // State for time slot selection within the modal
   const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
@@ -410,87 +410,18 @@ export const CartScreen = () => {
         Alert.alert('Error', 'Failed to create order. Please try again.');
       }
     } else {
-      // For UPI/PhonePe payments - Create order first with pending status
-      try {
-        // Step 1: Create order in Firebase with pending status
-        const orderId = await CartService.createOrder({
-          ...orderData,
-          status: 'pending',
-          paymentStatus: 'pending'
-        });
-        console.log('Order created with ID:', orderId);
-
-        // Step 2: Generate PhonePe payment request
-        // FIX: Do not add +20 here. finalAmount already includes delivery charges.
-        const paymentData = await initiatePhonePePayment(
-          orderData.finalAmount,
-          orderId,
-          orderData.customerId
-        );
-
-        console.log('PhonePe payment data:', paymentData);
-
-        // Step 3: Build PhonePe web checkout URL
-        const phonepeWebUrl = paymentData.paymentUrl || `https://mercury-uat.phonepe.com/transact/pg?token=${encodeURIComponent(paymentData.payload)}`;
-
-        console.log('Opening PhonePe URL:', phonepeWebUrl);
-
-        // Step 4: Open PhonePe in browser
-        const canOpen = await Linking.canOpenURL(phonepeWebUrl);
-        
-        if (canOpen) {
-          await Linking.openURL(phonepeWebUrl);
-          
-          // === CHANGED: Start listening for backend confirmation ===
-          // We don't ask the user anymore. We ask the Database.
-          waitForPaymentCompletion(orderId);
-          
-        } else {
-          throw new Error('Cannot open PhonePe URL');
-        }
-
-      } catch (error) {
-        console.error('Error initiating PhonePe payment:', error);
-        Alert.alert('Payment Error', 'Failed to initiate payment. Please try again.');
-      }
-      return;
+      // For UPI/PhonePe payments - Show alert that this option is currently unavailable
+      Alert.alert(
+        'Payment Method Unavailable',
+        'UPI/PhonePe payment is currently unavailable. Please select Cash on Delivery to proceed with your order.',
+        [
+          {
+            text: 'OK',
+            onPress: () => setPaymentMethod('Cash on Delivery'),
+          },
+        ]
+      );
     }
-  };
-
-  // Add this function to listen for payment status changes in real-time
-  const waitForPaymentCompletion = (orderId: string) => {
-    console.log(`Starting to watch order ${orderId} for payment status...`);
-    
-    // Show a loading indicator (optional)
-    Alert.alert("Processing Payment", "Please complete the payment in the browser. We are watching for confirmation...");
-
-    // Listen to the specific order document in Firestore
-    const unsubscribe = db.collection('orders').doc(orderId)
-      .onSnapshot((snapshot) => {
-        const data = snapshot.data();
-        
-        // Check if backend has updated the status
-        if (data) {
-          console.log(`Real-time Order Status: ${data.status} | Payment: ${data.paymentStatus}`);
-          
-          if (data.status === 'confirmed' || data.paymentStatus === 'paid') {
-            // SUCCESS! Stop listening and navigate
-            unsubscribe();
-            console.log('Payment confirmed by backend! Navigating...');
-            
-            // Dismiss any open alerts (if possible) and navigate
-            navigation.navigate('OrderConfirmation' as any, { orderId });
-          } 
-          else if (data.status === 'cancelled' || data.paymentStatus === 'failed') {
-            // FAILED
-            unsubscribe();
-            Alert.alert("Payment Failed", "The payment was declined or cancelled.");
-          }
-        }
-      });
-      
-    // Safety: Stop listening after 5 minutes if nothing happens to prevent memory leaks
-    setTimeout(() => unsubscribe(), 300000); 
   };
 
   const handleApplyCoupon = async () => {
@@ -1074,6 +1005,7 @@ export const CartScreen = () => {
       </View>
       
       <View style={styles.paymentMethodsContainer}>
+        {/* Show both options but disable UPI */}
         {['UPI', 'Cash on Delivery'].map((method) => (
           <TouchableOpacity
             key={method}
@@ -1085,14 +1017,38 @@ export const CartScreen = () => {
                   : theme.colors.surface,
                 borderColor: paymentMethod === method 
                   ? theme.colors.primary 
-                  : theme.colors.border
+                  : theme.colors.border,
+                // Add opacity to indicate disabled state for UPI
+                opacity: method === 'UPI' ? 0.5 : 1,
               }
             ]}
-            onPress={() => setPaymentMethod(method)}
+            onPress={() => {
+              if (method === 'UPI') {
+                // Show alert that UPI is disabled
+                Alert.alert(
+                  'Payment Method Unavailable',
+                  'UPI/PhonePe payment is currently unavailable. Please select Cash on Delivery to proceed with your order.',
+                  [
+                    {
+                      text: 'OK',
+                    },
+                  ]
+                );
+              } else {
+                setPaymentMethod(method);
+              }
+            }}
+            // Disable touch for UPI
+            disabled={method === 'UPI'}
           >
             <Text style={[styles.paymentMethodText, { color: theme.colors.text }]}>
               {method}
             </Text>
+            {method === 'UPI' && (
+              <Text style={[styles.paymentMethodText, { color: theme.colors.textSecondary, fontSize: 10, marginTop: 2 }]}>
+                (Unavailable)
+              </Text>
+            )}
           </TouchableOpacity>
         ))}
       </View>

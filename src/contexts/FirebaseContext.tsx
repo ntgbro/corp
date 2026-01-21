@@ -6,7 +6,7 @@ import {
   db,
   firestore,
   storage,
-  analytics
+  // analytics
 } from '../config/firebase';
 
 interface FirebaseContextType {
@@ -15,7 +15,7 @@ interface FirebaseContextType {
   db: any;
   firestore: any;
   storage: any;
-  analytics: any;
+  // analytics: any; // Removed analytics
 
   // Initialization status
   isInitialized: boolean;
@@ -44,7 +44,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({ children }) 
 
         // Firebase is already initialized in config/firebase.ts
         // Just verify the services are available
-        if (!auth || !db || !firestore || !storage || !analytics) {
+        if (!auth || !db || !firestore || !storage) {
           throw new Error('Firebase services not properly initialized');
         }
 
@@ -83,7 +83,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({ children }) 
     db,
     firestore,
     storage,
-    analytics,
+    // analytics: null, // Removed analytics
 
     // Status
     isInitialized,

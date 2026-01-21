@@ -3,7 +3,7 @@ import { initializeApp } from '@react-native-firebase/app';
 import { getAuth } from '@react-native-firebase/auth';
 import { getFirestore } from '@react-native-firebase/firestore';
 import { getStorage } from '@react-native-firebase/storage';
-import { getAnalytics } from '@react-native-firebase/analytics';
+// import { getAnalytics } from '@react-native-firebase/analytics';
 
 const firebaseConfig = {
   apiKey: "AIzaSyB0B4tNrApQRWljS7_b2AnBSSXuXli33Y4",
@@ -29,6 +29,6 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const firestore = getFirestore(app);
 export const storage = getStorage(app);
-export const analytics = getAnalytics(app);
+// export const analytics = getAnalytics(app);
 
 export default firebaseConfig;

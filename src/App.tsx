@@ -6,6 +6,7 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { AppNavigator } from './navigation';
 import SplashScreen from './features/splash/SplashScreen';
+import BootSplash from 'react-native-bootsplash';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useThemeContext } from './contexts/ThemeContext';
 import { store, persistor } from './store';
@@ -115,23 +116,29 @@ const AppContent: React.FC = () => {
       }
     };
 
-    initializeApp();
+    initializeApp().finally(() => {
+      // Hide the native splash screen after initialization
+      BootSplash.hide({ fade: true });
+    });
   }, []);
 
-  // Temporarily disable automatic navigation from splash screen
-  // Uncomment the following useEffect when you want to re-enable automatic navigation
-  
+  // Handle splash screen visibility
+  // Show the JS splash screen with animations after native bootsplash hides
   useEffect(() => {
     if (appReady) {
+      // Show the JS splash screen briefly to display the animations
+      setShowSplash(true);
+      
+      // Hide the JS splash screen after the animation completes
+      // The animation in SplashScreen.tsx runs for about 800ms + stagger(300, [6 items * 400ms])
+      // So total animation time is roughly 800 + 300*5 + 400 = ~2700ms
       const timer = setTimeout(() => {
         setShowSplash(false);
-      }, 3000); // Adjust timing to match your splash screen animation
+      }, 3000); // Allow time for the animation to complete
 
       return () => clearTimeout(timer);
     }
   }, [appReady]);
-
-  // Removed the loading screen check since appReady is now true immediately
 
   // Show splash screen (will stay visible until manually navigated away)
   if (showSplash) {
